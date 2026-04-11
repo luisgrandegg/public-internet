@@ -165,7 +165,18 @@ This project is used by non-developer designers. Unexpected permission prompts b
 - **Use `git -C <path>` if an explicit path is needed**, not `cd <path> && git ...`.
 - **Avoid shell builtins or utilities not in the allow list** (`cp`, `mv`, `mkdir`, `rm`, etc.).
   Use the dedicated file tools (`Write`, `Edit`, `Read`, `Glob`) instead — they never prompt.
-- **Allowed Bash commands:** `git`, `pnpm`, `gh`, `volta`, `jq`, `npx tsc`.
+- **Allowed Bash commands and the subcommands used in this project:**
+
+  | Command | Allowed subcommands |
+  | ------- | ------------------- |
+  | `git`   | `status`, `diff`, `add`, `commit`, `push`, `fetch`, `merge`, `log`, `checkout`, `branch`, `rev-parse`, `stash` |
+  | `pnpm`  | `install`, `build`, `lint`, `type-check`, `test`, `test:coverage`, `changeset`, `--filter <pkg> <script>`, `add`, `remove` |
+  | `gh`    | `pr view`, `pr create`, `pr checks --watch --interval 30`, `run view --log-failed`, `repo edit`, `api` |
+  | `volta` | `install` |
+  | `jq`    | any — for parsing JSON output from `gh` commands |
+  | `npx tsc` | type-check without a global install |
+
+  Commands not in this table require user confirmation before running.
 
 ---
 
