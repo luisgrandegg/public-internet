@@ -131,6 +131,7 @@ Slash commands for designers live in `.claude/commands/`. Use them to start guid
 | `/create-pr`              | Create a PR for the current branch and start CI watch                         |
 | `/watch-pr`               | Poll CI on the current PR; fix failures automatically                         |
 | `/rules-audit`            | Score the quality of AI rules (CLAUDE.md, CONSTITUTION.md) across 8 criteria |
+| `/review-pr`              | Review a PR, post inline comments per finding, submit REQUEST_CHANGES         |
 
 ---
 

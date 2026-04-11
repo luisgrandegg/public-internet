@@ -1,0 +1,202 @@
+# /review-pr
+
+Perform a thorough code review on a Pull Request, post an inline comment for each finding, and submit the review requesting changes.
+
+**Usage:** `/review-pr <PR>` where `<PR>` is one of:
+- A full GitHub PR URL: `https://github.com/owner/repo/pull/123`
+- A shorthand repo + number: `owner/repo#123`
+- A plain PR number (uses current repo): `123`
+
+---
+
+## What to do
+
+### Step 1 — Parse the PR reference
+
+From `$ARGUMENTS`, extract:
+- `OWNER` — GitHub org or username
+- `REPO` — repository name
+- `PR_NUMBER` — pull request number
+
+**Parsing rules:**
+
+- If it matches `https://github.com/<owner>/<repo>/pull/<number>`, extract all three.
+- If it matches `<owner>/<repo>#<number>`, extract all three.
+- If it is a plain integer, set `PR_NUMBER` to that integer and resolve `OWNER`/`REPO` from the current repo:
+  ```bash
+  gh repo view --json owner,name
+  ```
+
+If the input is empty or cannot be parsed, ask the user: "Please provide a PR reference — a GitHub URL, `owner/repo#number`, or a plain PR number."
+
+---
+
+### Step 2 — Fetch PR metadata
+
+```bash
+gh api repos/OWNER/REPO/pulls/PR_NUMBER
+```
+
+Record:
+- `title` — PR title
+- `body` — PR description
+- `head.sha` — head commit SHA (needed for review comments)
+- `base.ref` — base branch
+- `head.ref` — feature branch
+- `user.login` — PR author
+
+If the PR is not found (404), tell the user and stop.
+
+---
+
+### Step 3 — Fetch the changed files and diff
+
+```bash
+gh api repos/OWNER/REPO/pulls/PR_NUMBER/files
+```
+
+This returns an array of file objects. For each file, record:
+- `filename` — relative path
+- `status` — `added`, `modified`, `removed`, `renamed`
+- `patch` — the unified diff hunk (may be absent for binary files or very large diffs)
+
+Then read the full content of each changed file (non-binary, non-removed) using the Read tool. Use the filename directly — it is relative to the repo root.
+
+If a file is too large to read fully, read the changed hunks from `patch` only.
+
+---
+
+### Step 4 — Fetch PR comments and existing reviews
+
+Check what has already been flagged so you don't duplicate findings:
+
+```bash
+gh api repos/OWNER/REPO/pulls/PR_NUMBER/comments
+gh api repos/OWNER/REPO/pulls/PR_NUMBER/reviews
+```
+
+---
+
+### Step 5 — Perform the review
+
+Review every changed file against the criteria below. For each finding, record:
+
+- `path` — file path (exactly as returned by the files API)
+- `line` — the line number in the **right (new) side** of the file where the issue is located; use the last line of the problem if it spans multiple lines
+- `side` — always `"RIGHT"` for lines in the new version of the file
+- `summary` — one sentence: what is wrong
+- `detail` — concrete solution: what to change and how
+
+**Review criteria (check all that apply):**
+
+**TypeScript / correctness**
+- `any` types or implicit `any` — require explicit types
+- Missing return types on exported functions
+- Non-null assertions (`!`) without a justifying comment
+- `as` casts that bypass safety (prefer type guards)
+- Unused imports or variables
+
+**Design system conventions** (for files in `packages/design-system/`)
+- Hardcoded hex colors or raw `px` values — must use `var(--ds-*)` tokens
+- Inline `style={{}}` props — must use CSS Modules
+- Tailwind classes — not allowed
+- Missing `className` prop pass-through for external overrides
+- Missing or incomplete Storybook stories (< 3 named exports)
+- Missing accessibility test (`toHaveNoViolations`)
+
+**Security**
+- `dangerouslySetInnerHTML` without sanitization
+- `eval()` or `new Function()`
+- User-controlled values interpolated into URLs or SQL without encoding
+
+**Code quality**
+- `console.log` left in production code
+- Dead code or commented-out blocks
+- Logic that can be simplified significantly
+- Missing error handling at system boundaries (API calls, file I/O)
+
+**Testing**
+- Tests using `getByTestId` instead of semantic queries
+- `fireEvent` instead of `userEvent` for interactions
+- Assertions on class names or implementation details
+
+**Do not flag:**
+- Style preferences (formatting, naming conventions) that are enforced by the linter
+- Issues already flagged in existing review comments or reviews
+- Files with `status: "removed"` — no changes needed on deleted files
+
+---
+
+### Step 6 — Build the review payload
+
+**Before posting the review**, self-assign as a reviewer so the PR is tracked:
+
+```bash
+CURRENT_USER=$(gh api user --jq .login)
+gh api repos/OWNER/REPO/pulls/PR_NUMBER/requested_reviewers \
+  --method POST \
+  --field "reviewers[]=$CURRENT_USER"
+```
+
+If there are **no findings**, tell the user: "No issues found in this PR. You've been added as a reviewer — submit an approval manually if you're satisfied." Stop without posting any review.
+
+---
+
+If there are findings, construct the payload as a JSON file written to a temp path, then post it.
+
+**Write the payload** using the Write tool to `/tmp/review-payload.json`:
+
+```json
+{
+  "event": "REQUEST_CHANGES",
+  "body": "<overall summary — 2–4 sentences covering the main themes across all findings>",
+  "comments": [
+    {
+      "path": "<path>",
+      "line": <line>,
+      "side": "RIGHT",
+      "body": "**Issue:** <summary>\n\n**Suggestion:** <detail>"
+    }
+  ]
+}
+```
+
+Rules for the payload:
+- `body` at the top level is the overall review summary — not a list; write it as prose.
+- Each comment `body` must contain both the issue description and the concrete suggestion, using the **Issue:** / **Suggestion:** labels shown above.
+- `line` must be an integer (no quotes). Verify each line number is within the file's current line count — if uncertain, use the last line of the relevant hunk from the `patch`.
+- Include every finding as a separate comment. Do not merge multiple issues into one comment.
+
+---
+
+### Step 7 — Post the review
+
+```bash
+gh api repos/OWNER/REPO/pulls/PR_NUMBER/reviews \
+  --method POST \
+  --input /tmp/review-payload.json
+```
+
+If the API returns an error:
+- **422 Unprocessable Entity** — a comment references an invalid `line` or `path`. Re-read the diff, correct the line numbers, rewrite `/tmp/review-payload.json`, and retry once.
+- **404 Not Found** — the PR was not found or you lack access. Report to the user and stop.
+- Any other error — show the full error message to the user and stop.
+
+---
+
+### Step 8 — Confirm and report
+
+After a successful post, tell the user:
+
+```
+Review submitted on PR #PR_NUMBER — REQUEST_CHANGES
+
+  N comments posted:
+  - path/to/file.ts:42 — <one-line summary>
+  - path/to/other.ts:17 — <one-line summary>
+  ...
+
+  View the review: https://github.com/OWNER/REPO/pull/PR_NUMBER
+```
+
+Do not re-read the review after posting. The API response confirms success.
