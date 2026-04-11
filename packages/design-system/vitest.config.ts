@@ -9,13 +9,8 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     coverage: {
       provider: "v8",
-      exclude: [
-        "**/*.stories.tsx",
-        "**/index.ts",
-        "src/tailwind.preset.ts",
-        "src/tokens/**",
-        "src/lib/**",
-      ],
+      include: ["src/components/**/*.tsx"],
+      exclude: ["**/*.stories.tsx", "**/*.test.tsx"],
       thresholds: {
         lines: 70,
         functions: 70,

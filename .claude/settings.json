@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Edit",
       "Bash(git rev-parse:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
@@ -28,7 +29,8 @@
       "Bash(gh api:*)",
       "Bash(volta:*)",
       "Bash(jq:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
