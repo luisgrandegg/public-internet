@@ -1,7 +1,14 @@
 # CLAUDE.md — Apps
 
 > Rules scoped to `apps/`. The root `CLAUDE.md` applies globally on top of these.
-> `apps/web/` is the reference app.
+
+## Apps in this monorepo
+
+| App | Path | Description |
+|---|---|---|
+| `touristical-renting` | `apps/touristical-renting/` | Commission-free tourist rental platform (the Stay platform from CONSTITUTION.md) |
+
+Each app has its own `CLAUDE.md` with context scoped to that platform. Read it before working in that app.
 
 ---
 
