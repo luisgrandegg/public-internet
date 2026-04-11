@@ -1,0 +1,28 @@
+.root {
+  display: flex;
+}
+
+.vertical {
+  flex-direction: column;
+}
+
+.horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+/* Gap scale — mirrors design token spacing */
+.gap1  { gap: var(--ds-space-1); }
+.gap2  { gap: var(--ds-space-2); }
+.gap3  { gap: var(--ds-space-3); }
+.gap4  { gap: var(--ds-space-4); }
+.gap6  { gap: var(--ds-space-6); }
+.gap8  { gap: var(--ds-space-8); }
+.gap12 { gap: var(--ds-space-12); }
+.gap16 { gap: var(--ds-space-16); }
+
+/* Alignment */
+.alignStart   { align-items: flex-start; }
+.alignCenter  { align-items: center; }
+.alignEnd     { align-items: flex-end; }
+.alignStretch { align-items: stretch; }

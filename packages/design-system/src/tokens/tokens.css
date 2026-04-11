@@ -1,0 +1,52 @@
+:root {
+  /* Colors */
+  --ds-color-brand-primary: #635bff;
+  --ds-color-brand-secondary: #0a2540;
+  --ds-color-neutral-0: #ffffff;
+  --ds-color-neutral-100: #f6f9fc;
+  --ds-color-neutral-200: #e6ebf1;
+  --ds-color-neutral-500: #8898aa;
+  --ds-color-neutral-700: #65707e;
+  --ds-color-neutral-900: #0a2540;
+  --ds-color-success: #30b27b;
+  --ds-color-success-subtle: rgba(48, 178, 123, 0.12);
+  --ds-color-success-text: #1a7a52;
+  --ds-color-warning: #f7ab0a;
+  --ds-color-warning-subtle: rgba(247, 171, 10, 0.12);
+  --ds-color-warning-text: #7a5100;
+  --ds-color-danger: #df1b41;
+  --ds-color-danger-subtle: rgba(223, 27, 65, 0.1);
+  --ds-color-danger-text: #b00020;
+
+  /* Spacing (4px base scale) */
+  --ds-space-1: 4px;
+  --ds-space-2: 8px;
+  --ds-space-3: 12px;
+  --ds-space-4: 16px;
+  --ds-space-6: 24px;
+  --ds-space-8: 32px;
+  --ds-space-12: 48px;
+  --ds-space-16: 64px;
+
+  /* Typography */
+  --ds-font-size-xs: 11px;
+  --ds-font-size-sm: 13px;
+  --ds-font-size-md: 15px;
+  --ds-font-size-lg: 17px;
+  --ds-font-size-xl: 20px;
+  --ds-font-size-2xl: 24px;
+  --ds-font-weight-regular: 400;
+  --ds-font-weight-medium: 500;
+  --ds-font-weight-semibold: 600;
+  --ds-line-height-tight: 1.2;
+  --ds-line-height-normal: 1.5;
+
+  /* Borders & Shadows */
+  --ds-radius-sm: 4px;
+  --ds-radius-md: 6px;
+  --ds-radius-lg: 10px;
+  --ds-radius-full: 9999px;
+  --ds-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --ds-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --ds-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+}

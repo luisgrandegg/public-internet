@@ -1,0 +1,5 @@
+.root {
+  border: none;
+  border-top: 1px solid var(--ds-color-neutral-200);
+  margin: 0;
+}
