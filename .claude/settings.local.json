@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm --filter @public-internet/design-system add -D vitest@^3 @vitest/coverage-v8@^3 jsdom@^26 @testing-library/react@^16 @testing-library/user-event@^14 @testing-library/jest-dom@^6 jest-axe@^9 @types/jest-axe@^3)",
+      "Bash(pnpm --filter @public-internet/design-system remove class-variance-authority clsx tailwind-merge)",
+      "Bash(pnpm --filter @public-internet/design-system test)",
+      "Bash(pnpm --filter @public-internet/design-system type-check)",
+      "Bash(git -C c:/Users/luisg/projects/public-internet log --oneline -3)",
+      "Bash(git -C c:/Users/luisg/projects/public-internet add CLAUDE.md CONSTITUTION.md apps/CLAUDE.md backlog/ decisions/ .claude/)",
+      "Bash(git -C c:/Users/luisg/projects/public-internet commit -m ':*)"
+    ]
+  }
+}
