@@ -1,0 +1,32 @@
+.root {
+  margin: 0;
+  font-family: inherit;
+}
+
+.heading {
+  font-size: var(--ds-font-size-2xl);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-neutral-900);
+  line-height: var(--ds-line-height-tight);
+}
+
+.body {
+  font-size: var(--ds-font-size-md);
+  font-weight: var(--ds-font-weight-regular);
+  color: var(--ds-color-neutral-700);
+  line-height: var(--ds-line-height-normal);
+}
+
+.caption {
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-weight-regular);
+  color: var(--ds-color-neutral-500);
+  line-height: var(--ds-line-height-normal);
+}
+
+.label {
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-neutral-900);
+  line-height: var(--ds-line-height-tight);
+}
