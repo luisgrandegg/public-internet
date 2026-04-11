@@ -175,7 +175,7 @@ gh api repos/OWNER/REPO/pulls/PR_NUMBER/reviews \
       "path": "<path>",
       "line": <line>,
       "side": "RIGHT",
-      "body": "**Issue:** <summary>\n\n**Suggestion:** <detail>"
+      "body": "**Issue:** <summary>\n\n**Suggestion:** <detail>\n\n---\n*Co-authored-by: Claude Sonnet 4.6 <noreply@anthropic.com>*"
     }
   ]
 }
@@ -185,7 +185,7 @@ REVIEW_EOF
 Rules for the payload:
 - `commit_id` must be set to the `head.sha` value recorded in Step 2 — this anchors comments to the correct commit.
 - `body` at the top level is the overall review summary — not a list; write it as prose.
-- Each comment `body` must contain both the issue description and the concrete suggestion, using the **Issue:** / **Suggestion:** labels shown above.
+- Each comment `body` must contain the issue description, the concrete suggestion, and the `Co-authored-by` attribution footer, exactly as shown in the template above.
 - `line` must be an integer (no quotes). Verify each line number is within the file's current line count — if uncertain, use the last line of the relevant hunk from the `patch`.
 - Include every finding as a separate comment. Do not merge multiple issues into one comment.
 

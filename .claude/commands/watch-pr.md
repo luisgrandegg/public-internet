@@ -63,8 +63,7 @@ gh pr view --json mergeable,mergeStateStatus
 
 Check both CI status and merge status.
 
-**If all checks pass AND `mergeable` is `MERGEABLE`:**
-Tell the user: "All CI checks passed — the PR is ready to review and merge."
+**If all checks pass AND `mergeable` is `MERGEABLE`:** proceed to Step 3.5.
 
 **If any CI check fails:**
 
@@ -84,6 +83,54 @@ Tell the user: "All CI checks passed — the PR is ready to review and merge."
 6. Push — CI will re-trigger
 7. Re-run `/watch-pr`
 
+---
+
+### Step 3.5 — Resolve outstanding review comments
+
+CI passed and the branch is mergeable. Before declaring done, check for unresolved review feedback:
+
+```bash
+gh api repos/OWNER/REPO/pulls/PR_NUMBER/reviews
+gh api repos/OWNER/REPO/pulls/PR_NUMBER/comments
+```
+
+**Determine which reviews need action:**
+
+- Collect all reviews where `state` is `CHANGES_REQUESTED`.
+- For each such review, also fetch its individual comments (the `/comments` response already contains all inline comments for all reviews; filter by `pull_request_review_id`).
+- Skip any review submitted by the same login as the PR author (`user.login` from the PR metadata) — a self-review is informational, not a blocker.
+- If no reviews have `state: CHANGES_REQUESTED`, skip to Step 4.
+
+**For each unresolved inline comment:**
+
+Read the `path` and `line` fields to locate the exact file and line being flagged. Read the full file with the Read tool, then apply the fix using Edit:
+
+- If the comment body contains a code block, use that code as the replacement.
+- If the comment describes a change in prose, interpret it and apply the minimal fix that satisfies the request.
+- If the fix is ambiguous or requires a design decision, skip it and flag it to the user at the end.
+
+**For each top-level review body (no specific line):**
+
+Read the overall review `body`. Apply any actionable changes across the relevant files. If the body is purely informational (no concrete ask), skip it.
+
+**After applying all fixes:**
+
+1. Commit all changes in one commit:
+   ```bash
+   git add <changed files>
+   git commit -m "fix(review): address PR review comments"
+   ```
+2. Push the branch — CI will re-trigger.
+3. Re-run `/watch-pr` from Step 2 to monitor the new CI run and confirm no new review issues remain.
+
+**If some comments were skipped** (ambiguous or design decisions), report them clearly to the user after the CI loop completes so they can handle them manually.
+
+---
+
 ### Step 4 — Done
 
-Once CI passes and `mergeable` is `MERGEABLE`, notify the user. Do not merge the PR unless the user explicitly asks.
+Once CI passes, `mergeable` is `MERGEABLE`, and there are no outstanding `CHANGES_REQUESTED` reviews, notify the user:
+
+"All CI checks passed and all review comments have been addressed — the PR is ready to merge."
+
+Do not merge the PR unless the user explicitly asks.

@@ -1,5 +1,13 @@
 {
   "name": "public-internet",
+  "version": "0.0.1",
+  "description": "Open-source replacements for extractive platforms — built for public entities, cooperatives, and civic infrastructure.",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/luisgrandegg/public-internet#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/luisgrandegg/public-internet.git"
+  },
   "private": true,
   "scripts": {
     "build": "turbo build",
@@ -12,5 +20,8 @@
     "turbo": "^2.3.3",
     "typescript": "^5.7.2"
   },
-  "packageManager": "pnpm@9.15.0"
+  "packageManager": "pnpm@9.15.0",
+  "volta": {
+    "node": "22.22.2"
+  }
 }
