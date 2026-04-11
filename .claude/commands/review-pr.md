@@ -127,28 +127,48 @@ Review every changed file against the criteria below. For each finding, record:
 
 ---
 
-### Step 6 — Build the review payload
+### Step 6 — Self-assign as reviewer
 
-**Before posting the review**, self-assign as a reviewer so the PR is tracked:
+Resolve the current GitHub user and attempt to add them as a reviewer:
 
 ```bash
 CURRENT_USER=$(gh api user --jq .login)
+```
+
+If `CURRENT_USER` is empty (token lacks `user` scope or the call failed), log "Warning: could not resolve GitHub username — skipping self-assignment" and continue.
+
+If `CURRENT_USER` is non-empty, post the reviewer request:
+
+```bash
 gh api repos/OWNER/REPO/pulls/PR_NUMBER/requested_reviewers \
   --method POST \
   --field "reviewers[]=$CURRENT_USER"
 ```
 
+If this returns 422 `"Review cannot be requested from pull request author"`, log "Skipping self-assignment — you are the PR author" and continue. Any other error: report it and stop.
+
+Also compare `CURRENT_USER` against `user.login` from Step 2. If they match, set `IS_AUTHOR=true`; otherwise `IS_AUTHOR=false`.
+
 If there are **no findings**, tell the user: "No issues found in this PR. You've been added as a reviewer — submit an approval manually if you're satisfied." Stop without posting any review.
 
 ---
 
-If there are findings, construct the payload as a JSON file written to a temp path, then post it.
+### Step 7 — Build and post the review
 
-**Write the payload** using the Write tool to `/tmp/review-payload.json`:
+If there are findings, determine the review event:
 
-```json
+- If `IS_AUTHOR=false`: use `"event": "REQUEST_CHANGES"`
+- If `IS_AUTHOR=true`: use `"event": "COMMENT"` and prepend this sentence to the review `body`: _"Findings posted as comments — REQUEST_CHANGES is not available when the reviewer is the PR author."_
+
+Build the JSON payload and pipe it directly to `gh api` via stdin heredoc (do **not** write to a temp file — `/tmp` is not reliably accessible on all platforms):
+
+```bash
+gh api repos/OWNER/REPO/pulls/PR_NUMBER/reviews \
+  --method POST \
+  --input - <<'REVIEW_EOF'
 {
-  "event": "REQUEST_CHANGES",
+  "event": "<REQUEST_CHANGES or COMMENT>",
+  "commit_id": "<HEAD_SHA from Step 2>",
   "body": "<overall summary — 2–4 sentences covering the main themes across all findings>",
   "comments": [
     {
@@ -159,26 +179,18 @@ If there are findings, construct the payload as a JSON file written to a temp pa
     }
   ]
 }
+REVIEW_EOF
 ```
 
 Rules for the payload:
+- `commit_id` must be set to the `head.sha` value recorded in Step 2 — this anchors comments to the correct commit.
 - `body` at the top level is the overall review summary — not a list; write it as prose.
 - Each comment `body` must contain both the issue description and the concrete suggestion, using the **Issue:** / **Suggestion:** labels shown above.
 - `line` must be an integer (no quotes). Verify each line number is within the file's current line count — if uncertain, use the last line of the relevant hunk from the `patch`.
 - Include every finding as a separate comment. Do not merge multiple issues into one comment.
 
----
-
-### Step 7 — Post the review
-
-```bash
-gh api repos/OWNER/REPO/pulls/PR_NUMBER/reviews \
-  --method POST \
-  --input /tmp/review-payload.json
-```
-
 If the API returns an error:
-- **422 Unprocessable Entity** — a comment references an invalid `line` or `path`. Re-read the diff, correct the line numbers, rewrite `/tmp/review-payload.json`, and retry once.
+- **422 with `"pull_request_review_thread.line is not part of the diff"`** — a comment references a line outside the diff. Re-read the patch for that file, correct the line number to one present in the hunk, rebuild the heredoc, and retry once.
 - **404 Not Found** — the PR was not found or you lack access. Report to the user and stop.
 - Any other error — show the full error message to the user and stop.
 
@@ -189,7 +201,7 @@ If the API returns an error:
 After a successful post, tell the user:
 
 ```
-Review submitted on PR #PR_NUMBER — REQUEST_CHANGES
+Review submitted on PR #PR_NUMBER — <REQUEST_CHANGES or COMMENT>
 
   N comments posted:
   - path/to/file.ts:42 — <one-line summary>
