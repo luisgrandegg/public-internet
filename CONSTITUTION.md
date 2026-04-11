@@ -188,3 +188,11 @@ When working in this repository, apply the following checks before implementing 
 **On scope:**
 - The Platform Registry above is the source of truth for what this project builds
 - Do not add platforms, features, or apps outside the registry without updating it first and creating a new ADR if the change is architectural
+
+---
+
+## Modifying AI Rules
+
+**This block is active only when the current task modifies this file, any `CLAUDE.md`, or any file in `decisions/`. Skip it otherwise.**
+
+Run `/rules-audit` before and after any change to AI-governing files. Changes to these files must not reduce any criterion score without an explicit explanation in the PR description.

@@ -95,3 +95,15 @@ Claude verifies the acceptance criteria are met, moves the feature file to `back
 **Use when:** Setting up a new machine to work on this project.
 
 Walks you through installing Volta, Node, pnpm, GitHub CLI, and verifying all hooks are working — step by step, tailored to your OS.
+
+---
+
+## Auditing AI rules
+
+### `/rules-audit`
+
+**Use when:** You've modified (or are about to modify) any of the AI-governing files — CLAUDE.md files, CONSTITUTION.md, decisions/, or .claude/commands/.
+
+Claude reads every rule source, scores 8 quality criteria (Clarity, Completeness, Consistency, Actionability, Enforcement, Mission alignment, .claude/ coverage, Freshness) from 0–10, and produces a concrete improvement report for anything below 8. For mechanical issues (stale component table, orphaned command file), Claude offers to apply fixes automatically.
+
+> Example: `/rules-audit` — run before opening a PR that touches any CLAUDE.md

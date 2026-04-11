@@ -123,13 +123,14 @@ Slash commands for designers live in `.claude/commands/`. Use them to start guid
 
 | Command                   | Purpose                                               |
 | ------------------------- | ----------------------------------------------------- |
-| `/new-component`          | Scaffold a new design system component                |
-| `/ab-variant`             | Create an A/B experiment variant                      |
-| `/wireframe-to-component` | Turn a wireframe description into composed components |
-| `/audit-component`        | Check a component against all lifecycle gates         |
-| `/brainstorm-variants`    | Generate 3 design alternatives with tradeoffs         |
-| `/create-pr`              | Create a PR for the current branch and start CI watch |
-| `/watch-pr`               | Poll CI on the current PR; fix failures automatically |
+| `/new-component`          | Scaffold a new design system component                                        |
+| `/ab-variant`             | Create an A/B experiment variant                                              |
+| `/wireframe-to-component` | Turn a wireframe description into composed components                         |
+| `/audit-component`        | Check a component against all lifecycle gates                                 |
+| `/brainstorm-variants`    | Generate 3 design alternatives with tradeoffs                                 |
+| `/create-pr`              | Create a PR for the current branch and start CI watch                         |
+| `/watch-pr`               | Poll CI on the current PR; fix failures automatically                         |
+| `/rules-audit`            | Score the quality of AI rules (CLAUDE.md, CONSTITUTION.md) across 8 criteria |
 
 ---
 
@@ -165,3 +166,22 @@ This project is used by non-developer designers. Unexpected permission prompts b
 - **Avoid shell builtins or utilities not in the allow list** (`cp`, `mv`, `mkdir`, `rm`, etc.).
   Use the dedicated file tools (`Write`, `Edit`, `Read`, `Glob`) instead — they never prompt.
 - **Allowed Bash commands:** `git`, `pnpm`, `gh`, `volta`, `jq`, `npx tsc`.
+
+---
+
+## Modifying AI Rules
+
+**This section applies only when the current task involves editing one of these files:**
+- Any `CLAUDE.md` file (root, `apps/`, `packages/*/`)
+- `CONSTITUTION.md`
+- Any file in `decisions/`
+- Any file in `.claude/commands/`
+
+**If none of those files are being modified, skip this section — it is irrelevant context.**
+
+When modifying AI rules:
+
+1. Run `/rules-audit` before making changes to record the baseline score.
+2. Make your changes.
+3. Run `/rules-audit` again to confirm the score improved or did not regress.
+4. Include the before/after scores in the PR description.
