@@ -42,6 +42,8 @@ test.describe('Sign up page', () => {
     await page.getByLabel('Password', { exact: true }).fill('password123')
     await page.getByLabel('Confirm password', { exact: true }).fill('differentpassword')
     await page.getByRole('button', { name: 'Create account', exact: true }).click()
-    await expect(page.getByRole('alert')).toBeVisible()
+    // Scope by text to avoid strict-mode violation from Next.js route announcer
+    // (__next-route-announcer__ also has role="alert" and is always in the DOM)
+    await expect(page.locator('[role="alert"]', { hasText: /passwords do not match/i })).toBeVisible()
   })
 })
