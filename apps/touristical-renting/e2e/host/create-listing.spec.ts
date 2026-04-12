@@ -9,12 +9,11 @@ test.describe('Create listing wizard', () => {
     await expect(page.getByRole('heading', { name: 'List your property', exact: true })).toBeVisible()
     // PropertyTypeStep renders a fieldset with a legend — not a heading role
     await expect(page.getByText('What type of property are you listing?')).toBeVisible()
-    // Use value attribute selectors to avoid ambiguous regex matching
-    // ("flat" appears in the Studio description "self-contained studio flat")
-    await expect(page.locator('input[type="radio"][value="flat"]')).toBeVisible()
-    await expect(page.locator('input[type="radio"][value="house"]')).toBeVisible()
-    await expect(page.locator('input[type="radio"][value="room"]')).toBeVisible()
-    await expect(page.locator('input[type="radio"][value="studio"]')).toBeVisible()
+    // Radio inputs are visually hidden (radio-as-card pattern) — check visible labels instead
+    await expect(page.locator('label[for="propertyType-flat"]')).toBeVisible()
+    await expect(page.locator('label[for="propertyType-house"]')).toBeVisible()
+    await expect(page.locator('label[for="propertyType-room"]')).toBeVisible()
+    await expect(page.locator('label[for="propertyType-studio"]')).toBeVisible()
   })
 
   test('renders wizard progress with all step labels', async ({ page }) => {
@@ -33,7 +32,8 @@ test.describe('Create listing wizard', () => {
   })
 
   test('Next button advances to step 2 after selecting a property type', async ({ page }) => {
-    await page.locator('input[type="radio"][value="flat"]').click()
+    // Click the label — the native radio input is visually hidden (radio-as-card pattern)
+    await page.locator('label[for="propertyType-flat"]').click()
     await page.getByRole('button', { name: 'Next', exact: true }).click()
     // Step 2 — Location
     await expect(page.getByLabel('City', { exact: true })).toBeVisible()
@@ -42,12 +42,12 @@ test.describe('Create listing wizard', () => {
 
   test('validation blocks Next on step 1 if no property type selected', async ({ page }) => {
     await page.getByRole('button', { name: 'Next', exact: true }).click()
-    await expect(page.getByRole('alert')).toBeVisible()
-    await expect(page.getByRole('alert')).toContainText(/select a property type/i)
+    // Scope by text content to avoid strict-mode violation from multiple alert regions
+    await expect(page.locator('[role="alert"]', { hasText: /select a property type/i })).toBeVisible()
   })
 
   test('Back button on step 2 returns to step 1', async ({ page }) => {
-    await page.locator('input[type="radio"][value="flat"]').click()
+    await page.locator('label[for="propertyType-flat"]').click()
     await page.getByRole('button', { name: 'Next', exact: true }).click()
     await page.getByRole('button', { name: 'Back', exact: true }).click()
     await expect(page.getByText('What type of property are you listing?')).toBeVisible()
@@ -55,7 +55,7 @@ test.describe('Create listing wizard', () => {
 
   test('navigates through all steps to the review step', async ({ page }) => {
     // Step 1 — Property type
-    await page.locator('input[type="radio"][value="flat"]').click()
+    await page.locator('label[for="propertyType-flat"]').click()
     await page.getByRole('button', { name: 'Next', exact: true }).click()
 
     // Step 2 — Location
@@ -87,7 +87,7 @@ test.describe('Create listing wizard', () => {
 
   test('pricing step shows "total price" label (no hidden fees — constitution)', async ({ page }) => {
     // Navigate to pricing step
-    await page.locator('input[type="radio"][value="flat"]').click()
+    await page.locator('label[for="propertyType-flat"]').click()
     await page.getByRole('button', { name: 'Next', exact: true }).click()
     await page.getByLabel('City', { exact: true }).fill('Test')
     await page.getByLabel('Country', { exact: true }).fill('Test')
