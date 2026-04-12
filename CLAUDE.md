@@ -141,7 +141,21 @@ Slash commands for designers live in `.claude/commands/`. Use them to start guid
 Current feature status is always in [`backlog/backlog.md`](./backlog/backlog.md).
 Check it before starting work to understand what's done, in progress, and pending.
 
-When completing a feature, follow these steps **in order** — the pre-commit hook enforces consistency:
+### When to complete a backlog item
+
+**"Completing a feature" means: all code for the feature is committed, all lifecycle gates pass locally, and you are about to open a PR.** Do this before running `/create-pr` — not after, not in a separate session.
+
+Specifically, complete the backlog item when **all of the following are true**:
+- The feature's code is committed on the current branch
+- `pnpm typecheck` and `pnpm lint` report zero errors
+- `/audit-component` has passed (for DS components)
+- You are about to run `/create-pr`
+
+If you forget and open the PR first, complete the backlog item in a follow-up commit on the same branch before it merges.
+
+### How to complete a backlog item
+
+Follow these steps **in order** — the pre-commit hook enforces consistency:
 
 1. Append the completion block to the feature file (see `backlog/completed/README.md`)
 2. Copy the file to `backlog/completed/`

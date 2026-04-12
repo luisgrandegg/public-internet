@@ -77,16 +77,24 @@ Always use these tokens. **Never invent hex values or hardcode spacing.**
 
 Before creating a new component, check if one already exists:
 
-| Component | Import                           | Variants                                       |
-| --------- | -------------------------------- | ---------------------------------------------- |
-| `Button`  | `@public-internet/design-system` | `primary`, `secondary`, `destructive`, `ghost` |
-| `Input`   | `@public-internet/design-system` | `default`, `error`, `disabled`                 |
-| `Card`    | `@public-internet/design-system` | `default`, `elevated`, `bordered`              |
-| `Badge`   | `@public-internet/design-system` | `success`, `warning`, `danger`, `neutral`      |
-| `Text`    | `@public-internet/design-system` | `heading`, `body`, `caption`, `label`          |
-| `Stack`   | `@public-internet/design-system` | `vertical`, `horizontal`                       |
-| `Divider` | `@public-internet/design-system` | —                                              |
-| `Icon`    | `@public-internet/design-system` | —                                              |
+| Component     | Import                           | Variants / notes                                          |
+| ------------- | -------------------------------- | --------------------------------------------------------- |
+| `Button`      | `@public-internet/design-system` | `primary`, `secondary`, `destructive`, `ghost`            |
+| `Input`       | `@public-internet/design-system` | `default`, `error`, `disabled`                            |
+| `Textarea`    | `@public-internet/design-system` | `default`, `error` — use instead of native `<textarea>`   |
+| `Card`        | `@public-internet/design-system` | `default`, `elevated`, `bordered`; compound subcomponents |
+| `Badge`       | `@public-internet/design-system` | `success`, `warning`, `danger`, `neutral`                 |
+| `Text`        | `@public-internet/design-system` | `heading`, `body`, `caption`, `label`                     |
+| `Stack`       | `@public-internet/design-system` | `vertical`, `horizontal`                                  |
+| `Divider`     | `@public-internet/design-system` | —                                                         |
+| `Icon`        | `@public-internet/design-system` | —                                                         |
+| `Select`      | `@public-internet/design-system` | `default`, `error` — use instead of native `<select>`     |
+| `Checkbox`    | `@public-internet/design-system` | `default`, `error`                                        |
+| `RadioGroup`  | `@public-internet/design-system` | `vertical` (list), `grid` (card-style) layouts            |
+| `FileUpload`  | `@public-internet/design-system` | drag-and-drop + click-to-browse, single or multiple files |
+| `Stepper`     | `@public-internet/design-system` | `horizontal`, `vertical` — progress indicator `<ol>`      |
+
+> **Keep this table current.** When you add a component to `src/components/`, add a row here in the same commit. Stale entries cause agents to build duplicates.
 
 **If a layout or feature cannot be built from existing components, do not invent
 a one-off. Instead, flag the gap clearly:**
