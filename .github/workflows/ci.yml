@@ -164,7 +164,7 @@ jobs:
       - run: pnpm build
 
       - name: Push database schema
-        run: pnpm --filter @public-internet/touristical-renting exec prisma db push --skip-generate
+        run: pnpm --filter @public-internet/touristical-renting exec prisma db push --url "$DATABASE_URL"
 
       - name: Install Playwright browsers
         run: pnpm --filter @public-internet/touristical-renting exec playwright install --with-deps chromium
