@@ -39,7 +39,11 @@ export function FiltersSidebar({ filters }: FiltersSidebarProps) {
   }
 
   return (
-    <aside className={styles.root} aria-label="Search filters">
+    <form
+      className={styles.root}
+      aria-label="Search filters"
+      onSubmit={(e) => e.preventDefault()}
+    >
       <h2 className={styles.heading}>Filters</h2>
 
       <Input
@@ -115,6 +119,6 @@ export function FiltersSidebar({ filters }: FiltersSidebarProps) {
           onChange={(e) => handleChange('maxPrice', e.target.value)}
         />
       </div>
-    </aside>
+    </form>
   )
 }
