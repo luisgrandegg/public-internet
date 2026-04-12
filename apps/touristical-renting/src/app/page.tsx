@@ -1,5 +1,8 @@
 import { Input, Button, Card } from '@public-internet/design-system'
 import { getListings } from '@/lib/services/listings'
+
+// This page fetches live data from the database — disable static prerendering.
+export const dynamic = 'force-dynamic'
 import type { PropertyType } from '@/lib/types'
 import { ListingCard } from './listings/_components/ListingCard'
 import styles from './page.module.css'
