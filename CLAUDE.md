@@ -24,6 +24,7 @@ structured environment that guarantees production-quality output.
 → Storybook preview → PR-ready code, without needing a dedicated engineer.
 
 **Stack:** React, TypeScript (strict), CSS Modules, Storybook 8, pnpm workspaces, Turborepo.
+**Backend:** Next.js Route Handlers (REST API), PostgreSQL, Prisma ORM, better-auth. See [ADR-004](./decisions/ADR-004-full-stack-rest-api.md).
 
 ---
 
@@ -72,6 +73,7 @@ Before making a choice that touches styling strategy, experiment isolation, or c
 | [ADR-001](./decisions/ADR-001-css-modules-over-tailwind.md) | CSS Modules over Tailwind/CSS-in-JS |
 | [ADR-002](./decisions/ADR-002-static-experiment-isolation.md) | Experiments isolated in `src/experiments/` vs. runtime feature flags |
 | [ADR-003](./decisions/ADR-003-claude-md-context-files.md) | CLAUDE.md context files over MCP server or system prompt |
+| [ADR-004](./decisions/ADR-004-full-stack-rest-api.md) | Full-stack features with REST API — no placeholder implementations |
 
 If you are about to make a decision that contradicts an existing ADR, stop and flag it explicitly rather than silently overriding it. If the decision genuinely needs to change, write a new ADR that supersedes the old one.
 
@@ -134,6 +136,45 @@ Slash commands for designers live in `.claude/commands/`. Use them to start guid
 | `/rules-audit`            | Score the quality of AI rules (CLAUDE.md, CONSTITUTION.md) across 8 criteria |
 | `/review-pr`              | Review a PR, post inline comments per finding, submit REQUEST_CHANGES         |
 | `/tackle-backlog`         | Spawn one agent per backlog feature (coordinator for dependent features)       |
+
+---
+
+## Full-Stack Rule
+
+**Every feature that touches data must be implemented end-to-end before it is considered done.**
+
+This is a hard rule. It is not acceptable to:
+- Return `{ ok: true }` from a Server Action without persisting anything
+- Use `MOCK_LISTINGS` or any in-memory array as the data source for a user-facing page
+- Mark a feature complete in the backlog when the backend is a stub
+
+A feature is done when:
+1. A Prisma schema entry and migration exist for any new data it introduces
+2. A REST Route Handler exists at `app/api/**/route.ts` implementing the operation
+3. The Server Action (if used) calls that Route Handler — it does not duplicate the logic
+4. The UI reflects real data from the database, not mock data
+
+**Backend stack (per ADR-004):**
+
+| Layer | Choice |
+|---|---|
+| API | Next.js Route Handlers (`app/api/**/route.ts`) following REST conventions |
+| Database | PostgreSQL |
+| ORM | Prisma — schema at `prisma/schema.prisma`, migrations committed to repo |
+| Auth | `better-auth` — email + password, session-based, no OAuth dependency |
+
+**REST response shape:**
+```typescript
+// Success
+{ data: T }
+
+// Error
+{ error: { code: string; message: string; fields?: Record<string, string> } }
+```
+
+HTTP status codes are the source of truth. Never return `{ ok: false }` with a 200 status.
+
+Environment variables for DB connections must appear in `.env.example` with explanatory comments. Never hardcode connection strings.
 
 ---
 

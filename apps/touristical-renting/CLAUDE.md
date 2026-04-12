@@ -93,6 +93,105 @@ If a UI requirement cannot be met with existing design system components, **flag
 
 ---
 
+## Backend and API
+
+This app uses Next.js Route Handlers as its REST API. See `apps/CLAUDE.md § Full-Stack Rules` for the shared pattern.
+
+### REST API surface for touristical-renting
+
+| Method | Path | Auth required | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/sign-up` | No | Create account; sets session cookie |
+| `POST` | `/api/auth/sign-in` | No | Authenticate; sets session cookie |
+| `POST` | `/api/auth/sign-out` | Yes | Destroy session |
+| `POST` | `/api/auth/forgot-password` | No | Send reset email (always 204 to prevent enumeration) |
+| `GET` | `/api/listings` | No | List listings; supports `?location`, `?propertyType`, `?minPrice`, `?maxPrice`, `?page` |
+| `POST` | `/api/listings` | Yes (Host) | Create a listing |
+| `GET` | `/api/listings/:id` | No | Get single listing |
+| `PATCH` | `/api/listings/:id` | Yes (owner) | Update listing |
+| `DELETE` | `/api/listings/:id` | Yes (owner) | Delete listing |
+| `POST` | `/api/bookings` | Yes (Guest) | Create a booking |
+| `GET` | `/api/bookings/:id` | Yes (owner) | Get booking detail |
+| `GET` | `/api/host/listings` | Yes (Host) | List host's own listings |
+| `GET` | `/api/host/bookings` | Yes (Host) | List bookings for host's listings |
+
+### Prisma schema (initial entities)
+
+```prisma
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  isHost       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  listings     Listing[]
+  bookings     Booking[]
+  sessions     Session[]
+}
+
+model Listing {
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  propertyType String   // 'flat' | 'house' | 'room' | 'studio'
+  city         String
+  country      String
+  lat          Float
+  lng          Float
+  nightlyRate  Int      // cents — avoids floating-point rounding in money
+  maxGuests    Int
+  bedrooms     Int
+  bathrooms    Int
+  photos       Photo[]
+  host         User     @relation(fields: [hostId], references: [id])
+  hostId       String
+  bookings     Booking[]
+  createdAt    DateTime @default(now())
+}
+
+model Photo {
+  id        String  @id @default(cuid())
+  url       String
+  alt       String
+  listing   Listing @relation(fields: [listingId], references: [id])
+  listingId String
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  listingId String
+  guest     User     @relation(fields: [guestId], references: [id])
+  guestId   String
+  checkIn   DateTime
+  checkOut  DateTime
+  totalCost Int      // cents
+  createdAt DateTime @default(now())
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+```
+
+> **Note:** `nightlyRate` and `totalCost` are stored in cents (integer) to avoid floating-point rounding errors. Always display as `€${(amount / 100).toFixed(2)}`.
+
+### Required environment variables
+
+```bash
+# .env.example
+DATABASE_URL="postgresql://user:password@localhost:5432/touristical_renting"
+BETTER_AUTH_SECRET="<random 32-char secret>"
+NEXT_PUBLIC_API_BASE="http://localhost:3000"
+```
+
+---
+
 ## Data rules
 
 - Every price shown to a user must be the **total price** — nightly rate × nights + all itemised fees. Never reveal additional fees after the Guest has started the booking flow.
