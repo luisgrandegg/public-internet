@@ -1,18 +1,18 @@
 // GENERATED — do not edit manually. Run: pnpm --filter @public-internet/touristical-renting-sdk generate
 import type { ApiClient } from '../client.js'
-import { BookingsReviewResource } from './bookingsReview.resource.js'
+import { BookingsReviewResource } from './bookings-review.resource.js'
 import { BookingsResource } from './bookings.resource.js'
 import { HostBookingsResource } from './host-bookings.resource.js'
-import { HostEnquiriesReplyResource } from './host-enquiries.reply.resource.js'
+import { HostEnquiriesReplyResource } from './host-enquiries-reply.resource.js'
 import { HostEnquiriesResource } from './host-enquiries.resource.js'
 import { HostListingsResource } from './host-listings.resource.js'
-import { ListingsAvailabilityResource } from './listingsAvailability.resource.js'
-import { ListingsEnquiriesResource } from './listingsEnquiries.resource.js'
-import { ListingsReviewsResource } from './listingsReviews.resource.js'
+import { ListingsAvailabilityResource } from './listings-availability.resource.js'
+import { ListingsEnquiriesResource } from './listings-enquiries.resource.js'
+import { ListingsReviewsResource } from './listings-reviews.resource.js'
 import { ListingsResource } from './listings.resource.js'
-import { UsersMeBecomeHostResource } from './usersMeBecomeHost.resource.js'
-import { UsersMeExportResource } from './usersMeExport.resource.js'
-import { UsersMeResource } from './usersMe.resource.js'
+import { UsersMeBecomeHostResource } from './users-me-become-host.resource.js'
+import { UsersMeExportResource } from './users-me-export.resource.js'
+import { UsersMeResource } from './users-me.resource.js'
 
 export class TouristicalRentingSDK {
   readonly bookingsReview: BookingsReviewResource

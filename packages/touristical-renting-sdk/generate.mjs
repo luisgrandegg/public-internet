@@ -111,7 +111,6 @@ function generateTypes() {
 /**
  * Given a path like /api/listings/{id}, determines:
  * - resourceGroup: 'listings', 'bookings', 'host.listings', 'host.bookings'
- *   Non-host compound groups use camelCase (e.g. listingsAvailability)
  * - isCollection: true if path ends without a param segment
  */
 function classifyPath(path) {
@@ -123,24 +122,7 @@ function classifyPath(path) {
   const staticSegments = segments.filter(s => !s.startsWith('{'))
   const hasParam = segments.some(s => s.startsWith('{'))
 
-  // Convert hyphenated segment to camelCase: become-host → becomeHost
-  function segToCamel(seg) {
-    return seg.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
-  }
-
-  // For host.* keep dot notation (existing pattern). For others, use camelCase.
-  let group
-  if (staticSegments[0] === 'host') {
-    group = staticSegments.map(segToCamel).join('.')
-  } else {
-    // camelCase compound: listings + availability → listingsAvailability
-    group = staticSegments
-      .map((s, i) => {
-        const camel = segToCamel(s)
-        return i === 0 ? camel : camel.charAt(0).toUpperCase() + camel.slice(1)
-      })
-      .join('')
-  }
+  const group = staticSegments.join('.')
   return { group, isCollection: !hasParam }
 }
 
@@ -225,12 +207,16 @@ function buildUrl(path, pathParams) {
 /**
  * Generate resource class content for a group.
  */
-function generateResourceClass(group, methods) {
-  // className: turn camelCase group into PascalCase, handling both dot and camelCase
-  const className = group
-    .split('.')
+function toPascalCase(str) {
+  // Handle dots and hyphens as word separators
+  return str
+    .split(/[.\-]/)
     .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-    .join('') + 'Resource'
+    .join('')
+}
+
+function generateResourceClass(group, methods) {
+  const className = toPascalCase(group) + 'Resource'
 
   // Collect all base type names used (strip Array<...> wrappers)
   const usedTypes = new Set()
@@ -318,6 +304,17 @@ function generateResourceClass(group, methods) {
 
 // ─── SDK main class generator ─────────────────────────────────────────────────
 
+/**
+ * Convert a dot-separated group key to a safe camelCase property name.
+ * "users.me.become-host" → "usersMeBecomeHost"
+ */
+function groupToPropertyKey(group) {
+  return group
+    .split(/[.\-]/)
+    .map((s, i) => i === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1))
+    .join('')
+}
+
 function generateSdkClass(resourceMap) {
   const lines = [
     '// GENERATED — do not edit manually. Run: pnpm --filter @public-internet/touristical-renting-sdk generate',
@@ -325,21 +322,24 @@ function generateSdkClass(resourceMap) {
   ]
 
   const imports = []
-  const topLevelFields = []
-  const hostFields = []
+
+  // Classify groups:
+  //   - single-segment plain names (e.g. "listings", "bookings") → top-level fields
+  //   - "host.*" → nested under this.host
+  //   - everything else → camelCase top-level field using full dotted path
+  const topLevelFields = []   // { key: string, className: string }
+  const hostFields = []       // { key: string, className: string }
 
   for (const [group, { className, fileName }] of Object.entries(resourceMap)) {
-    const isHost = group.startsWith('host.')
     imports.push(`import { ${className} } from './${fileName}.js'`)
-    if (isHost) {
-      // host.bookings → bookings, host.enquiries.reply → enquiriesReply
-      const subParts = group.replace('host.', '').split('.')
-      const subKey = subParts
-        .map((s, i) => i === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1))
-        .join('')
+    if (group.startsWith('host.')) {
+      // Convert "host.enquiries.reply" → "enquiriesReply" (camelCase property key)
+      const subKey = groupToPropertyKey(group.replace(/^host\./, ''))
       hostFields.push({ key: subKey, className })
     } else {
-      topLevelFields.push({ key: group, className })
+      // Use camelCase for any group so we always produce a valid identifier
+      const key = groupToPropertyKey(group)
+      topLevelFields.push({ key, className })
     }
   }
 
@@ -388,7 +388,7 @@ const resourceMap = {}
 
 for (const [group, methods] of Object.entries(resources)) {
   const { className, content } = generateResourceClass(group, methods)
-  const fileName = group.replace('.', '-') + '.resource'
+  const fileName = group.replace(/\./g, '-') + '.resource'
   resourceMap[group] = { className, fileName }
   writeFileSync(join(outDir, `${fileName}.ts`), content, 'utf8')
   console.log(`✓ src/generated/${fileName}.ts`)

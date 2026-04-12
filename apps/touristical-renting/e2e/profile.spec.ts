@@ -11,8 +11,7 @@ test.describe('Profile page — constitution constraints', () => {
   // The profile page requires authentication; check redirect behaviour only.
   // Authenticated flow is tested in integration tests that rely on a seeded database.
 
-  test('does not contain urgency copy', async ({ page }) => {
-    // Navigate to signin (which is where /profile redirects unauthenticated users)
+  test('does not contain urgency copy on sign-in page (where profile redirects)', async ({ page }) => {
     await page.goto('/auth/signin')
     const bodyText = await page.locator('body').innerText()
     expect(bodyText).not.toMatch(/only \d+ left/i)
@@ -20,12 +19,11 @@ test.describe('Profile page — constitution constraints', () => {
     expect(bodyText).not.toMatch(/limited time/i)
   })
 
-  test('become-host is not a pre-checked checkbox', async ({ page }) => {
-    // We can only observe the unauthenticated redirect; if the page were reachable
-    // without auth, any pre-checked "become host" checkbox would be a constitution violation.
-    // This test documents the requirement: no checkbox, explicit button only.
+  test('become-host requires an explicit action — not a pre-checked state', async ({ page }) => {
+    // Unauthenticated — profile page redirects away, enforcing the auth gate.
+    // When the page is reached (authenticated), HostToggle renders an explicit button,
+    // never a pre-checked checkbox.
     await page.goto('/profile')
-    // Unauthenticated — redirected away; profile page must not be accessible without auth.
     await expect(page).toHaveURL('/auth/signin')
   })
 })
@@ -37,7 +35,7 @@ test.describe('Data export endpoint', () => {
   })
 })
 
-test.describe('Users me endpoint', () => {
+test.describe('Users me API', () => {
   test('GET /api/users/me returns 401 when not authenticated', async ({ request }) => {
     const response = await request.get('/api/users/me')
     expect(response.status()).toBe(401)
