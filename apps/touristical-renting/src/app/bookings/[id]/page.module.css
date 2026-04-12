@@ -1,0 +1,93 @@
+.root {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.heading {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.listingCard {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-neutral-200, #e5e7eb);
+  border-radius: 0.75rem;
+  margin-bottom: 2rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.listingPhoto {
+  width: 160px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+.listingPhotoPlaceholder {
+  width: 160px;
+  height: 120px;
+  background-color: var(--color-neutral-200, #e5e7eb);
+  border-radius: 0.5rem;
+}
+
+.listingTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.listingLocation {
+  color: var(--color-neutral-500, #6b7280);
+  font-size: 0.9375rem;
+  margin-bottom: 0.5rem;
+}
+
+.hostName {
+  font-size: 0.875rem;
+  color: var(--color-neutral-600, #4b5563);
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionHeading {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-neutral-100, #f3f4f6);
+  font-size: 0.9375rem;
+}
+
+.detailLabel {
+  color: var(--color-neutral-500, #6b7280);
+}
+
+.detailValue {
+  font-weight: 500;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.noFeeNote {
+  font-size: 0.8125rem;
+  color: var(--color-neutral-500, #6b7280);
+}
