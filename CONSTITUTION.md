@@ -91,8 +91,8 @@ Research is ongoing. Platforms are added here before work begins.
 
 | | |
 |---|---|
-| **Status** | Planned |
-| **App** | `apps/eats` (not yet created) |
+| **Status** | In progress |
+| **App** | `apps/eats` |
 
 **Original spirit:** Help restaurants reach more customers. Give people with vehicles a way to earn flexibly.
 

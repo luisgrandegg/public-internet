@@ -1,0 +1,262 @@
+/**
+ * Generates openapi.json from swagger-jsdoc annotations in route files.
+ * Run: node scripts/generate-spec.mjs
+ * Output: src/lib/openapi.json
+ */
+import swaggerJsdoc from 'swagger-jsdoc'
+import { writeFileSync, mkdirSync } from 'fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const root = join(__dirname, '..')
+
+const options = {
+  definition: {
+    openapi: '3.0.3',
+    info: {
+      title: 'Eats API',
+      version: '1.0.0',
+      description:
+        'Commission-free food delivery REST API. All prices are in cents (integer) unless noted. ' +
+        'The platform charges a flat infrastructure fee per order — never a percentage commission.',
+      contact: { name: 'public-internet', url: 'https://github.com/public-internet' },
+    },
+    servers: [
+      {
+        url: '{baseUrl}',
+        variables: { baseUrl: { default: 'http://localhost:3001', description: 'Base server URL' } },
+      },
+    ],
+    components: {
+      securitySchemes: {
+        sessionCookie: {
+          type: 'apiKey',
+          in: 'cookie',
+          name: 'better-auth.session_token',
+          description: 'Session cookie set by better-auth on sign-in',
+        },
+      },
+      schemas: {
+        OrderStatus: {
+          type: 'string',
+          enum: ['PENDING', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'IN_DELIVERY', 'DELIVERED', 'CANCELLED'],
+          description: 'Lifecycle status of an order',
+        },
+        DeliveryStatus: {
+          type: 'string',
+          enum: ['UNASSIGNED', 'ASSIGNED', 'PICKED_UP', 'DELIVERED', 'FAILED'],
+          description: 'Lifecycle status of a delivery',
+        },
+        RestaurantSummary: {
+          type: 'object',
+          required: ['id', 'name', 'city'],
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            city: { type: 'string' },
+            imageUrl: { type: 'string', nullable: true },
+          },
+        },
+        Restaurant: {
+          type: 'object',
+          required: ['id', 'name', 'description', 'address', 'city', 'country', 'lat', 'lng', 'isActive', 'ownerId', 'createdAt', 'updatedAt'],
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            description: { type: 'string' },
+            address: { type: 'string' },
+            city: { type: 'string' },
+            country: { type: 'string' },
+            lat: { type: 'number' },
+            lng: { type: 'number' },
+            phone: { type: 'string', nullable: true },
+            imageUrl: { type: 'string', nullable: true },
+            isActive: { type: 'boolean' },
+            ownerId: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CreateRestaurantInput: {
+          type: 'object',
+          required: ['name', 'description', 'address', 'city', 'country'],
+          properties: {
+            name: { type: 'string', minLength: 2, maxLength: 120 },
+            description: { type: 'string', minLength: 10, maxLength: 1000 },
+            address: { type: 'string' },
+            city: { type: 'string' },
+            country: { type: 'string' },
+            lat: { type: 'number', default: 0 },
+            lng: { type: 'number', default: 0 },
+            phone: { type: 'string' },
+            imageUrl: { type: 'string', format: 'uri' },
+          },
+        },
+        UpdateRestaurantInput: {
+          type: 'object',
+          description: 'All fields are optional. Only provided fields are updated.',
+          properties: {
+            name: { type: 'string', minLength: 2, maxLength: 120 },
+            description: { type: 'string', minLength: 10, maxLength: 1000 },
+            address: { type: 'string' },
+            city: { type: 'string' },
+            country: { type: 'string' },
+            lat: { type: 'number' },
+            lng: { type: 'number' },
+            phone: { type: 'string' },
+            imageUrl: { type: 'string', format: 'uri' },
+            isActive: { type: 'boolean' },
+          },
+        },
+        MenuItem: {
+          type: 'object',
+          required: ['id', 'name', 'description', 'price', 'category', 'isAvailable', 'restaurantId', 'createdAt', 'updatedAt'],
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            description: { type: 'string' },
+            price: { type: 'integer', description: 'Price in cents. Display as (price / 100).toFixed(2)' },
+            category: { type: 'string' },
+            isAvailable: { type: 'boolean' },
+            restaurantId: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CreateMenuItemInput: {
+          type: 'object',
+          required: ['name', 'description', 'price', 'category'],
+          properties: {
+            name: { type: 'string', minLength: 2, maxLength: 120 },
+            description: { type: 'string', minLength: 5, maxLength: 500 },
+            price: { type: 'number', description: 'Price in euros (float). Service converts to cents.' },
+            category: { type: 'string' },
+          },
+        },
+        UpdateMenuItemInput: {
+          type: 'object',
+          description: 'All fields are optional. Only provided fields are updated.',
+          properties: {
+            name: { type: 'string', minLength: 2, maxLength: 120 },
+            description: { type: 'string', minLength: 5, maxLength: 500 },
+            price: { type: 'number', description: 'Price in euros (float).' },
+            category: { type: 'string' },
+            isAvailable: { type: 'boolean' },
+          },
+        },
+        OrderItemInput: {
+          type: 'object',
+          required: ['menuItemId', 'quantity'],
+          properties: {
+            menuItemId: { type: 'string' },
+            quantity: { type: 'integer', minimum: 1 },
+          },
+        },
+        OrderItem: {
+          type: 'object',
+          required: ['id', 'orderId', 'menuItemId', 'quantity', 'unitPrice'],
+          properties: {
+            id: { type: 'string' },
+            orderId: { type: 'string' },
+            menuItemId: { type: 'string' },
+            quantity: { type: 'integer' },
+            unitPrice: { type: 'integer', description: 'Unit price in cents, snapshotted at order time' },
+          },
+        },
+        Order: {
+          type: 'object',
+          required: ['id', 'status', 'customerId', 'restaurantId', 'items', 'itemsCost', 'infrastructureFee', 'totalCost', 'deliveryAddress', 'createdAt', 'updatedAt'],
+          properties: {
+            id: { type: 'string' },
+            status: { $ref: '#/components/schemas/OrderStatus' },
+            customerId: { type: 'string' },
+            restaurantId: { type: 'string' },
+            restaurant: { $ref: '#/components/schemas/RestaurantSummary' },
+            items: { type: 'array', items: { $ref: '#/components/schemas/OrderItem' } },
+            itemsCost: { type: 'integer', description: 'Sum of all item costs in cents' },
+            infrastructureFee: { type: 'integer', description: 'Flat infrastructure fee in cents — transparent and published. Not a commission.' },
+            totalCost: { type: 'integer', description: 'Total cost in cents = itemsCost + infrastructureFee. Complete price — no hidden fees.' },
+            deliveryAddress: { type: 'string' },
+            notes: { type: 'string', nullable: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CreateOrderInput: {
+          type: 'object',
+          required: ['restaurantId', 'items', 'deliveryAddress'],
+          properties: {
+            restaurantId: { type: 'string' },
+            items: { type: 'array', minItems: 1, items: { $ref: '#/components/schemas/OrderItemInput' } },
+            deliveryAddress: { type: 'string' },
+            notes: { type: 'string' },
+          },
+        },
+        Delivery: {
+          type: 'object',
+          required: ['id', 'orderId', 'status', 'basePay', 'distancePay', 'createdAt', 'updatedAt'],
+          properties: {
+            id: { type: 'string' },
+            orderId: { type: 'string' },
+            courierId: { type: 'string', nullable: true },
+            status: { $ref: '#/components/schemas/DeliveryStatus' },
+            basePay: { type: 'integer', description: 'Base pay in cents — flat per-delivery amount shown to courier before accepting' },
+            distancePay: { type: 'integer', description: 'Distance pay in cents — per-km rate × estimated km shown to courier before accepting' },
+            pickedUpAt: { type: 'string', format: 'date-time', nullable: true },
+            deliveredAt: { type: 'string', format: 'date-time', nullable: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        PaginatedRestaurants: {
+          type: 'object',
+          required: ['restaurants', 'total', 'page', 'limit'],
+          properties: {
+            restaurants: { type: 'array', items: { $ref: '#/components/schemas/Restaurant' } },
+            total: { type: 'integer' },
+            page: { type: 'integer' },
+            limit: { type: 'integer' },
+          },
+        },
+        ApiError: {
+          type: 'object',
+          required: ['error'],
+          properties: {
+            error: {
+              type: 'object',
+              required: ['code', 'message'],
+              properties: {
+                code: { type: 'string', example: 'VALIDATION_ERROR' },
+                message: { type: 'string' },
+                fields: {
+                  type: 'object',
+                  additionalProperties: { type: 'string' },
+                  description: 'Per-field validation errors',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    tags: [
+      { name: 'restaurants', description: 'Restaurant discovery' },
+      { name: 'menu', description: 'Menu item browsing' },
+      { name: 'orders', description: 'Order placement and tracking' },
+      { name: 'courier', description: 'Courier delivery operations' },
+      { name: 'restaurant-owner', description: 'Restaurant owner management operations' },
+    ],
+  },
+  // Using glob pattern — swagger-jsdoc resolves from cwd (app root).
+  apis: ['./src/app/api/**/route.ts'],
+}
+
+const spec = swaggerJsdoc(options)
+
+const outDir = join(root, 'src', 'lib')
+mkdirSync(outDir, { recursive: true })
+writeFileSync(join(outDir, 'openapi.json'), JSON.stringify(spec, null, 2), 'utf8')
+
+console.log('✓ openapi.json written to src/lib/openapi.json')
+console.log(`  ${Object.keys(spec.paths ?? {}).length} paths documented`)
