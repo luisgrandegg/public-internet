@@ -76,3 +76,29 @@ export async function updateListing(id: string, input: UpdateListingInput) {
 export async function deleteListing(id: string) {
   return db.listing.delete({ where: { id } })
 }
+
+export async function getListingAvailability(listingId: string) {
+  const [bookings, blocks] = await Promise.all([
+    db.booking.findMany({
+      where: { listingId },
+      select: { checkIn: true, checkOut: true },
+    }),
+    db.availabilityBlock.findMany({
+      where: { listingId },
+      select: { startDate: true, endDate: true },
+    }),
+  ])
+
+  const blockedRanges = [
+    ...bookings.map((b) => ({
+      start: b.checkIn.toISOString().split('T')[0],
+      end: b.checkOut.toISOString().split('T')[0],
+    })),
+    ...blocks.map((b) => ({
+      start: b.startDate.toISOString().split('T')[0],
+      end: b.endDate.toISOString().split('T')[0],
+    })),
+  ]
+
+  return { blockedRanges }
+}
