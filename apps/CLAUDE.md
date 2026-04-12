@@ -255,6 +255,21 @@ When adding a new app to the monorepo:
 
 ---
 
+## E2E Testing
+
+Every app feature must ship with Playwright e2e tests. See the root `CLAUDE.md § E2E Testing Rule` for the full rule.
+
+**App-specific checklist — every backlog ticket for an app must include:**
+
+1. At least one spec file in `apps/<app>/e2e/` covering the ticket's acceptance criteria
+2. A happy-path test that exercises the full user flow
+3. A test that verifies constitution constraints (no urgency copy, no hidden fees, opt-ins not pre-checked)
+4. An empty/error state test if the feature fetches data from the database
+
+**Do not mark a backlog feature as complete** until the corresponding e2e tests pass locally with `pnpm --filter @public-internet/<app> test:e2e`.
+
+---
+
 ## Flagging Gaps
 
 If a UI requirement cannot be met with existing design system components, **do not silently work around it**. Flag it explicitly and stop:

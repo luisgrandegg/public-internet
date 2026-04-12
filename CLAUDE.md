@@ -120,6 +120,7 @@ If you are about to make a decision that contradicts an existing ADR, stop and f
 - `pnpm lint` — zero ESLint errors
 - `pnpm typecheck` — zero TypeScript errors (strict mode)
 - `pnpm build` — all packages build cleanly
+- `pnpm --filter <app> test:e2e` — e2e suite passes (app features only)
 
 ### Package Tagging
 
@@ -183,6 +184,61 @@ A feature is done when:
 HTTP status codes are the source of truth. Never return `{ ok: false }` with a 200 status.
 
 Environment variables for DB connections must appear in `.env.example` with explanatory comments. Never hardcode connection strings.
+
+---
+
+## E2E Testing Rule
+
+**Every backlog feature that touches an app must ship with Playwright e2e tests.** Tests live in `apps/<app>/e2e/` and run against the built app in CI.
+
+### What to test
+
+| Scenario | What to cover |
+|---|---|
+| Page renders | Heading, key content, no JS crash |
+| Form submission | Happy path + validation errors |
+| Navigation | Links and redirects land on the correct route |
+| Constitution constraints | No urgency copy, no hidden fees, host opt-in not pre-checked |
+| Empty state | Pages that fetch data behave correctly when the database is empty |
+
+### What NOT to test in e2e
+
+- Implementation details (CSS class names, component internals)
+- Unit-level logic already covered by unit tests
+- Third-party integrations that cannot run in CI (email delivery, payment providers)
+
+### E2E test location and naming
+
+```
+apps/<app>/
+├── e2e/
+│   ├── home.spec.ts
+│   ├── listings.spec.ts
+│   ├── auth/
+│   │   ├── signin.spec.ts
+│   │   ├── signup.spec.ts
+│   │   └── forgot-password.spec.ts
+│   └── host/
+│       └── create-listing.spec.ts
+├── playwright.config.ts        ← webServer points to `pnpm start`
+└── package.json                ← "test:e2e": "playwright test"
+```
+
+One spec file per feature area. Group related pages (auth, host) into subdirectories.
+
+### Running e2e tests locally
+
+```bash
+# Requires a running built app: pnpm build && pnpm start
+pnpm --filter @public-internet/<app> test:e2e
+
+# Interactive UI mode (useful when writing tests)
+pnpm --filter @public-internet/<app> test:e2e:ui
+```
+
+### CI setup for e2e
+
+The e2e CI job runs after `build` and requires a PostgreSQL service. See `.github/workflows/ci.yml` — the `e2e` job uses `services: postgres:16` and runs `prisma migrate deploy` before tests. The Playwright report is uploaded as a CI artifact on failure.
 
 ---
 
