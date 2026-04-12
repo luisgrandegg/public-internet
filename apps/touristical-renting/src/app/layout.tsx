@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { SkipLink } from '@/components/SkipLink'
+import { SiteHeader } from '@/components/SiteHeader'
 
 export const metadata: Metadata = {
   title: 'Touristical Renting — Commission-free holiday lets',
@@ -14,7 +16,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <SkipLink href="#main-content" />
+        <SiteHeader />
+        <main id="main-content">{children}</main>
+      </body>
     </html>
   )
 }

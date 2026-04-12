@@ -1,0 +1,98 @@
+.hero {
+  background: linear-gradient(
+    135deg,
+    var(--ds-color-brand-secondary) 0%,
+    var(--ds-color-brand-primary) 100%
+  );
+  padding: var(--ds-space-16) var(--ds-space-6);
+  text-align: center;
+  color: var(--ds-color-neutral-0);
+}
+
+.heroHeading {
+  font-size: var(--ds-font-size-2xl);
+  font-weight: var(--ds-font-weight-semibold);
+  margin-bottom: var(--ds-space-2);
+  line-height: var(--ds-line-height-tight);
+}
+
+.heroSubheading {
+  font-size: var(--ds-font-size-lg);
+  opacity: 0.85;
+  margin-bottom: var(--ds-space-8);
+  line-height: var(--ds-line-height-normal);
+}
+
+.searchForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  max-width: 760px;
+  margin: 0 auto;
+  background-color: var(--ds-color-neutral-0);
+  padding: var(--ds-space-4);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow-lg);
+  align-items: flex-end;
+}
+
+.searchField {
+  flex: 1;
+  min-width: 160px;
+}
+
+.section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--ds-space-12) var(--ds-space-6);
+}
+
+.sectionHeading {
+  font-size: var(--ds-font-size-2xl);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-neutral-900);
+  margin-bottom: var(--ds-space-8);
+}
+
+.listingsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--ds-space-6);
+}
+
+.howItWorksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--ds-space-6);
+}
+
+.howItWorksStep {
+  padding: var(--ds-space-6);
+}
+
+.stepNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ds-radius-full);
+  background-color: var(--ds-color-brand-primary);
+  color: var(--ds-color-neutral-0);
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-semibold);
+  margin-bottom: var(--ds-space-4);
+}
+
+.stepTitle {
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-neutral-900);
+  margin-bottom: var(--ds-space-2);
+}
+
+.stepDescription {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-700);
+  line-height: var(--ds-line-height-normal);
+}

@@ -24,6 +24,7 @@ structured environment that guarantees production-quality output.
 → Storybook preview → PR-ready code, without needing a dedicated engineer.
 
 **Stack:** React, TypeScript (strict), CSS Modules, Storybook 8, pnpm workspaces, Turborepo.
+**Backend:** Next.js Route Handlers (REST API), PostgreSQL, Prisma ORM, better-auth. See [ADR-004](./decisions/ADR-004-full-stack-rest-api.md).
 
 ---
 
@@ -34,12 +35,19 @@ structured environment that guarantees production-quality output.
 ├── apps/
 │   └── touristical-renting/  # Stay platform — commission-free tourist rental
 ├── packages/
-│   └── design-system/        # Core component library + tokens
+│   ├── design-system/        # Core component library + tokens
+│   │   ├── src/
+│   │   │   ├── components/   # Production components
+│   │   │   ├── experiments/  # A/B variants (never imported by apps)
+│   │   │   ├── tokens/       # Design tokens (CSS vars + TS object)
+│   │   │   └── index.ts      # Barrel export
+│   │   └── package.json
+│   └── touristical-renting-sdk/  # Auto-generated typed SDK for the touristical-renting API
 │       ├── src/
-│       │   ├── components/   # Production components
-│       │   ├── experiments/  # A/B variants (never imported by apps)
-│       │   ├── tokens/       # Design tokens (CSS vars + TS object)
-│       │   └── index.ts      # Barrel export
+│       │   ├── client.ts         # ApiClient interface + FetchApiClient
+│       │   ├── index.ts          # Barrel export
+│       │   └── generated/        # Generated from openapi.json — do not edit manually
+│       ├── generate.mjs          # SDK generator script
 │       └── package.json
 ├── .claude/
 │   └── commands/             # Custom slash commands for designers
@@ -57,7 +65,7 @@ structured environment that guarantees production-quality output.
 Each subdirectory has its own `CLAUDE.md` with context scoped to that area:
 
 - `packages/design-system/CLAUDE.md` — tokens, components, conventions, Storybook
-- `apps/CLAUDE.md` — app registry, import rules, composition patterns, gap flagging
+- `apps/CLAUDE.md` — app registry, import rules, composition patterns, gap flagging, OpenAPI + SDK rules
 - `apps/touristical-renting/CLAUDE.md` — domain vocabulary, routes, constitution alignment for the Stay platform
 
 ---
@@ -72,6 +80,7 @@ Before making a choice that touches styling strategy, experiment isolation, or c
 | [ADR-001](./decisions/ADR-001-css-modules-over-tailwind.md) | CSS Modules over Tailwind/CSS-in-JS |
 | [ADR-002](./decisions/ADR-002-static-experiment-isolation.md) | Experiments isolated in `src/experiments/` vs. runtime feature flags |
 | [ADR-003](./decisions/ADR-003-claude-md-context-files.md) | CLAUDE.md context files over MCP server or system prompt |
+| [ADR-004](./decisions/ADR-004-full-stack-rest-api.md) | Full-stack features with REST API — no placeholder implementations |
 
 If you are about to make a decision that contradicts an existing ADR, stop and flag it explicitly rather than silently overriding it. If the decision genuinely needs to change, write a new ADR that supersedes the old one.
 
@@ -111,6 +120,7 @@ If you are about to make a decision that contradicts an existing ADR, stop and f
 - `pnpm lint` — zero ESLint errors
 - `pnpm typecheck` — zero TypeScript errors (strict mode)
 - `pnpm build` — all packages build cleanly
+- `pnpm --filter <app> test:e2e` — e2e suite passes (app features only)
 
 ### Package Tagging
 
@@ -133,6 +143,102 @@ Slash commands for designers live in `.claude/commands/`. Use them to start guid
 | `/watch-pr`               | Poll CI on the current PR; fix failures automatically                         |
 | `/rules-audit`            | Score the quality of AI rules (CLAUDE.md, CONSTITUTION.md) across 8 criteria |
 | `/review-pr`              | Review a PR, post inline comments per finding, submit REQUEST_CHANGES         |
+| `/tackle-backlog`         | Spawn one agent per backlog feature (coordinator for dependent features)       |
+| `/discover`               | Explore a project's architecture, data model, API surface, and UI             |
+
+---
+
+## Full-Stack Rule
+
+**Every feature that touches data must be implemented end-to-end before it is considered done.**
+
+This is a hard rule. It is not acceptable to:
+- Return `{ ok: true }` from a Server Action without persisting anything
+- Use `MOCK_LISTINGS` or any in-memory array as the data source for a user-facing page
+- Mark a feature complete in the backlog when the backend is a stub
+
+A feature is done when:
+1. A Prisma schema entry and migration exist for any new data it introduces
+2. A REST Route Handler exists at `app/api/**/route.ts` implementing the operation
+3. The Server Action (if used) calls that Route Handler — it does not duplicate the logic
+4. The UI reflects real data from the database, not mock data
+
+**Backend stack (per ADR-004):**
+
+| Layer | Choice |
+|---|---|
+| API | Next.js Route Handlers (`app/api/**/route.ts`) following REST conventions |
+| Database | PostgreSQL |
+| ORM | Prisma — schema at `prisma/schema.prisma`, migrations committed to repo |
+| Auth | `better-auth` — email + password, session-based, no OAuth dependency |
+
+**REST response shape:**
+```typescript
+// Success
+{ data: T }
+
+// Error
+{ error: { code: string; message: string; fields?: Record<string, string> } }
+```
+
+HTTP status codes are the source of truth. Never return `{ ok: false }` with a 200 status.
+
+Environment variables for DB connections must appear in `.env.example` with explanatory comments. Never hardcode connection strings.
+
+---
+
+## E2E Testing Rule
+
+**Every backlog feature that touches an app must ship with Playwright e2e tests.** Tests live in `apps/<app>/e2e/` and run against the built app in CI.
+
+### What to test
+
+| Scenario | What to cover |
+|---|---|
+| Page renders | Heading, key content, no JS crash |
+| Form submission | Happy path + validation errors |
+| Navigation | Links and redirects land on the correct route |
+| Constitution constraints | No urgency copy, no hidden fees, host opt-in not pre-checked |
+| Empty state | Pages that fetch data behave correctly when the database is empty |
+
+### What NOT to test in e2e
+
+- Implementation details (CSS class names, component internals)
+- Unit-level logic already covered by unit tests
+- Third-party integrations that cannot run in CI (email delivery, payment providers)
+
+### E2E test location and naming
+
+```
+apps/<app>/
+├── e2e/
+│   ├── home.spec.ts
+│   ├── listings.spec.ts
+│   ├── auth/
+│   │   ├── signin.spec.ts
+│   │   ├── signup.spec.ts
+│   │   └── forgot-password.spec.ts
+│   └── host/
+│       └── create-listing.spec.ts
+├── playwright.config.ts        ← webServer points to `pnpm start`
+└── package.json                ← "test:e2e": "playwright test"
+```
+
+One spec file per feature area. Group related pages (auth, host) into subdirectories.
+
+### Running e2e tests locally
+
+```bash
+# Requires a running built app: pnpm build && pnpm start
+pnpm --filter @public-internet/<app> test:e2e
+
+# Interactive UI mode (useful when writing tests)
+pnpm --filter @public-internet/<app> test:e2e:ui
+```
+
+### CI setup for e2e
+
+The e2e CI job runs after `build` and requires a PostgreSQL service. See `.github/workflows/ci.yml` — the `e2e` job uses `services: postgres:16` and runs `prisma migrate deploy` before tests. The Playwright report is uploaded as a CI artifact on failure.
 
 ---
 

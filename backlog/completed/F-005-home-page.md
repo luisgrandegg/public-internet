@@ -12,11 +12,11 @@ The entry point of the platform. Gives guests a clear starting point to search f
 
 ## Acceptance criteria
 
-- [ ] Search form submits as GET to `/listings` with correct query params
-- [ ] No urgency/scarcity copy anywhere on the page
-- [ ] All images have descriptive `alt` text
-- [ ] Page is usable with keyboard only (tab order is logical)
-- [ ] `pnpm type-check` and `pnpm lint` pass
+- [x] Search form submits as GET to `/listings` with correct query params
+- [x] No urgency/scarcity copy anywhere on the page
+- [x] All images have descriptive `alt` text
+- [x] Page is usable with keyboard only (tab order is logical)
+- [x] `pnpm type-check` and `pnpm lint` pass
 
 ## Notes
 
@@ -27,3 +27,13 @@ The entry point of the platform. Gives guests a clear starting point to search f
 ## Status
 
 Planned — not yet implemented.
+
+---
+
+## Completed
+
+**Completed:** 2026-04-12
+**PR:** feature/touristical-renting-bootstrap (pending)
+**Commit:** (see branch HEAD)
+**Audit:** pnpm type-check and lint pass
+**Notes:** Server Component home page with GET search form, 4 featured ListingCards from mock data, and 3-step How it works section using Card. No urgency copy. All image alt text provided by ListingCard component.

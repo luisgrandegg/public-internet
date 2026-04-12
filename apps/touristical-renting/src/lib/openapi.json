@@ -1,0 +1,1131 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Touristical Renting API",
+    "version": "1.0.0",
+    "description": "Commission-free tourist rental REST API. All prices are in cents (integer) unless noted.",
+    "contact": {
+      "name": "public-internet",
+      "url": "https://github.com/public-internet"
+    }
+  },
+  "servers": [
+    {
+      "url": "{baseUrl}",
+      "variables": {
+        "baseUrl": {
+          "default": "http://localhost:3000",
+          "description": "Base server URL"
+        }
+      }
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "better-auth.session_token",
+        "description": "Session cookie set by better-auth on sign-in"
+      }
+    },
+    "schemas": {
+      "PropertyType": {
+        "type": "string",
+        "enum": [
+          "flat",
+          "house",
+          "room",
+          "studio"
+        ],
+        "description": "Type of rental property"
+      },
+      "PhotoInput": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Publicly accessible photo URL"
+          },
+          "alt": {
+            "type": "string",
+            "default": "",
+            "description": "Accessible alt text"
+          }
+        }
+      },
+      "Photo": {
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "alt",
+          "listingId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "alt": {
+            "type": "string"
+          },
+          "listingId": {
+            "type": "string"
+          }
+        }
+      },
+      "HostSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "HostSummaryWithCreatedAt": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/HostSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      },
+      "GuestSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "email"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        }
+      },
+      "ListingSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "nightlyRate"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "nightlyRate": {
+            "type": "integer",
+            "description": "Nightly rate in cents"
+          }
+        }
+      },
+      "Listing": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "propertyType",
+          "city",
+          "country",
+          "lat",
+          "lng",
+          "nightlyRate",
+          "maxGuests",
+          "bedrooms",
+          "bathrooms",
+          "hostId",
+          "photos",
+          "host",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "propertyType": {
+            "$ref": "#/components/schemas/PropertyType"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "nightlyRate": {
+            "type": "integer",
+            "description": "Nightly rate in cents. Display as (nightlyRate / 100).toFixed(2)"
+          },
+          "maxGuests": {
+            "type": "integer"
+          },
+          "bedrooms": {
+            "type": "integer"
+          },
+          "bathrooms": {
+            "type": "integer"
+          },
+          "hostId": {
+            "type": "string"
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Photo"
+            }
+          },
+          "host": {
+            "$ref": "#/components/schemas/HostSummary"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "HostListing": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Listing"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "_count": {
+                "type": "object",
+                "properties": {
+                  "bookings": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Booking": {
+        "type": "object",
+        "required": [
+          "id",
+          "listingId",
+          "guestId",
+          "checkIn",
+          "checkOut",
+          "totalCost",
+          "createdAt",
+          "updatedAt",
+          "listing",
+          "guest"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "listingId": {
+            "type": "string"
+          },
+          "guestId": {
+            "type": "string"
+          },
+          "checkIn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checkOut": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalCost": {
+            "type": "integer",
+            "description": "Total booking cost in cents"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "listing": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingSummary"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "photos": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Photo"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "guest": {
+            "$ref": "#/components/schemas/GuestSummary"
+          }
+        }
+      },
+      "CreateListingInput": {
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "propertyType",
+          "city",
+          "country",
+          "nightlyRate",
+          "maxGuests",
+          "bedrooms",
+          "bathrooms",
+          "photos"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2000
+          },
+          "propertyType": {
+            "$ref": "#/components/schemas/PropertyType"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number",
+            "default": 0
+          },
+          "lng": {
+            "type": "number",
+            "default": 0
+          },
+          "nightlyRate": {
+            "type": "number",
+            "description": "Nightly rate in euros (float). Service converts to cents."
+          },
+          "maxGuests": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "bedrooms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 50
+          },
+          "bathrooms": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "photos": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/PhotoInput"
+            }
+          }
+        }
+      },
+      "UpdateListingInput": {
+        "type": "object",
+        "description": "All fields are optional. Only provided fields are updated.",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2000
+          },
+          "propertyType": {
+            "$ref": "#/components/schemas/PropertyType"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "nightlyRate": {
+            "type": "number",
+            "description": "Nightly rate in euros (float)."
+          },
+          "maxGuests": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "bedrooms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 50
+          },
+          "bathrooms": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "photos": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/PhotoInput"
+            }
+          }
+        }
+      },
+      "CreateBookingInput": {
+        "type": "object",
+        "required": [
+          "listingId",
+          "checkIn",
+          "checkOut"
+        ],
+        "properties": {
+          "listingId": {
+            "type": "string"
+          },
+          "checkIn": {
+            "type": "string",
+            "format": "date",
+            "description": "ISO date YYYY-MM-DD"
+          },
+          "checkOut": {
+            "type": "string",
+            "format": "date",
+            "description": "ISO date YYYY-MM-DD. Must be after checkIn."
+          }
+        }
+      },
+      "PaginatedListings": {
+        "type": "object",
+        "required": [
+          "listings",
+          "total",
+          "page",
+          "limit"
+        ],
+        "properties": {
+          "listings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Listing"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "VALIDATION_ERROR"
+              },
+              "message": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Per-field validation errors"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "listings",
+      "description": "Listing discovery and management"
+    },
+    {
+      "name": "bookings",
+      "description": "Booking management"
+    },
+    {
+      "name": "host",
+      "description": "Host dashboard operations"
+    }
+  ],
+  "paths": {
+    "/api/bookings/{id}": {
+      "get": {
+        "operationId": "bookings_get",
+        "summary": "Get a booking by ID",
+        "description": "Only the guest or the listing host can view a booking.",
+        "tags": [
+          "bookings"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Booking"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the guest or host for this booking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bookings": {
+      "post": {
+        "operationId": "bookings_create",
+        "summary": "Create a booking",
+        "tags": [
+          "bookings"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Booking"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cannot book own listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/host/bookings": {
+      "get": {
+        "operationId": "host_bookings_list",
+        "summary": "List bookings for all of the authenticated host's listings",
+        "tags": [
+          "host"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bookings for the host's listings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Booking"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/host/listings": {
+      "get": {
+        "operationId": "host_listings_list",
+        "summary": "List the authenticated host's listings",
+        "tags": [
+          "host"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The host's listings with booking counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/HostListing"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{id}": {
+      "get": {
+        "operationId": "listings_get",
+        "summary": "Get a listing by ID",
+        "tags": [
+          "listings"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listing details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Listing"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "listings_update",
+        "summary": "Update a listing",
+        "tags": [
+          "listings"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateListingInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Listing"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the listing host",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "listings_delete",
+        "summary": "Delete a listing",
+        "tags": [
+          "listings"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Listing deleted"
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the listing host",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings": {
+      "get": {
+        "operationId": "listings_list",
+        "summary": "List listings",
+        "tags": [
+          "listings"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "location",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by city or country (case-insensitive substring match)"
+          },
+          {
+            "in": "query",
+            "name": "propertyType",
+            "schema": {
+              "$ref": "#/components/schemas/PropertyType"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minPrice",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Minimum nightly rate in cents"
+          },
+          {
+            "in": "query",
+            "name": "maxPrice",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Maximum nightly rate in cents"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of listings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PaginatedListings"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "listings_create",
+        "summary": "Create a listing",
+        "tags": [
+          "listings"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateListingInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Listing created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Listing"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

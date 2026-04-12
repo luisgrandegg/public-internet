@@ -30,6 +30,12 @@
     "build-storybook": {
       "dependsOn": ["^build"],
       "outputs": ["storybook-static/**"]
+    },
+    "generate:spec": {
+      "cache": false
+    },
+    "generate": {
+      "cache": false
     }
   }
 }

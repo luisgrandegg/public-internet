@@ -42,14 +42,14 @@ The primary discovery surface. Split layout: filter sidebar on the left, listing
 
 ## Acceptance criteria
 
-- [ ] Filters update the URL and trigger a server-side re-filter (no stale cache)
-- [ ] Map loads client-side only (no SSR errors)
-- [ ] Hovering a listing card opens the corresponding map popup
-- [ ] Every listing card price shows "total price" label
-- [ ] Map attribution rendered per OSM licence requirements
-- [ ] No scarcity/urgency signals anywhere
-- [ ] Map loading state is accessible (`role="status"`, `aria-label`)
-- [ ] `pnpm type-check` and `pnpm lint` pass
+- [x] Filters update the URL and trigger a server-side re-filter (no stale cache)
+- [x] Map loads client-side only (no SSR errors)
+- [x] Hovering a listing card opens the corresponding map popup
+- [x] Every listing card price shows "total price" label
+- [x] Map attribution rendered per OSM licence requirements
+- [x] No scarcity/urgency signals anywhere
+- [x] Map loading state is accessible (`role="status"`, `aria-label`)
+- [x] `pnpm type-check` and `pnpm lint` pass
 
 ## Dependencies to add
 
@@ -67,3 +67,13 @@ The primary discovery surface. Split layout: filter sidebar on the left, listing
 ## Status
 
 Planned — not yet implemented.
+
+---
+
+## Completed
+
+**Completed:** 2026-04-12
+**PR:** feature/touristical-renting-bootstrap (pending)
+**Commit:** (see branch HEAD)
+**Audit:** pnpm type-check and lint pass
+**Notes:** Full listings search page with Leaflet map using OpenStreetMap tiles. Server Component page filters by location, propertyType, minPrice, maxPrice from searchParams. ListingsClientShell owns hoveredListingId state. Map is SSR-disabled via dynamic import with accessible loading placeholder. Leaflet icon webpack fix applied. GAP comment on native select in FiltersSidebar.

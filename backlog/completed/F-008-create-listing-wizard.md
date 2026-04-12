@@ -26,13 +26,13 @@ A 6-step wizard that guides a Host through creating a new Listing. In-memory dra
 
 ## Acceptance criteria
 
-- [ ] All 6 steps navigate forward and back
-- [ ] Draft data persists across step navigation (in-memory)
-- [ ] Step progress indicator shows current step with `aria-current="step"`
-- [ ] Pricing step copy explicitly states "total price, no additional fees"
-- [ ] Property type step is fully keyboard-navigable (radio group semantics)
-- [ ] Final review step shows all entered data before submission
-- [ ] `pnpm type-check` and `pnpm lint` pass
+- [x] All 6 steps navigate forward and back
+- [x] Draft data persists across step navigation (in-memory)
+- [x] Step progress indicator shows current step with `aria-current="step"`
+- [x] Pricing step copy explicitly states "total price, no additional fees"
+- [x] Property type step is fully keyboard-navigable (radio group semantics)
+- [x] Final review step shows all entered data before submission
+- [x] `pnpm type-check` and `pnpm lint` pass
 
 ## Design system gaps required
 
@@ -45,3 +45,13 @@ A 6-step wizard that guides a Host through creating a new Listing. In-memory dra
 ## Status
 
 Planned — not yet implemented.
+
+---
+
+## Completed
+
+**Completed:** 2026-04-12
+**PR:** feature/touristical-renting-bootstrap (pending)
+**Commit:** (see branch HEAD)
+**Audit:** pnpm type-check and lint pass
+**Notes:** Full 6-step wizard at /host/listings/new. CreateListingWizard Client Component manages currentStep and draft state. WizardProgress uses accessible ol with aria-current="step" and ✓ for completed steps. PropertyTypeStep uses visually-hidden radio inputs with styled card labels. PricingStep label explicitly states total price. ReviewStep shows read-only draft summary before server action submit. All DS gaps flagged with GAP comments.

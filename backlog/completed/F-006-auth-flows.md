@@ -31,13 +31,13 @@ Three pages: sign in, sign up, and forgot password. UI-only for now — backed b
 
 ## Acceptance criteria
 
-- [ ] Forms are progressively enhanced (work without JS)
-- [ ] Field errors are associated via `aria-describedby` (handled by DS `Input`)
-- [ ] Global errors use `role="alert"` so screen readers announce them
-- [ ] Host toggle is unchecked by default
-- [ ] Forgot password shows confirmation state without page reload
-- [ ] No urgency copy anywhere in the flows
-- [ ] `pnpm type-check` and `pnpm lint` pass
+- [x] Forms are progressively enhanced (work without JS)
+- [x] Field errors are associated via `aria-describedby` (handled by DS `Input`)
+- [x] Global errors use `role="alert"` so screen readers announce them
+- [x] Host toggle is unchecked by default
+- [x] Forgot password shows confirmation state without page reload
+- [x] No urgency copy anywhere in the flows
+- [x] `pnpm type-check` and `pnpm lint` pass
 
 ## Design system gaps required
 
@@ -46,3 +46,13 @@ Three pages: sign in, sign up, and forgot password. UI-only for now — backed b
 ## Status
 
 Planned — not yet implemented.
+
+---
+
+## Completed
+
+**Completed:** 2026-04-12
+**PR:** feature/touristical-renting-bootstrap (pending)
+**Commit:** (see branch HEAD)
+**Audit:** pnpm type-check and lint pass
+**Notes:** Three auth pages implemented using useActionState with Server Actions. Shared auth layout uses Card variant="elevated" at 400px max width. Host toggle checkbox is unchecked by default. Forgot password renders success state inline. GAP comment added for native checkbox pending DS Checkbox component.

@@ -1,0 +1,99 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--ds-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--ds-color-neutral-200);
+  background-color: var(--ds-color-neutral-0);
+  box-shadow: var(--ds-shadow-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.root:hover {
+  box-shadow: var(--ds-shadow-md);
+  transform: translateY(-2px);
+}
+
+.root:focus-visible {
+  outline: 2px solid var(--ds-color-brand-primary);
+  outline-offset: 2px;
+}
+
+.imageWrapper {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background-color: var(--ds-color-neutral-200);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.badgeWrapper {
+  position: absolute;
+  top: var(--ds-space-3);
+  left: var(--ds-space-3);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-4);
+  flex: 1;
+}
+
+.title {
+  font-size: var(--ds-font-size-md);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-neutral-900);
+  margin: 0;
+  line-height: var(--ds-line-height-tight);
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-700);
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-700);
+}
+
+.ratingText {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-neutral-900);
+}
+
+.noReviews {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-500);
+  font-style: italic;
+}
+
+.price {
+  margin-top: auto;
+  padding-top: var(--ds-space-2);
+  border-top: 1px solid var(--ds-color-neutral-200);
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-700);
+}
+
+.priceAmount {
+  font-size: var(--ds-font-size-md);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-neutral-900);
+}

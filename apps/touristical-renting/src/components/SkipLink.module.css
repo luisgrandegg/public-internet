@@ -1,0 +1,32 @@
+.root {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  padding: var(--ds-space-2) var(--ds-space-4);
+  background-color: var(--ds-color-brand-primary);
+  color: var(--ds-color-neutral-0);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-semibold);
+  text-decoration: none;
+  border-radius: var(--ds-radius-md);
+
+  /* Visually hidden until focused */
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+  width: 1px;
+  height: 1px;
+}
+
+.root:focus {
+  clip: auto;
+  clip-path: none;
+  overflow: visible;
+  white-space: normal;
+  width: auto;
+  height: auto;
+  outline: 3px solid var(--ds-color-neutral-900);
+  outline-offset: 2px;
+}
