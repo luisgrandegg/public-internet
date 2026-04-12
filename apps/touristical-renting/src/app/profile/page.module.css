@@ -1,0 +1,21 @@
+.root {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--ds-space-8) var(--ds-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-8);
+}
+
+.heading {
+  font-size: var(--ds-font-size-2xl);
+  font-weight: var(--ds-font-weight-bold);
+  color: var(--ds-color-text-primary);
+  margin: 0;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--ds-color-border-subtle);
+  margin: 0;
+}

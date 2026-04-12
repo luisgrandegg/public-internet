@@ -1,0 +1,18 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+.sectionHeading {
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-text-primary);
+  margin: 0;
+}
+
+.description {
+  font-size: var(--ds-font-size-base);
+  color: var(--ds-color-text-secondary);
+  margin: 0;
+}

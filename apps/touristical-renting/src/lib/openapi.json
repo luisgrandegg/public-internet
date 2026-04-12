@@ -501,6 +501,110 @@
           }
         }
       },
+      "UserProfile": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "email",
+          "isHost",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "isHost": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserProfileSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "email",
+          "isHost"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "isHost": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateProfileInput": {
+        "type": "object",
+        "description": "All fields are optional. Only provided fields are updated.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "description": "Public avatar URL"
+          }
+        }
+      },
+      "UserDataExport": {
+        "type": "object",
+        "required": [
+          "user",
+          "listings",
+          "bookings"
+        ],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserProfile"
+          },
+          "listings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Listing"
+            }
+          },
+          "bookings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Booking"
+            }
+          }
+        }
+      },
       "ApiError": {
         "type": "object",
         "required": [
@@ -546,6 +650,10 @@
     {
       "name": "host",
       "description": "Host dashboard operations"
+    },
+    {
+      "name": "users",
+      "description": "User profile and account management"
     }
   ],
   "paths": {
@@ -1098,6 +1206,199 @@
                   "properties": {
                     "data": {
                       "$ref": "#/components/schemas/Listing"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/become-host": {
+      "post": {
+        "operationId": "users_become_host",
+        "summary": "Enable host status for the current user",
+        "description": "Explicitly opts the user in to host mode so they can list properties. This is an irreversible action in the MVP — once a host, always a host.",
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Host status enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "isHost": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me/export": {
+      "get": {
+        "operationId": "users_export_me",
+        "summary": "Export all user data as JSON",
+        "description": "Downloads a JSON file containing the user's profile, listings, and bookings. Required by the platform's no-lock-in principle.",
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON file download with all user data",
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string",
+                  "example": "attachment; filename=\"my-data.json\""
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDataExport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "operationId": "users_get_me",
+        "summary": "Get current user profile",
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current user profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "users_update_me",
+        "summary": "Update current user profile",
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated user profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserProfileSummary"
                     }
                   }
                 }

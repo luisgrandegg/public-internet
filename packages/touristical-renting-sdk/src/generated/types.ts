@@ -131,6 +131,36 @@ export interface PaginatedListings {
   limit: number
 }
 
+export interface UserProfile {
+  id: string
+  name: string
+  email: string
+  image?: string | null
+  isHost: boolean
+  createdAt: string
+}
+
+export interface UserProfileSummary {
+  id: string
+  name: string
+  email: string
+  image?: string | null
+  isHost: boolean
+}
+
+/** All fields are optional. Only provided fields are updated. */
+export interface UpdateProfileInput {
+  name?: string
+  /** Public avatar URL */
+  image?: string
+}
+
+export interface UserDataExport {
+  user: UserProfile
+  listings: Array<Listing>
+  bookings: Array<Booking>
+}
+
 export interface ApiError {
   error: {
     code: string
