@@ -218,6 +218,46 @@ const options = {
             limit: { type: 'integer' },
           },
         },
+        UserProfile: {
+          type: 'object',
+          required: ['id', 'name', 'email', 'isHost', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            email: { type: 'string', format: 'email' },
+            image: { type: 'string', format: 'uri', nullable: true },
+            isHost: { type: 'boolean' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        UserProfileSummary: {
+          type: 'object',
+          required: ['id', 'name', 'email', 'isHost'],
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            email: { type: 'string', format: 'email' },
+            image: { type: 'string', format: 'uri', nullable: true },
+            isHost: { type: 'boolean' },
+          },
+        },
+        UpdateProfileInput: {
+          type: 'object',
+          description: 'All fields are optional. Only provided fields are updated.',
+          properties: {
+            name: { type: 'string', minLength: 1, maxLength: 120 },
+            image: { type: 'string', format: 'uri', description: 'Public avatar URL' },
+          },
+        },
+        UserDataExport: {
+          type: 'object',
+          required: ['user', 'listings', 'bookings'],
+          properties: {
+            user: { $ref: '#/components/schemas/UserProfile' },
+            listings: { type: 'array', items: { $ref: '#/components/schemas/Listing' } },
+            bookings: { type: 'array', items: { $ref: '#/components/schemas/Booking' } },
+          },
+        },
         ApiError: {
           type: 'object',
           required: ['error'],
@@ -243,6 +283,7 @@ const options = {
       { name: 'listings', description: 'Listing discovery and management' },
       { name: 'bookings', description: 'Booking management' },
       { name: 'host', description: 'Host dashboard operations' },
+      { name: 'users', description: 'User profile and account management' },
     ],
   },
   // Using glob pattern — swagger-jsdoc resolves from cwd (app root).
