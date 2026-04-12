@@ -64,7 +64,8 @@ test.describe('Create listing wizard', () => {
     await page.getByRole('button', { name: 'Next', exact: true }).click()
 
     // Step 3 — Description
-    await page.getByLabel('Title', { exact: true }).fill('Beautiful flat in the city centre')
+    // Label is "Listing title" not "Title"
+    await page.getByLabel('Listing title', { exact: true }).fill('Beautiful flat in the city centre')
     await page.locator('textarea[name="description"]').fill('A lovely place with great views.')
     await page.getByRole('button', { name: 'Next', exact: true }).click()
 
@@ -72,10 +73,11 @@ test.describe('Create listing wizard', () => {
     await page.getByRole('button', { name: 'Next', exact: true }).click()
 
     // Step 5 — Pricing
-    await page.getByLabel(/nightly rate/i).fill('85')
-    await page.getByLabel(/max guests/i).fill('4')
-    await page.getByLabel(/bedrooms/i).fill('2')
-    await page.getByLabel(/bathrooms/i).fill('1')
+    // Label is "€ per night — ..." not "/nightly rate/". Max guests is a <select>.
+    await page.getByLabel(/per night/i).fill('85')
+    await page.locator('select[name="maxGuests"]').selectOption('4')
+    await page.getByLabel('Bedrooms', { exact: true }).fill('2')
+    await page.getByLabel('Bathrooms', { exact: true }).fill('1')
     await page.getByRole('button', { name: 'Next', exact: true }).click()
 
     // Step 6 — Review (final)
@@ -92,7 +94,8 @@ test.describe('Create listing wizard', () => {
     await page.getByLabel('City', { exact: true }).fill('Test')
     await page.getByLabel('Country', { exact: true }).fill('Test')
     await page.getByRole('button', { name: 'Next', exact: true }).click()
-    await page.getByLabel('Title', { exact: true }).fill('Test')
+    // Label is "Listing title" not "Title"
+    await page.getByLabel('Listing title', { exact: true }).fill('Test')
     await page.locator('textarea[name="description"]').fill('Test')
     await page.getByRole('button', { name: 'Next', exact: true }).click()
     await page.getByRole('button', { name: 'Next', exact: true }).click()
