@@ -185,7 +185,7 @@ This project is used by non-developer designers. Unexpected permission prompts b
 
   | Command | Allowed subcommands |
   | ------- | ------------------- |
-  | `git`   | `status`, `diff`, `add`, `commit`, `push`, `fetch`, `merge`, `log`, `checkout`, `branch`, `rev-parse`, `stash` |
+  | `git`   | `status`, `diff`, `add`, `commit`, `push`, `pull`, `fetch`, `merge`, `log`, `checkout`, `branch`, `rev-parse`, `stash`, `cherry-pick`, `config`, `rm` |
   | `pnpm`  | `install`, `build`, `lint`, `type-check`, `test`, `test:coverage`, `changeset`, `--filter <pkg> <script>`, `add`, `remove` |
   | `gh`    | `pr view`, `pr create`, `pr checks --watch --interval 30`, `run view --log-failed`, `repo edit`, `api` |
   | `volta` | `install` |
