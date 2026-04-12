@@ -1,0 +1,47 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+.sectionHeading {
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-text-primary);
+  margin: 0;
+}
+
+.description {
+  font-size: var(--ds-font-size-base);
+  color: var(--ds-color-text-secondary);
+  margin: 0;
+}
+
+.hostConfirmed {
+  font-size: var(--ds-font-size-base);
+  color: var(--ds-color-text-primary);
+  font-weight: var(--ds-font-weight-medium);
+  margin: 0;
+}
+
+.dashboardLink {
+  font-size: var(--ds-font-size-base);
+  color: var(--ds-color-brand-primary);
+  text-decoration: underline;
+}
+
+.successMessage {
+  padding: var(--ds-space-3) var(--ds-space-4);
+  background-color: var(--ds-color-success-subtle);
+  color: var(--ds-color-success-text);
+  border-radius: var(--ds-radius-md);
+  font-size: var(--ds-font-size-sm);
+}
+
+.errorMessage {
+  padding: var(--ds-space-3) var(--ds-space-4);
+  background-color: var(--ds-color-error-subtle);
+  color: var(--ds-color-error-text);
+  border-radius: var(--ds-radius-md);
+  font-size: var(--ds-font-size-sm);
+}
