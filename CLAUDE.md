@@ -32,7 +32,7 @@ structured environment that guarantees production-quality output.
 ```
 /
 ├── apps/
-│   └── web/                  # Reference app
+│   └── touristical-renting/  # Stay platform — commission-free tourist rental
 ├── packages/
 │   └── design-system/        # Core component library + tokens
 │       ├── src/
@@ -57,7 +57,8 @@ structured environment that guarantees production-quality output.
 Each subdirectory has its own `CLAUDE.md` with context scoped to that area:
 
 - `packages/design-system/CLAUDE.md` — tokens, components, conventions, Storybook
-- `apps/CLAUDE.md` — import rules, composition patterns, gap flagging
+- `apps/CLAUDE.md` — app registry, import rules, composition patterns, gap flagging
+- `apps/touristical-renting/CLAUDE.md` — domain vocabulary, routes, constitution alignment for the Stay platform
 
 ---
 

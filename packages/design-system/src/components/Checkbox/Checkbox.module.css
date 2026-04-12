@@ -1,0 +1,112 @@
+/* Checkbox wrapper — outer container for a single checkbox + error */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+}
+
+/* Label + custom box row */
+.checkboxWrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Visually-hidden native input — stays in tab order */
+.nativeInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Custom visual checkbox box */
+.customBox {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--ds-color-neutral-200);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-color-neutral-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+/* Checked state */
+.nativeInput:checked + .customBox {
+  background: var(--ds-color-brand-primary);
+  border-color: var(--ds-color-brand-primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Focus ring — keyboard only */
+.nativeInput:focus-visible + .customBox {
+  box-shadow: 0 0 0 2px rgba(99, 91, 255, 0.2);
+  border-color: var(--ds-color-brand-primary);
+}
+
+/* Disabled state */
+.nativeInput:disabled + .customBox {
+  background: var(--ds-color-neutral-100);
+  border-color: var(--ds-color-neutral-200);
+  cursor: not-allowed;
+}
+
+.nativeInput:disabled ~ .labelText {
+  color: var(--ds-color-neutral-500);
+  cursor: not-allowed;
+}
+
+.checkboxWrapper:has(.nativeInput:disabled) {
+  cursor: not-allowed;
+}
+
+/* Label text */
+.labelText {
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-regular);
+  line-height: var(--ds-line-height-normal);
+  color: var(--ds-color-neutral-900);
+}
+
+/* Error message */
+.errorMessage {
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-danger-text);
+  padding-left: calc(18px + var(--ds-space-2));
+}
+
+/* CheckboxGroup fieldset */
+.fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+.legend {
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-neutral-900);
+  margin-bottom: var(--ds-space-2);
+  padding: 0;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+}

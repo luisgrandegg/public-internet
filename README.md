@@ -68,8 +68,8 @@ pnpm install
 # 3. Build all packages
 pnpm build
 
-# 4. Start the reference app
-pnpm --filter @public-internet/web dev
+# 4. Start the touristical-renting app
+pnpm --filter @public-internet/touristical-renting dev
 
 # 5. Start Storybook (design system preview)
 pnpm --filter @public-internet/design-system storybook
@@ -82,7 +82,7 @@ pnpm --filter @public-internet/design-system storybook
 ```
 /
 ├── apps/
-│   └── web/                  # Reference app (Next.js)
+│   └── touristical-renting/  # Stay platform — commission-free tourist rental (Next.js)
 ├── packages/
 │   └── design-system/        # Component library + design tokens
 │       ├── src/

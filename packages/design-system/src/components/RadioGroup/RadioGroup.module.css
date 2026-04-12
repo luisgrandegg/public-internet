@@ -1,0 +1,133 @@
+/* Fieldset reset */
+.fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.legend {
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-neutral-900);
+  margin-bottom: var(--ds-space-3);
+  padding: 0;
+}
+
+/* Vertical layout */
+.listVertical {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+}
+
+/* Grid layout */
+.listGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--ds-space-3);
+}
+
+/* Option wrapper — contains visually-hidden input + label */
+.optionWrapper {
+  position: relative;
+}
+
+/* Visually hidden native radio — stays in tab/arrow-key order */
+.nativeInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ─── Vertical / inline label ─────────────────────────────── */
+
+.inlineLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Custom radio circle indicator */
+.radioIndicator {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--ds-color-neutral-200);
+  border-radius: var(--ds-radius-full);
+  background: var(--ds-color-neutral-0);
+  margin-top: 2px;
+  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+/* Checked state — use ~ to target label inside same optionWrapper */
+.nativeInput:checked ~ .inlineLabel .radioIndicator {
+  border-color: var(--ds-color-brand-primary);
+  background: var(--ds-color-brand-primary);
+  box-shadow: inset 0 0 0 3px var(--ds-color-neutral-0);
+}
+
+/* Focus ring — keyboard only */
+.nativeInput:focus-visible ~ .inlineLabel .radioIndicator {
+  box-shadow: 0 0 0 2px rgba(99, 91, 255, 0.2);
+  border-color: var(--ds-color-brand-primary);
+}
+
+/* ─── Grid / card label ────────────────────────────────────── */
+
+.cardLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ds-space-1);
+  padding: var(--ds-space-4);
+  border: 1.5px solid var(--ds-color-neutral-200);
+  border-radius: var(--ds-radius-md);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.nativeInput:checked ~ .cardLabel {
+  border-color: var(--ds-color-brand-primary);
+  background: rgba(99, 91, 255, 0.04);
+}
+
+.nativeInput:focus-visible ~ .cardLabel {
+  box-shadow: 0 0 0 2px rgba(99, 91, 255, 0.2);
+  border-color: var(--ds-color-brand-primary);
+}
+
+/* ─── Shared option text ───────────────────────────────────── */
+
+.optionLabel {
+  display: block;
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-neutral-900);
+  line-height: var(--ds-line-height-normal);
+}
+
+.optionDescription {
+  display: block;
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-neutral-500);
+  line-height: var(--ds-line-height-normal);
+  margin-top: var(--ds-space-1);
+}
+
+/* ─── Error message ────────────────────────────────────────── */
+
+.errorMessage {
+  display: block;
+  margin-top: var(--ds-space-2);
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-danger-text);
+}
