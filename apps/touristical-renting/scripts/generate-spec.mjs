@@ -218,6 +218,86 @@ const options = {
             limit: { type: 'integer' },
           },
         },
+        UserProfile: {
+          type: 'object',
+          required: ['id', 'name', 'email', 'isHost', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            email: { type: 'string', format: 'email' },
+            image: { type: 'string', format: 'uri', nullable: true },
+            isHost: { type: 'boolean' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        UserProfileSummary: {
+          type: 'object',
+          required: ['id', 'name', 'email', 'isHost'],
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            email: { type: 'string', format: 'email' },
+            image: { type: 'string', format: 'uri', nullable: true },
+            isHost: { type: 'boolean' },
+          },
+        },
+        UpdateProfileInput: {
+          type: 'object',
+          description: 'All fields are optional. Only provided fields are updated.',
+          properties: {
+            name: { type: 'string', minLength: 1, maxLength: 120 },
+            image: { type: 'string', format: 'uri', description: 'Public avatar URL' },
+          },
+        },
+        UserDataExport: {
+          type: 'object',
+          required: ['user', 'listings', 'bookings'],
+          properties: {
+            user: { $ref: '#/components/schemas/UserProfile' },
+            listings: { type: 'array', items: { $ref: '#/components/schemas/Listing' } },
+            bookings: { type: 'array', items: { $ref: '#/components/schemas/Booking' } },
+          },
+        },
+        Enquiry: {
+          type: 'object',
+          required: ['id', 'listingId', 'guestId', 'hostId', 'message', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            listingId: { type: 'string' },
+            guestId: { type: 'string' },
+            hostId: { type: 'string' },
+            message: { type: 'string' },
+            reply: { type: 'string', nullable: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            repliedAt: { type: 'string', format: 'date-time', nullable: true },
+          },
+        },
+        Review: {
+          type: 'object',
+          required: ['id', 'bookingId', 'listingId', 'authorId', 'targetId', 'targetRole', 'rating', 'body', 'submittedAt'],
+          properties: {
+            id: { type: 'string' },
+            bookingId: { type: 'string' },
+            listingId: { type: 'string' },
+            authorId: { type: 'string' },
+            targetId: { type: 'string' },
+            targetRole: { type: 'string', enum: ['guest', 'host'] },
+            rating: { type: 'integer', minimum: 1, maximum: 5 },
+            body: { type: 'string' },
+            submittedAt: { type: 'string', format: 'date-time' },
+            publishedAt: { type: 'string', format: 'date-time', nullable: true },
+          },
+        },
+        CreateReviewInput: {
+          type: 'object',
+          required: ['targetId', 'targetRole', 'rating', 'body'],
+          properties: {
+            targetId: { type: 'string' },
+            targetRole: { type: 'string', enum: ['guest', 'host'] },
+            rating: { type: 'integer', minimum: 1, maximum: 5 },
+            body: { type: 'string', minLength: 10, maxLength: 2000 },
+          },
+        },
         ApiError: {
           type: 'object',
           required: ['error'],
@@ -243,12 +323,15 @@ const options = {
       { name: 'listings', description: 'Listing discovery and management' },
       { name: 'bookings', description: 'Booking management' },
       { name: 'host', description: 'Host dashboard operations' },
+      { name: 'users', description: 'User profile and account management' },
+      { name: 'enquiries', description: 'Guest-to-host messaging' },
+      { name: 'reviews', description: 'Mutual review system' },
     ],
   },
-  // Using glob pattern — swagger-jsdoc resolves from cwd (app root).
+  // Using absolute paths so the script can be run from any directory.
   // Note: Next.js [param] directory names contain brackets which break glob character classes,
   // so we use ** and exclude the auth catch-all and docs route.
-  apis: ['./src/app/api/**/route.ts'],
+  apis: [join(root, 'src/app/api/**/route.ts')],
 }
 
 const spec = swaggerJsdoc(options)

@@ -131,6 +131,67 @@ export interface PaginatedListings {
   limit: number
 }
 
+export interface UserProfile {
+  id: string
+  name: string
+  email: string
+  image?: string | null
+  isHost: boolean
+  createdAt: string
+}
+
+export interface UserProfileSummary {
+  id: string
+  name: string
+  email: string
+  image?: string | null
+  isHost: boolean
+}
+
+/** All fields are optional. Only provided fields are updated. */
+export interface UpdateProfileInput {
+  name?: string
+  /** Public avatar URL */
+  image?: string
+}
+
+export interface UserDataExport {
+  user: UserProfile
+  listings: Array<Listing>
+  bookings: Array<Booking>
+}
+
+export interface Enquiry {
+  id: string
+  listingId: string
+  guestId: string
+  hostId: string
+  message: string
+  reply?: string | null
+  createdAt: string
+  repliedAt?: string | null
+}
+
+export interface Review {
+  id: string
+  bookingId: string
+  listingId: string
+  authorId: string
+  targetId: string
+  targetRole: 'guest' | 'host'
+  rating: number
+  body: string
+  submittedAt: string
+  publishedAt?: string | null
+}
+
+export interface CreateReviewInput {
+  targetId: string
+  targetRole: 'guest' | 'host'
+  rating: number
+  body: string
+}
+
 export interface ApiError {
   error: {
     code: string

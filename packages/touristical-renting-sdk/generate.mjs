@@ -7,7 +7,7 @@
  * Default input: ../../apps/touristical-renting/src/lib/openapi.json
  * Output: src/generated/  (types.ts, *.resource.ts, index.ts)
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync } from 'fs'
 import { join, dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -15,6 +15,18 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const outDir = join(__dirname, 'src', 'generated')
 
 mkdirSync(outDir, { recursive: true })
+
+// Clean stale generated files before regenerating
+try {
+  const existingFiles = readdirSync(outDir)
+  for (const file of existingFiles) {
+    if (file.endsWith('.ts')) {
+      rmSync(join(outDir, file))
+    }
+  }
+} catch {
+  // Ignore errors if directory is empty or doesn't exist
+}
 
 // ─── Read spec ────────────────────────────────────────────────────────────────
 
@@ -99,6 +111,7 @@ function generateTypes() {
 /**
  * Given a path like /api/listings/{id}, determines:
  * - resourceGroup: 'listings', 'bookings', 'host.listings', 'host.bookings'
+ *   Non-host compound groups use camelCase (e.g. listingsAvailability)
  * - isCollection: true if path ends without a param segment
  */
 function classifyPath(path) {
@@ -110,7 +123,24 @@ function classifyPath(path) {
   const staticSegments = segments.filter(s => !s.startsWith('{'))
   const hasParam = segments.some(s => s.startsWith('{'))
 
-  const group = staticSegments.join('.')
+  // Convert hyphenated segment to camelCase: become-host → becomeHost
+  function segToCamel(seg) {
+    return seg.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+  }
+
+  // For host.* keep dot notation (existing pattern). For others, use camelCase.
+  let group
+  if (staticSegments[0] === 'host') {
+    group = staticSegments.map(segToCamel).join('.')
+  } else {
+    // camelCase compound: listings + availability → listingsAvailability
+    group = staticSegments
+      .map((s, i) => {
+        const camel = segToCamel(s)
+        return i === 0 ? camel : camel.charAt(0).toUpperCase() + camel.slice(1)
+      })
+      .join('')
+  }
   return { group, isCollection: !hasParam }
 }
 
@@ -196,6 +226,7 @@ function buildUrl(path, pathParams) {
  * Generate resource class content for a group.
  */
 function generateResourceClass(group, methods) {
+  // className: turn camelCase group into PascalCase, handling both dot and camelCase
   const className = group
     .split('.')
     .map(s => s.charAt(0).toUpperCase() + s.slice(1))
@@ -301,7 +332,11 @@ function generateSdkClass(resourceMap) {
     const isHost = group.startsWith('host.')
     imports.push(`import { ${className} } from './${fileName}.js'`)
     if (isHost) {
-      const subKey = group.replace('host.', '')
+      // host.bookings → bookings, host.enquiries.reply → enquiriesReply
+      const subParts = group.replace('host.', '').split('.')
+      const subKey = subParts
+        .map((s, i) => i === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1))
+        .join('')
       hostFields.push({ key: subKey, className })
     } else {
       topLevelFields.push({ key: group, className })
