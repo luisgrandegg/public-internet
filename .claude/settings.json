@@ -35,7 +35,10 @@
       "Bash(git cherry-pick:*)",
       "Bash(git config:*)",
       "Bash(node:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(git -C c:/Users/luisg/projects/public-internet add .claude/settings.json)",
+      "Bash(git -C c:/Users/luisg/projects/public-internet commit -m \"chore\\(settings\\): drop session-specific git -C entries again\")",
+      "Bash(git -C c:/Users/luisg/projects/public-internet push)"
     ]
   }
 }
