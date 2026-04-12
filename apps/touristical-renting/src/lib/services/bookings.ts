@@ -10,9 +10,20 @@ export async function createBooking(guestId: string, input: CreateBookingInput) 
   // Prevent the host from booking their own listing
   if (listing.hostId === guestId) throw new Error('CANNOT_BOOK_OWN_LISTING')
 
-  // Calculate total cost in cents — complete price, no hidden fees
   const checkInDate = new Date(checkIn)
   const checkOutDate = new Date(checkOut)
+
+  // Check for overlapping bookings (double-booking prevention)
+  const overlap = await db.booking.count({
+    where: {
+      listingId,
+      checkIn: { lt: checkOutDate },
+      checkOut: { gt: checkInDate },
+    },
+  })
+  if (overlap > 0) throw new Error('DATES_UNAVAILABLE')
+
+  // Calculate total cost in cents — complete price, no hidden fees
   const nights = Math.ceil(
     (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
   )
@@ -37,10 +48,31 @@ export async function getBookingById(id: string) {
     where: { id },
     include: {
       listing: {
-        include: { photos: true },
-        // hostId is included via the model directly (not a relation select)
+        include: {
+          photos: true,
+          host: { select: { id: true, name: true, image: true } },
+        },
       },
       guest: { select: { id: true, name: true, email: true } },
     },
+  })
+}
+
+export async function getGuestBookings(guestId: string) {
+  return db.booking.findMany({
+    where: { guestId },
+    include: {
+      listing: {
+        select: {
+          id: true,
+          title: true,
+          city: true,
+          country: true,
+          photos: { take: 1 },
+          host: { select: { id: true, name: true } },
+        },
+      },
+    },
+    orderBy: { checkIn: 'desc' },
   })
 }

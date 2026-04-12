@@ -1,4 +1,4 @@
-# F-020 — Eats: restaurant registration
+# F-030 — Eats: restaurant registration
 
 ## Summary
 
@@ -20,7 +20,7 @@ Creates a new `Restaurant` with `ownerId = session.userId` and `isActive = true`
 
 - Form: restaurant name, description, address, city, country, phone (optional), image URL (optional)
 - No payment step, no exclusivity checkbox, no advertising tier selection
-- On success: redirect to `/restaurant` (dashboard — F-021)
+- On success: redirect to `/restaurant` (dashboard — F-031)
 
 ## Acceptance criteria
 
@@ -35,5 +35,5 @@ Creates a new `Restaurant` with `ownerId = session.userId` and `isActive = true`
 
 ## Notes
 
-- `PATCH /api/restaurant/restaurants/:id` (update) can be implemented in the same PR or deferred to F-021
+- `PATCH /api/restaurant/restaurants/:id` (update) can be implemented in the same PR or deferred to F-031
 - Constitution check: no copy suggesting the platform takes a commission or requires exclusivity

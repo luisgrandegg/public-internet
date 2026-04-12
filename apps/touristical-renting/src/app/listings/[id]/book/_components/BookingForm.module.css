@@ -1,0 +1,50 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dateRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.priceBreakdown {
+  padding: 1rem;
+  background-color: var(--color-neutral-50, #f9fafb);
+  border: 1px solid var(--color-neutral-200, #e5e7eb);
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.priceRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.priceTotal {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1rem;
+  border-top: 1px solid var(--color-neutral-200, #e5e7eb);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.noFeeNote {
+  font-size: 0.8125rem;
+  color: var(--color-neutral-500, #6b7280);
+  margin-top: 0.5rem;
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  background-color: var(--color-error-50, #fef2f2);
+  border: 1px solid var(--color-error-200, #fecaca);
+  border-radius: 0.5rem;
+  color: var(--color-error-800, #991b1b);
+  font-size: 0.9375rem;
+}

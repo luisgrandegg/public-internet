@@ -1,4 +1,4 @@
-# F-024 — Eats: courier dashboard and delivery management
+# F-034 — Eats: courier dashboard and delivery management
 
 ## Summary
 
@@ -58,4 +58,4 @@ Returns 403 if the delivery is assigned to a different courier. Returns 422 for 
 
 - Constitution (worker rights): pay must never be shown as a single opaque number — `basePay + distancePay` always
 - An appeal path for deactivation must be visible in the courier dashboard (even if it is only a link/copy at this stage)
-- The `basePay` and `distancePay` values on a `Delivery` record are set when the `Order` is created (F-018)
+- The `basePay` and `distancePay` values on a `Delivery` record are set when the `Order` is created (F-028)

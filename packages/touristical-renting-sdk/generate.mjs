@@ -7,7 +7,7 @@
  * Default input: ../../apps/touristical-renting/src/lib/openapi.json
  * Output: src/generated/  (types.ts, *.resource.ts, index.ts)
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync } from 'fs'
 import { join, dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -15,6 +15,18 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const outDir = join(__dirname, 'src', 'generated')
 
 mkdirSync(outDir, { recursive: true })
+
+// Clean stale generated files before regenerating
+try {
+  const existingFiles = readdirSync(outDir)
+  for (const file of existingFiles) {
+    if (file.endsWith('.ts')) {
+      rmSync(join(outDir, file))
+    }
+  }
+} catch {
+  // Ignore errors if directory is empty or doesn't exist
+}
 
 // ─── Read spec ────────────────────────────────────────────────────────────────
 
@@ -321,8 +333,8 @@ function generateSdkClass(resourceMap) {
   for (const [group, { className, fileName }] of Object.entries(resourceMap)) {
     imports.push(`import { ${className} } from './${fileName}.js'`)
     if (group.startsWith('host.')) {
-      const subKey = group.replace(/^host\./, '')
-      // sub-keys under host are single words (e.g. "listings", "bookings")
+      // Convert "host.enquiries.reply" → "enquiriesReply" (camelCase property key)
+      const subKey = groupToPropertyKey(group.replace(/^host\./, ''))
       hostFields.push({ key: subKey, className })
     } else {
       // Use camelCase for any group so we always produce a valid identifier

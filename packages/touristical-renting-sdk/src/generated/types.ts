@@ -161,6 +161,37 @@ export interface UserDataExport {
   bookings: Array<Booking>
 }
 
+export interface Enquiry {
+  id: string
+  listingId: string
+  guestId: string
+  hostId: string
+  message: string
+  reply?: string | null
+  createdAt: string
+  repliedAt?: string | null
+}
+
+export interface Review {
+  id: string
+  bookingId: string
+  listingId: string
+  authorId: string
+  targetId: string
+  targetRole: 'guest' | 'host'
+  rating: number
+  body: string
+  submittedAt: string
+  publishedAt?: string | null
+}
+
+export interface CreateReviewInput {
+  targetId: string
+  targetRole: 'guest' | 'host'
+  rating: number
+  body: string
+}
+
 export interface ApiError {
   error: {
     code: string

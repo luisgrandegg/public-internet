@@ -1,8 +1,8 @@
-# F-022 — Eats: menu management
+# F-032 — Eats: menu management
 
 ## Summary
 
-The `/restaurant/[id]/menu` page lets a restaurant owner add, edit, and remove menu items. Prices are entered in euros (float) and stored as cents by the API. Items can be toggled available/unavailable without deleting them — unavailable items are never shown to customers (enforced in F-017).
+The `/restaurant/[id]/menu` page lets a restaurant owner add, edit, and remove menu items. Prices are entered in euros (float) and stored as cents by the API. Items can be toggled available/unavailable without deleting them — unavailable items are never shown to customers (enforced in F-027).
 
 ## API
 

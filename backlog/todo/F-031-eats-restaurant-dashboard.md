@@ -1,8 +1,8 @@
-# F-021 — Eats: restaurant dashboard and order management
+# F-031 — Eats: restaurant dashboard and order management
 
 ## Summary
 
-The `/restaurant` dashboard lets a restaurant owner see incoming orders and update their status through the kitchen workflow. Order status transitions are: `PENDING → ACCEPTED → PREPARING → READY_FOR_PICKUP`. The `IN_DELIVERY` and `DELIVERED` transitions are owned by the courier (F-024).
+The `/restaurant` dashboard lets a restaurant owner see incoming orders and update their status through the kitchen workflow. Order status transitions are: `PENDING → ACCEPTED → PREPARING → READY_FOR_PICKUP`. The `IN_DELIVERY` and `DELIVERED` transitions are owned by the courier (F-034).
 
 ## API
 

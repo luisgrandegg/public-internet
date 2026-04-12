@@ -1,0 +1,23 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.success {
+  padding: 0.75rem 1rem;
+  background-color: var(--color-success-50, #f0fdf4);
+  border: 1px solid var(--color-success-200, #bbf7d0);
+  border-radius: 0.5rem;
+  color: var(--color-success-800, #166534);
+  font-size: 0.9375rem;
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  background-color: var(--color-error-50, #fef2f2);
+  border: 1px solid var(--color-error-200, #fecaca);
+  border-radius: 0.5rem;
+  color: var(--color-error-800, #991b1b);
+  font-size: 0.9375rem;
+}

@@ -1,0 +1,21 @@
+.root {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.heading {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.listingTitle {
+  color: var(--color-neutral-600, #4b5563);
+  margin-bottom: 2rem;
+}
+
+.listingLink {
+  color: inherit;
+  text-decoration: underline;
+}

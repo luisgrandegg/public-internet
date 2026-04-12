@@ -1,8 +1,8 @@
-# F-017 — Eats: restaurant detail and menu
+# F-027 — Eats: restaurant detail and menu
 
 ## Summary
 
-The `/restaurants/[id]` page shows a restaurant's full profile and menu. Backed by two API endpoints. All prices displayed are real menu prices — no hidden service charges added on this page. This is a read-only view for customers; menu editing lives in F-022.
+The `/restaurants/[id]` page shows a restaurant's full profile and menu. Backed by two API endpoints. All prices displayed are real menu prices — no hidden service charges added on this page. This is a read-only view for customers; menu editing lives in F-032.
 
 ## API
 

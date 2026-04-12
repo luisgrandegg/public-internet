@@ -14,6 +14,14 @@ export class BookingsResource {
   }
 
   /**
+   * List bookings for the authenticated guest
+   * Requires authentication.
+   */
+  list(params?: Record<string, string | number | boolean | undefined>): Promise<Array<Booking>> {
+    return this.client.get('/api/bookings', params)
+  }
+
+  /**
    * Create a booking
    * Requires authentication.
    */

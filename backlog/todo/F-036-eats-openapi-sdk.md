@@ -1,8 +1,8 @@
-# F-026 — Eats: OpenAPI spec annotation and SDK generation
+# F-036 — Eats: OpenAPI spec annotation and SDK generation
 
 ## Summary
 
-Once all business API routes (F-016 through F-024) are implemented, this feature annotates every Route Handler with `@swagger` JSDoc, regenerates `openapi.json`, and regenerates the `eats-sdk` typed resource classes. This is a housekeeping feature that must be done before any consumer of the SDK can be written.
+Once all business API routes (F-026 through F-034) are implemented, this feature annotates every Route Handler with `@swagger` JSDoc, regenerates `openapi.json`, and regenerates the `eats-sdk` typed resource classes. This is a housekeeping feature that must be done before any consumer of the SDK can be written.
 
 ## What this feature includes
 
@@ -29,6 +29,6 @@ Once all business API routes (F-016 through F-024) are implemented, this feature
 
 ## Notes
 
-- This feature depends on F-016–F-024 being merged first
+- This feature depends on F-026–F-034 being merged first
 - Do not edit files in `packages/eats-sdk/src/generated/` manually — they are always overwritten by the generator
 - The `generate-spec.mjs` schemas were written during bootstrapping and may need minor updates to match the final route shapes
