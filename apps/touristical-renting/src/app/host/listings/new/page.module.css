@@ -1,0 +1,12 @@
+.root {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--ds-space-8) var(--ds-space-6);
+}
+
+.heading {
+  font-size: var(--ds-font-size-2xl);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-neutral-900);
+  margin-bottom: var(--ds-space-6);
+}

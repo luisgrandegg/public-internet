@@ -1,0 +1,43 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+}
+
+.heading {
+  font-size: var(--ds-font-size-xl);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-neutral-900);
+}
+
+.textareaWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+}
+
+.textareaLabel {
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-neutral-900);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-900);
+  background-color: var(--ds-color-neutral-0);
+  border: 1px solid var(--ds-color-neutral-200);
+  border-radius: var(--ds-radius-md);
+  resize: vertical;
+  font-family: inherit;
+  line-height: var(--ds-line-height-normal);
+}
+
+.textarea:focus {
+  outline: 2px solid var(--ds-color-brand-primary);
+  outline-offset: 2px;
+  border-color: var(--ds-color-brand-primary);
+}
