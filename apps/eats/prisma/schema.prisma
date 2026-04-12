@@ -1,0 +1,174 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/__generated__/prisma"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── better-auth tables ──────────────────────────────────────────────────────
+// These are managed by better-auth. Do not rename fields or remove models.
+// Extend User with app-specific fields below the required ones.
+
+model User {
+  id                String       @id
+  name              String
+  email             String       @unique
+  emailVerified     Boolean
+  image             String?
+  isRestaurantOwner Boolean      @default(false)
+  isCourier         Boolean      @default(false)
+  createdAt         DateTime
+  updatedAt         DateTime
+  sessions          Session[]
+  accounts          Account[]
+  restaurants       Restaurant[]
+  orders            Order[]
+  deliveries        Delivery[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+}
+
+// ─── App tables ──────────────────────────────────────────────────────────────
+
+model Restaurant {
+  id          String     @id @default(cuid())
+  name        String
+  description String
+  address     String
+  city        String
+  country     String
+  lat         Float      @default(0)
+  lng         Float      @default(0)
+  phone       String?
+  imageUrl    String?
+  isActive    Boolean    @default(true)
+  owner       User       @relation(fields: [ownerId], references: [id])
+  ownerId     String
+  menuItems   MenuItem[]
+  orders      Order[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model MenuItem {
+  id           String     @id @default(cuid())
+  name         String
+  description  String
+  // Stored in cents to avoid floating-point rounding errors.
+  // Display as: (price / 100).toFixed(2)
+  price        Int
+  category     String
+  isAvailable  Boolean    @default(true)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  orderItems   OrderItem[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  status          OrderStatus @default(PENDING)
+  customer        User        @relation(fields: [customerId], references: [id])
+  customerId      String
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
+  restaurantId    String
+  items           OrderItem[]
+  delivery        Delivery?
+  // All costs stored in cents. Shown in full to customer before confirmation.
+  itemsCost       Int
+  // Flat infrastructure fee — transparent and published. Not a commission.
+  infrastructureFee Int       @default(0)
+  // Total = itemsCost + infrastructureFee. No hidden fees.
+  totalCost       Int
+  deliveryAddress String
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY_FOR_PICKUP
+  IN_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId    String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemId String
+  quantity   Int
+  // Unit price snapshotted at order time — protects against menu price changes
+  unitPrice  Int
+}
+
+model Delivery {
+  id      String         @id @default(cuid())
+  order   Order          @relation(fields: [orderId], references: [id])
+  orderId String         @unique
+  courier User?          @relation(fields: [courierId], references: [id])
+  // Null until a courier accepts the delivery
+  courierId String?
+  status  DeliveryStatus @default(UNASSIGNED)
+  // Transparent courier pay breakdown — workers see exactly how pay is calculated.
+  // Total courier pay = basePay + distancePay
+  basePay      Int       @default(0)  // cents — flat per-delivery amount
+  distancePay  Int       @default(0)  // cents — per-km amount
+  pickedUpAt   DateTime?
+  deliveredAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+enum DeliveryStatus {
+  UNASSIGNED
+  ASSIGNED
+  PICKED_UP
+  DELIVERED
+  FAILED
+}

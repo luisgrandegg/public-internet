@@ -1,0 +1,9 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Eats API",
+    "version": "1.0.0",
+    "description": "Commission-free food delivery REST API. Run `pnpm generate:spec` to regenerate from route annotations."
+  },
+  "paths": {}
+}
