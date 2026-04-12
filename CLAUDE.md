@@ -143,6 +143,7 @@ Slash commands for designers live in `.claude/commands/`. Use them to start guid
 | `/rules-audit`            | Score the quality of AI rules (CLAUDE.md, CONSTITUTION.md) across 8 criteria |
 | `/review-pr`              | Review a PR, post inline comments per finding, submit REQUEST_CHANGES         |
 | `/tackle-backlog`         | Spawn one agent per backlog feature (coordinator for dependent features)       |
+| `/discover`               | Explore a project's architecture, data model, API surface, and UI             |
 
 ---
 
