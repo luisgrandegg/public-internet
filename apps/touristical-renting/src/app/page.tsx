@@ -1,10 +1,41 @@
 import { Input, Button, Card } from '@public-internet/design-system'
-import { MOCK_LISTINGS } from '@/lib/mock-data'
+import { getListings } from '@/lib/services/listings'
+
+// This page fetches live data from the database — disable static prerendering.
+export const dynamic = 'force-dynamic'
+import type { PropertyType } from '@/lib/types'
 import { ListingCard } from './listings/_components/ListingCard'
 import styles from './page.module.css'
 
-export default function HomePage() {
-  const featuredListings = MOCK_LISTINGS.slice(0, 4)
+export default async function HomePage() {
+  const { listings } = await getListings({ page: 1, limit: 4 })
+
+  const featuredListings = listings.map((l) => ({
+    id: l.id,
+    title: l.title,
+    description: l.description,
+    propertyType: l.propertyType as PropertyType,
+    location: {
+      city: l.city,
+      country: l.country,
+      coordinates: { lat: l.lat, lng: l.lng },
+    },
+    host: {
+      id: l.host.id,
+      name: l.host.name,
+      avatarUrl: l.host.image ?? null,
+      memberSince: '',
+      verifiedHost: false,
+    },
+    photos: l.photos.map((p) => ({ url: p.url, alt: p.alt })),
+    amenities: [],
+    nightlyRate: l.nightlyRate / 100, // cents → euros for display
+    maxGuests: l.maxGuests,
+    bedrooms: l.bedrooms,
+    bathrooms: l.bathrooms,
+    rating: null,
+    reviewCount: 0,
+  }))
 
   return (
     <>
@@ -45,11 +76,18 @@ export default function HomePage() {
       {/* Section 2 — Featured listings */}
       <section className={styles.section}>
         <h2 className={styles.sectionHeading}>Featured places</h2>
-        <div className={styles.listingsGrid}>
-          {featuredListings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
+        {featuredListings.length === 0 ? (
+          <p className={styles.emptyState}>
+            Be the first to list your property —{' '}
+            <a href="/host/listings/new">List your property</a>
+          </p>
+        ) : (
+          <div className={styles.listingsGrid}>
+            {featuredListings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Section 3 — How it works */}
