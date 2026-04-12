@@ -11,6 +11,10 @@ export type ListingActionResult =
   | { ok: true; listingId: string }
   | { ok: false; fieldErrors: Record<string, string>; globalError?: string }
 
+export type UpdateListingActionResult =
+  | { ok: true }
+  | { ok: false; error: string; fieldErrors?: Record<string, string> }
+
 export async function createListing(
   _prev: ListingActionResult | null,
   formData: FormData,
@@ -58,4 +62,52 @@ export async function createListing(
   } catch {
     return { ok: false, fieldErrors: {}, globalError: 'Could not create listing. Please try again.' }
   }
+}
+
+export async function updateListing(
+  _prevState: UpdateListingActionResult | null,
+  formData: FormData,
+): Promise<UpdateListingActionResult> {
+  const id = String(formData.get('_listingId') ?? '')
+  if (!id) return { ok: false, error: 'Missing listing ID' }
+
+  const requestHeaders = await headers()
+  const cookie = requestHeaders.get('cookie') ?? ''
+
+  const nightlyRateEuros = Number(formData.get('nightlyRate'))
+  const body = {
+    title: String(formData.get('title') ?? ''),
+    description: String(formData.get('description') ?? ''),
+    propertyType: String(formData.get('propertyType') ?? ''),
+    city: String(formData.get('city') ?? ''),
+    country: String(formData.get('country') ?? ''),
+    nightlyRate: nightlyRateEuros, // send euros; service layer converts to cents
+    maxGuests: Number(formData.get('maxGuests')),
+    bedrooms: Number(formData.get('bedrooms')),
+    bathrooms: Number(formData.get('bathrooms')),
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const res = await fetch(`${baseUrl}/api/listings/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      cookie,
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (res.ok) {
+    revalidatePath('/host')
+    return { ok: true }
+  }
+
+  const json = await res.json().catch(() => ({}))
+  const apiError = json?.error
+
+  if (res.status === 422 && apiError?.fields) {
+    return { ok: false, error: apiError.message ?? 'Validation failed', fieldErrors: apiError.fields }
+  }
+
+  return { ok: false, error: apiError?.message ?? 'Could not save changes. Please try again.' }
 }
