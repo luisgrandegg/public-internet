@@ -45,7 +45,7 @@ A slash command that audits AI-generated code in a PR or diff against all projec
 
 Same structure as `/rules-audit`:
 - ✅ PASS / ❌ FAIL / ⚠️ WARN per check, grouped by group
-- Auto-fix offered for: `console.log` removal (GROUP 2), barrel export gaps (GROUP 2)
+- Auto-fix offered for: `console.log` removal (GROUP 2), lifecycle gate errors (GROUP 4)
 - All ❌ FAIL items must be resolved before a PR can be opened
 
 ## Status
@@ -53,3 +53,13 @@ Same structure as `/rules-audit`:
 Planned — not yet implemented.
 
 Created as part of the `/rules-audit` PR (the original `/ai-audit` concept was split: rules audit → `/rules-audit`, code audit → this file).
+
+---
+
+## Completed
+
+**Completed:** 2026-04-12
+**PR:** feature/F-004-ai-audit-skill (pending)
+**Commit:** 9acf9d7
+**Audit:** N/A — command file only, no components
+**Notes:** Full instruction set covering all 4 check groups. Auto-fix offered for console.log removal and lifecycle gate failures. Report format mirrors /rules-audit for consistency.
