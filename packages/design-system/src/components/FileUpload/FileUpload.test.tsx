@@ -40,7 +40,7 @@ describe("FileUpload", () => {
   it("respects maxFiles constraint", async () => {
     const onFilesChange = vi.fn();
     const { container } = render(
-      <FileUpload label="Upload" onFilesChange={onFilesChange} maxFiles={2} />
+      <FileUpload label="Upload" onFilesChange={onFilesChange} maxFiles={2} multiple />
     );
 
     const input = container.querySelector(
