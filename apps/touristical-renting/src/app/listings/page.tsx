@@ -1,6 +1,6 @@
-import { MOCK_LISTINGS } from '@/lib/mock-data'
 import type { ListingFilters, PropertyType } from '@/lib/types'
 import { ListingsClientShell } from './_components/ListingsClientShell'
+import { getListings } from '@/lib/services/listings'
 
 interface ListingsPageProps {
   searchParams: Promise<{
@@ -11,6 +11,7 @@ interface ListingsPageProps {
     propertyType?: string
     minPrice?: string
     maxPrice?: string
+    page?: string
   }>
 }
 
@@ -31,33 +32,47 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
     maxPrice: params.maxPrice ?? '',
   }
 
-  const filtered = MOCK_LISTINGS.filter((listing) => {
-    if (filters.location) {
-      const q = filters.location.toLowerCase()
-      if (
-        !listing.location.city.toLowerCase().includes(q) &&
-        !listing.location.country.toLowerCase().includes(q)
-      ) {
-        return false
-      }
-    }
+  const propertyType = filters.propertyType || undefined
+  const minPrice = filters.minPrice ? Math.round(parseFloat(filters.minPrice) * 100) : undefined
+  const maxPrice = filters.maxPrice ? Math.round(parseFloat(filters.maxPrice) * 100) : undefined
+  const page = params.page ? parseInt(params.page, 10) : 1
 
-    if (filters.propertyType && listing.propertyType !== filters.propertyType) {
-      return false
-    }
-
-    if (filters.minPrice) {
-      const min = parseFloat(filters.minPrice)
-      if (!isNaN(min) && listing.nightlyRate < min) return false
-    }
-
-    if (filters.maxPrice) {
-      const max = parseFloat(filters.maxPrice)
-      if (!isNaN(max) && listing.nightlyRate > max) return false
-    }
-
-    return true
+  const { listings } = await getListings({
+    location: filters.location || undefined,
+    propertyType: propertyType as PropertyType | undefined,
+    minPrice,
+    maxPrice,
+    page,
+    limit: 20,
   })
 
-  return <ListingsClientShell listings={filtered} filters={filters} />
+  // Normalise DB listings to the Listing type expected by components
+  const normalisedListings = listings.map((l) => ({
+    id: l.id,
+    title: l.title,
+    description: l.description,
+    propertyType: l.propertyType as PropertyType,
+    location: {
+      city: l.city,
+      country: l.country,
+      coordinates: { lat: l.lat, lng: l.lng },
+    },
+    host: {
+      id: l.host.id,
+      name: l.host.name,
+      avatarUrl: l.host.image ?? null,
+      memberSince: '',
+      verifiedHost: false,
+    },
+    photos: l.photos.map((p) => ({ url: p.url, alt: p.alt })),
+    amenities: [],
+    nightlyRate: l.nightlyRate / 100, // cents → euros for display
+    maxGuests: l.maxGuests,
+    bedrooms: l.bedrooms,
+    bathrooms: l.bathrooms,
+    rating: null,
+    reviewCount: 0,
+  }))
+
+  return <ListingsClientShell listings={normalisedListings} filters={filters} />
 }

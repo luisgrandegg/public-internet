@@ -154,6 +154,107 @@ Add these scripts to each app's `package.json` when the database is wired up.
 
 ---
 
+## OpenAPI and SDK Rules
+
+Every app that exposes a REST API must maintain an OpenAPI 3.0 spec and a corresponding typed SDK package.
+
+### OpenAPI annotation rule
+
+**Every Route Handler exported function must have a `@swagger` JSDoc annotation** directly above it. The annotation documents the path, HTTP method, operationId, summary, tags, parameters, request body, and all possible responses.
+
+```typescript
+/**
+ * @swagger
+ * /api/listings:
+ *   get:
+ *     operationId: listings_list
+ *     summary: List listings
+ *     tags:
+ *       - listings
+ *     responses:
+ *       200:
+ *         description: Paginated list of listings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/PaginatedListings'
+ */
+export async function GET(req: NextRequest) { ... }
+```
+
+**Rules for annotations:**
+- `operationId` must be unique and follow the pattern `<resource>_<method>` (e.g. `listings_create`, `host_listings_list`)
+- All schemas go in `components/schemas` in the spec definition — never inline in annotations
+- The spec definition (schemas + server info) lives in `scripts/generate-spec.mjs`
+- Security requirement (`security: [{ sessionCookie: [] }]`) must be declared on every authenticated endpoint
+
+### OpenAPI spec generation
+
+Each app generates its `src/lib/openapi.json` from annotations:
+
+```bash
+pnpm --filter <app> generate:spec
+# reads src/app/api/**/route.ts JSDoc, writes src/lib/openapi.json
+```
+
+The generated `openapi.json` is committed to the repo and served at `GET /api/docs`.
+
+**After any Route Handler change** (new endpoint, new parameter, new response shape):
+1. Update the `@swagger` annotation on the affected function
+2. Run `pnpm --filter <app> generate:spec` to regenerate `openapi.json`
+3. Run `pnpm --filter <app>-sdk generate` to regenerate the SDK
+4. Build and type-check both packages before committing
+
+### SDK package
+
+Each app has a corresponding SDK package at `packages/<app-name>-sdk/`. The SDK:
+- Accepts an `ApiClient` interface (injected via constructor)
+- Groups methods by REST resource: `sdk.listings.list()`, `sdk.listings.create(body)`, etc.
+- Has a `host` namespace for host-scoped operations: `sdk.host.listings.list()`
+- All types are generated from `openapi.json` via `packages/<app>-sdk/generate.mjs`
+
+```typescript
+// Usage
+import { TouristicalRentingSDK, FetchApiClient } from '@public-internet/touristical-renting-sdk'
+
+const client = new FetchApiClient('http://localhost:3000')
+const sdk = new TouristicalRentingSDK(client)
+
+const { listings } = await sdk.listings.list({ location: 'Barcelona' })
+const listing = await sdk.listings.get(id)
+await sdk.listings.create({ title: '...', nightlyRate: 120, ... })
+```
+
+```typescript
+// ApiClient interface — implement this to swap HTTP clients
+interface ApiClient {
+  get<T>(path: string, params?: Record<string, string | number | boolean | undefined>): Promise<T>
+  post<T>(path: string, body?: unknown): Promise<T>
+  patch<T>(path: string, body?: unknown): Promise<T>
+  delete<T>(path: string): Promise<T>
+}
+```
+
+SDK generation command:
+```bash
+pnpm --filter <app>-sdk generate
+# reads src/lib/openapi.json from the app, writes src/generated/ in the SDK package
+```
+
+**Never edit files in `packages/<app>-sdk/src/generated/`** — they are overwritten on every `generate` run.
+
+### When to add a new app
+
+When adding a new app to the monorepo:
+1. Create `packages/<app-name>-sdk/` following the `touristical-renting-sdk` structure
+2. Wire up `generate:spec` in the app's `package.json` and `generate` in the SDK's `package.json`
+3. Annotate every Route Handler on the first commit that introduces it — never leave annotations as TODO
+
+---
+
 ## Flagging Gaps
 
 If a UI requirement cannot be met with existing design system components, **do not silently work around it**. Flag it explicitly and stop:

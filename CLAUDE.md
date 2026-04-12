@@ -35,12 +35,19 @@ structured environment that guarantees production-quality output.
 ├── apps/
 │   └── touristical-renting/  # Stay platform — commission-free tourist rental
 ├── packages/
-│   └── design-system/        # Core component library + tokens
+│   ├── design-system/        # Core component library + tokens
+│   │   ├── src/
+│   │   │   ├── components/   # Production components
+│   │   │   ├── experiments/  # A/B variants (never imported by apps)
+│   │   │   ├── tokens/       # Design tokens (CSS vars + TS object)
+│   │   │   └── index.ts      # Barrel export
+│   │   └── package.json
+│   └── touristical-renting-sdk/  # Auto-generated typed SDK for the touristical-renting API
 │       ├── src/
-│       │   ├── components/   # Production components
-│       │   ├── experiments/  # A/B variants (never imported by apps)
-│       │   ├── tokens/       # Design tokens (CSS vars + TS object)
-│       │   └── index.ts      # Barrel export
+│       │   ├── client.ts         # ApiClient interface + FetchApiClient
+│       │   ├── index.ts          # Barrel export
+│       │   └── generated/        # Generated from openapi.json — do not edit manually
+│       ├── generate.mjs          # SDK generator script
 │       └── package.json
 ├── .claude/
 │   └── commands/             # Custom slash commands for designers
@@ -58,7 +65,7 @@ structured environment that guarantees production-quality output.
 Each subdirectory has its own `CLAUDE.md` with context scoped to that area:
 
 - `packages/design-system/CLAUDE.md` — tokens, components, conventions, Storybook
-- `apps/CLAUDE.md` — app registry, import rules, composition patterns, gap flagging
+- `apps/CLAUDE.md` — app registry, import rules, composition patterns, gap flagging, OpenAPI + SDK rules
 - `apps/touristical-renting/CLAUDE.md` — domain vocabulary, routes, constitution alignment for the Stay platform
 
 ---

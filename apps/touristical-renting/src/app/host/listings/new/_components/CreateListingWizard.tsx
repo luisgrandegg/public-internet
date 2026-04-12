@@ -59,7 +59,7 @@ export function CreateListingWizard() {
   const [draft, setDraft] = useState<Partial<CreateListingDraft>>(INITIAL_DRAFT)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const [submitState, submitAction, isPending] = useActionState<{ ok: boolean } | null, FormData>(
+  const [submitState, submitAction, isPending] = useActionState<import('@/lib/actions/listings').ListingActionResult | null, FormData>(
     createListing,
     null
   )

@@ -1,0 +1,112 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── better-auth tables ──────────────────────────────────────────────────────
+// These are managed by better-auth. Do not rename fields or remove models.
+// Extend User with app-specific fields below the required ones.
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  isHost        Boolean   @default(false)
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+  listings      Listing[]
+  bookings      Booking[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+}
+
+// ─── App tables ──────────────────────────────────────────────────────────────
+
+model Listing {
+  id           String    @id @default(cuid())
+  title        String
+  description  String
+  propertyType String    // 'flat' | 'house' | 'room' | 'studio'
+  city         String
+  country      String
+  lat          Float     @default(0)
+  lng          Float     @default(0)
+  // Stored in cents to avoid floating-point rounding errors.
+  // Display as: (nightlyRate / 100).toFixed(2)
+  nightlyRate  Int
+  maxGuests    Int
+  bedrooms     Int
+  bathrooms    Int
+  photos       Photo[]
+  host         User      @relation(fields: [hostId], references: [id])
+  hostId       String
+  bookings     Booking[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Photo {
+  id        String  @id @default(cuid())
+  url       String
+  alt       String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId String
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  listingId String
+  guest     User     @relation(fields: [guestId], references: [id])
+  guestId   String
+  checkIn   DateTime
+  checkOut  DateTime
+  // Total cost in cents — the complete price paid. No additional fees.
+  totalCost Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
