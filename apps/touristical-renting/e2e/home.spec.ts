@@ -6,34 +6,35 @@ test.describe('Home page', () => {
   })
 
   test('renders the page heading', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Find your next place to stay' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Find your next place to stay', exact: true })).toBeVisible()
   })
 
   test('renders the search form with all fields', async ({ page }) => {
-    await expect(page.getByLabel('Where are you going?')).toBeVisible()
-    await expect(page.getByLabel('Check in')).toBeVisible()
-    await expect(page.getByLabel('Check out')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Search' })).toBeVisible()
+    await expect(page.getByLabel('Where are you going?', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Check in', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Check out', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Search', exact: true })).toBeVisible()
   })
 
   test('search form navigates to /listings with query params', async ({ page }) => {
-    await page.getByLabel('Where are you going?').fill('Barcelona')
-    await page.getByRole('button', { name: 'Search' }).click()
+    await page.getByLabel('Where are you going?', { exact: true }).fill('Barcelona')
+    await page.getByRole('button', { name: 'Search', exact: true }).click()
     await expect(page).toHaveURL(/\/listings\?.*location=Barcelona/)
   })
 
   test('renders the "Featured places" section with listing cards', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Featured places' })).toBeVisible()
-    // Home page uses MOCK_LISTINGS — cards are always present
-    const cards = page.locator('article')
+    await expect(page.getByRole('heading', { name: 'Featured places', exact: true })).toBeVisible()
+    // ListingCard renders as <a> links to /listings/:id
+    const cards = page.locator('a[href^="/listings/"]')
     await expect(cards.first()).toBeVisible()
   })
 
   test('renders the "How it works" section with 3 steps', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'How it works' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Contact the host directly' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Stay' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'How it works', exact: true })).toBeVisible()
+    // Use exact: true to avoid matching the h1 hero heading which contains "stay"
+    await expect(page.getByRole('heading', { name: 'Search', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Contact the host directly', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Stay', exact: true })).toBeVisible()
   })
 
   test('has no urgency copy', async ({ page }) => {
@@ -44,9 +45,10 @@ test.describe('Home page', () => {
   })
 
   test('site header contains navigation links', async ({ page }) => {
-    await expect(page.getByRole('link', { name: 'Find a place' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Host your space' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible()
+    const header = page.getByRole('banner')
+    await expect(header.getByRole('link', { name: 'Find a place', exact: true })).toBeVisible()
+    await expect(header.getByRole('link', { name: 'Host your space', exact: true })).toBeVisible()
+    await expect(header.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible()
   })
 
   test('has a skip-to-main-content link', async ({ page }) => {
