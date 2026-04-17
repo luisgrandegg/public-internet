@@ -137,11 +137,15 @@ enum OrderStatus {
 }
 
 model OrderItem {
-  id         String   @id @default(cuid())
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  order      Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId    String
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-  menuItemId String
+  // menuItem may be null after a hard delete of the source MenuItem —
+  // unitPrice is snapshotted at order time so the order record stays intact.
+  menuItem   MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  menuItemId String?
+  // Name snapshot — lets us render completed orders even after the menu item is deleted.
+  nameSnapshot String?
   quantity   Int
   // Unit price snapshotted at order time — protects against menu price changes
   unitPrice  Int

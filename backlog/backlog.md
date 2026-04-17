@@ -18,7 +18,6 @@ Active features for the public-internet monorepo. Check this before starting wor
 | F-028 | Eats: order flow — cart + cost confirmation + `POST /api/orders` | Planned | — |
 | F-029 | Eats: order history & detail — `/orders`, `/orders/[id]` + order API | Planned | — |
 | F-031 | Eats: restaurant dashboard + order management — `/restaurant` + order status API | Planned | — |
-| F-032 | Eats: menu management — `/restaurant/[id]/menu` + menu CRUD API | Planned | — |
 | F-033 | Eats: courier registration — `/courier/register` + pay model explanation | Planned | — |
 | F-034 | Eats: courier dashboard + delivery management — `/courier` + delivery API | Planned | — |
 | F-035 | Eats: profile page — `/profile`, sign-out | Planned | — |
