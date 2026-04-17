@@ -13,5 +13,4 @@ Active features for the public-internet monorepo. Check this before starting wor
 | F-021 | Enquiry system (Guest → Host messaging) | Planned | — |
 | F-022 | Mutual review system | Planned | — |
 | F-023 | User profile (`/profile`) | Planned | — |
-| F-035 | Eats: profile page — `/profile`, sign-out | Planned | — |
 | F-036 | Eats: OpenAPI spec annotation + eats-sdk generation | Planned | — |
