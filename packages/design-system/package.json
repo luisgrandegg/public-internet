@@ -10,7 +10,7 @@
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./styles": "./dist/index.css"
+    "./styles": "./src/tokens/tokens.css"
   },
   "scripts": {
     "build": "tsup",
