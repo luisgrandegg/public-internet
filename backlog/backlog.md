@@ -13,7 +13,6 @@ Active features for the public-internet monorepo. Check this before starting wor
 | F-021 | Enquiry system (Guest → Host messaging) | Planned | — |
 | F-022 | Mutual review system | Planned | — |
 | F-023 | User profile (`/profile`) | Planned | — |
-| F-025 | Eats: auth UI — sign-in, sign-up, forgot-password pages | Planned | — |
 | F-026 | Eats: restaurant browse — `/restaurants` page + `GET /api/restaurants` | Planned | — |
 | F-027 | Eats: restaurant detail + menu — `/restaurants/[id]` + menu API | Planned | — |
 | F-028 | Eats: order flow — cart + cost confirmation + `POST /api/orders` | Planned | — |
