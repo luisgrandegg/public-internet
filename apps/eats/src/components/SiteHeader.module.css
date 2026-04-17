@@ -54,6 +54,9 @@
 
 .actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
 }
 
 .signinLink {

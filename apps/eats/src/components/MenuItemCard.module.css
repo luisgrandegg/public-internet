@@ -1,0 +1,39 @@
+.card {
+  padding: var(--ds-space-5, var(--ds-space-4));
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ds-space-4);
+}
+
+.price {
+  font-size: var(--ds-font-size-md);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-brand-primary);
+  white-space: nowrap;
+}
+
+.category {
+  color: var(--ds-color-neutral-700);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--ds-font-size-xs);
+}
+
+.description {
+  color: var(--ds-color-neutral-700);
+  line-height: var(--ds-line-height-normal);
+  font-size: var(--ds-font-size-sm);
+}
+
+.footer {
+  margin-top: var(--ds-space-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  align-items: center;
+  justify-content: space-between;
+}

@@ -1,0 +1,36 @@
+.root {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ds-space-8) var(--ds-space-4);
+  background-color: var(--ds-color-neutral-100);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  margin-bottom: var(--ds-space-4);
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-700);
+  text-decoration: none;
+  width: 100%;
+  max-width: 420px;
+}
+
+.backLink:hover {
+  color: var(--ds-color-neutral-900);
+}
+
+.backLink:focus-visible {
+  outline: 2px solid var(--ds-color-brand-primary);
+  outline-offset: 2px;
+  border-radius: var(--ds-radius-sm);
+}
+
+.cardWrapper {
+  width: 100%;
+  max-width: 420px;
+}
