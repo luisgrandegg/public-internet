@@ -30,3 +30,24 @@ test.describe('Restaurants browse', () => {
     expect([200, 422]).toContain(res.status())
   })
 })
+
+test.describe('Restaurant detail', () => {
+  test('unknown restaurant yields 404 page', async ({ page }) => {
+    const response = await page.goto('/restaurants/does-not-exist')
+    expect(response?.status()).toBe(404)
+  })
+
+  test('detail API returns 404 for unknown id', async ({ request }) => {
+    const res = await request.get('/api/restaurants/does-not-exist', {
+      failOnStatusCode: false,
+    })
+    expect(res.status()).toBe(404)
+  })
+
+  test('menu API returns 404 for unknown restaurant', async ({ request }) => {
+    const res = await request.get('/api/restaurants/does-not-exist/menu', {
+      failOnStatusCode: false,
+    })
+    expect(res.status()).toBe(404)
+  })
+})
