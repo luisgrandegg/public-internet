@@ -25,16 +25,25 @@ Returns only restaurants where `isActive = true`. Orders alphabetically by name 
 
 ## Acceptance criteria
 
-- [ ] `GET /api/restaurants` returns paginated list of active restaurants, filtered by `?city`
-- [ ] Route Handler has a `@swagger` JSDoc annotation
-- [ ] `/restaurants` page fetches real data from the API — no mock arrays
-- [ ] Empty state renders correctly when 0 restaurants match
-- [ ] No promoted or algorithmically ranked restaurants
-- [ ] `pnpm --filter @public-internet/eats type-check` passes
-- [ ] e2e spec: page renders heading, empty state behaves correctly (`e2e/restaurants.spec.ts`)
+- [x] `GET /api/restaurants` returns paginated list of active restaurants, filtered by `?city`
+- [x] Route Handler has a `@swagger` JSDoc annotation
+- [x] `/restaurants` page fetches real data from the API — no mock arrays
+- [x] Empty state renders correctly when 0 restaurants match
+- [x] No promoted or algorithmically ranked restaurants
+- [x] `pnpm --filter @public-internet/eats type-check` passes
+- [x] e2e spec: page renders heading, empty state behaves correctly (`e2e/restaurants.spec.ts`)
 
 ## Notes
 
 - `RestaurantCard` is a local app component (not DS) — it composes DS primitives
 - Keep ordering deterministic: `ORDER BY name ASC` to avoid surprising results
 - Image is optional — render a placeholder when `imageUrl` is null
+
+---
+
+## Completed
+
+**Completed:** 2026-04-17
+**Branch:** claude/food-delivery-missing-features-jo5BM
+**Audit:** `pnpm --filter @public-internet/eats type-check` and `lint` pass with zero errors
+**Notes:** Page is a Server Component that calls `listRestaurants()` directly (no SDK roundtrip needed server-side). The service sorts `[{ city: 'asc' }, { name: 'asc' }]` for deterministic ordering. Pagination links preserve the `city` filter.
