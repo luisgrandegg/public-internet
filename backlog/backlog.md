@@ -13,7 +13,6 @@ Active features for the public-internet monorepo. Check this before starting wor
 | F-021 | Enquiry system (Guest → Host messaging) | Planned | — |
 | F-022 | Mutual review system | Planned | — |
 | F-023 | User profile (`/profile`) | Planned | — |
-| F-029 | Eats: order history & detail — `/orders`, `/orders/[id]` + order API | Planned | — |
 | F-031 | Eats: restaurant dashboard + order management — `/restaurant` + order status API | Planned | — |
 | F-033 | Eats: courier registration — `/courier/register` + pay model explanation | Planned | — |
 | F-034 | Eats: courier dashboard + delivery management — `/courier` + delivery API | Planned | — |

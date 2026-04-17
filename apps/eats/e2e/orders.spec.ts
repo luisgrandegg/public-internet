@@ -33,4 +33,14 @@ test.describe('Orders history', () => {
     await page.goto('/orders')
     await expect(page).toHaveURL(/\/auth\/signin/)
   })
+
+  test('/orders/[id] redirects unauthenticated users to sign-in', async ({ page }) => {
+    await page.goto('/orders/any-id')
+    await expect(page).toHaveURL(/\/auth\/signin/)
+  })
+
+  test('GET /api/orders/[id] rejects unauthenticated', async ({ request }) => {
+    const res = await request.get('/api/orders/any-id', { failOnStatusCode: false })
+    expect(res.status()).toBe(401)
+  })
 })
