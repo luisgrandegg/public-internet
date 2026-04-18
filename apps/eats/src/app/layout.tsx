@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     'Order food from local restaurants with zero commission. A flat infrastructure fee is the only cost — transparent and published. Public infrastructure for the food delivery economy.',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode

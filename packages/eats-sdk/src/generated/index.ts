@@ -1,3 +1,11 @@
 // GENERATED — do not edit manually.
 export * from './types.js'
+export { CourierDeliveriesResource } from './courier-deliveries.resource.js'
+export { OrdersResource } from './orders.resource.js'
+export { RestaurantMenuResource } from './restaurant-menu.resource.js'
+export { RestaurantOrdersResource } from './restaurant-orders.resource.js'
+export { RestaurantRestaurantsMenuResource } from './restaurant-restaurants-menu.resource.js'
+export { RestaurantRestaurantsResource } from './restaurant-restaurants.resource.js'
+export { RestaurantsMenuResource } from './restaurants-menu.resource.js'
+export { RestaurantsResource } from './restaurants.resource.js'
 export { EatsSDK } from './sdk.js'

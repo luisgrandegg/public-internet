@@ -7,7 +7,7 @@
  * Default input: ../../apps/eats/src/lib/openapi.json
  * Output: src/generated/  (types.ts, *.resource.ts, index.ts)
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync } from 'fs'
 import { join, dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -15,6 +15,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const outDir = join(__dirname, 'src', 'generated')
 
 mkdirSync(outDir, { recursive: true })
+
+// Clean stale generated files before regenerating to avoid dead imports.
+try {
+  for (const file of readdirSync(outDir)) {
+    if (file.endsWith('.ts')) rmSync(join(outDir, file))
+  }
+} catch {
+  // ignore — directory may not exist yet
+}
 
 // ─── Read spec ────────────────────────────────────────────────────────────────
 
@@ -167,7 +176,7 @@ function buildUrl(path, pathParams) {
 
 function generateResourceClass(group, methods) {
   const className = group
-    .split('.')
+    .split(/[.\-]/)
     .map(s => s.charAt(0).toUpperCase() + s.slice(1))
     .join('') + 'Resource'
 
@@ -252,6 +261,18 @@ function generateResourceClass(group, methods) {
   return { className, content: lines.join('\n') }
 }
 
+/**
+ * Convert a dot- or hyphen-separated group key to a safe camelCase identifier.
+ * "restaurants.menu" → "restaurantsMenu"
+ * "become-host"      → "becomeHost"
+ */
+function groupToPropertyKey(group) {
+  return group
+    .split(/[.\-]/)
+    .map((s, i) => (i === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1)))
+    .join('')
+}
+
 function generateSdkClass(resourceMap) {
   const lines = [
     '// GENERATED — do not edit manually. Run: pnpm --filter @public-internet/eats-sdk generate',
@@ -264,14 +285,21 @@ function generateSdkClass(resourceMap) {
 
   for (const [group, { className, fileName }] of Object.entries(resourceMap)) {
     imports.push(`import { ${className} } from './${fileName}.js'`)
-    const parts = group.split('.')
-    if (parts.length === 1) {
-      topLevelFields.push({ key: group, className })
+
+    // Special namespaces: "courier.*" and "restaurant.*" become nested fields.
+    // Everything else — including multi-segment groups like "restaurants.menu" —
+    // becomes a camelCase top-level field so we always get a valid identifier.
+    if (group.startsWith('courier.')) {
+      const subKey = groupToPropertyKey(group.replace(/^courier\./, ''))
+      if (!nestedFields.courier) nestedFields.courier = []
+      nestedFields.courier.push({ key: subKey, className })
+    } else if (group.startsWith('restaurant.')) {
+      const subKey = groupToPropertyKey(group.replace(/^restaurant\./, ''))
+      if (!nestedFields.restaurant) nestedFields.restaurant = []
+      nestedFields.restaurant.push({ key: subKey, className })
     } else {
-      const ns = parts[0]
-      const subKey = parts.slice(1).join('.')
-      if (!nestedFields[ns]) nestedFields[ns] = []
-      nestedFields[ns].push({ key: subKey, className })
+      const key = groupToPropertyKey(group)
+      topLevelFields.push({ key, className })
     }
   }
 
