@@ -82,7 +82,9 @@ pnpm --filter @public-internet/design-system storybook
 ```
 /
 ├── apps/
-│   └── touristical-renting/  # Stay platform — commission-free tourist rental (Next.js)
+│   ├── touristical-renting/  # Stay platform — commission-free tourist rental (Next.js)
+│   ├── eats/                 # Eats platform — commission-free food delivery (Next.js)
+│   └── voice-bridge/         # Dev tool — voice-first PR-change capture (Next.js)
 ├── packages/
 │   └── design-system/        # Component library + design tokens
 │       ├── src/
@@ -135,7 +137,19 @@ This repo uses Claude Code with custom slash commands for designer-facing workfl
 | `/create-pr` | Create a PR for the current branch and start CI watch |
 | `/watch-pr` | Poll CI; fix failures and resolve review comments automatically |
 | `/review-pr` | Review a PR, post inline comments per finding, submit REQUEST_CHANGES |
+| `/voice-changes` | Apply the most recent voice spec from `.voice-changes/` to the current branch |
 | `/rules-audit` | Score the quality of AI rules across 8 criteria |
+
+### Voice toolchain (optional)
+
+For designers and PMs who want to dictate PR changes instead of typing them, the `apps/voice-bridge` companion captures voice via [ElevenLabs Conversational AI](https://elevenlabs.io/conversational-ai), confirms intent, and writes a structured change spec that `/voice-changes` applies through Claude Code. See [ADR-005](./decisions/ADR-005-voice-input-via-elevenlabs.md) for the scoping decision and the documented migration path to a self-hosted alternative.
+
+```bash
+cp apps/voice-bridge/.env.example apps/voice-bridge/.env.local
+# fill in ELEVENLABS_AGENT_ID + ELEVENLABS_API_KEY (or leave blank for stub mode)
+pnpm --filter @public-internet/voice-bridge dev
+# → open http://localhost:3100/pr/<your-pr-number>
+```
 
 ---
 
@@ -181,6 +195,8 @@ Significant decisions are documented in [`decisions/`](./decisions/):
 | [ADR-001](./decisions/ADR-001-css-modules-over-tailwind.md) | CSS Modules over Tailwind / CSS-in-JS |
 | [ADR-002](./decisions/ADR-002-static-experiment-isolation.md) | Experiments isolated in `src/experiments/` vs. runtime feature flags |
 | [ADR-003](./decisions/ADR-003-claude-md-context-files.md) | CLAUDE.md context files over MCP server or system prompt |
+| [ADR-004](./decisions/ADR-004-full-stack-rest-api.md) | Full-stack features with REST API — no placeholder implementations |
+| [ADR-005](./decisions/ADR-005-voice-input-via-elevenlabs.md) | Voice input for the designer toolchain via ElevenLabs Conversational AI |
 
 ---
 

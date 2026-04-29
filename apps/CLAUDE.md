@@ -8,6 +8,7 @@
 |---|---|---|
 | `touristical-renting` | `apps/touristical-renting/` | Commission-free tourist rental platform (the Stay platform from CONSTITUTION.md) |
 | `eats` | `apps/eats/` | Commission-free food delivery platform (the Eats platform from CONSTITUTION.md) |
+| `voice-bridge` | `apps/voice-bridge/` | Developer tool — voice-first PR-change capture. Not a Public Internet platform. See [ADR-005](../decisions/ADR-005-voice-input-via-elevenlabs.md). |
 
 Each app has its own `CLAUDE.md` with context scoped to that platform. Read it before working in that app.
 
