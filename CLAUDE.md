@@ -33,7 +33,9 @@ structured environment that guarantees production-quality output.
 ```
 /
 ├── apps/
-│   └── touristical-renting/  # Stay platform — commission-free tourist rental
+│   ├── touristical-renting/  # Stay platform — commission-free tourist rental
+│   ├── eats/                 # Eats platform — commission-free food delivery
+│   └── voice-bridge/         # Dev tool — voice-first PR-change capture (see ADR-005)
 ├── packages/
 │   ├── design-system/        # Core component library + tokens
 │   │   ├── src/
@@ -67,6 +69,7 @@ Each subdirectory has its own `CLAUDE.md` with context scoped to that area:
 - `packages/design-system/CLAUDE.md` — tokens, components, conventions, Storybook
 - `apps/CLAUDE.md` — app registry, import rules, composition patterns, gap flagging, OpenAPI + SDK rules
 - `apps/touristical-renting/CLAUDE.md` — domain vocabulary, routes, constitution alignment for the Stay platform
+- `apps/voice-bridge/CLAUDE.md` — voice toolchain rules, ElevenLabs provider boundary, spec format
 
 ---
 
@@ -81,6 +84,7 @@ Before making a choice that touches styling strategy, experiment isolation, or c
 | [ADR-002](./decisions/ADR-002-static-experiment-isolation.md) | Experiments isolated in `src/experiments/` vs. runtime feature flags |
 | [ADR-003](./decisions/ADR-003-claude-md-context-files.md) | CLAUDE.md context files over MCP server or system prompt |
 | [ADR-004](./decisions/ADR-004-full-stack-rest-api.md) | Full-stack features with REST API — no placeholder implementations |
+| [ADR-005](./decisions/ADR-005-voice-input-via-elevenlabs.md) | Voice input for the designer toolchain via ElevenLabs Conversational AI |
 
 If you are about to make a decision that contradicts an existing ADR, stop and flag it explicitly rather than silently overriding it. If the decision genuinely needs to change, write a new ADR that supersedes the old one.
 
@@ -145,6 +149,18 @@ Slash commands for designers live in `.claude/commands/`. Use them to start guid
 | `/review-pr`              | Review a PR, post inline comments per finding, submit REQUEST_CHANGES         |
 | `/tackle-backlog`         | Spawn one agent per backlog feature (coordinator for dependent features)       |
 | `/discover`               | Explore a project's architecture, data model, API surface, and UI             |
+| `/voice-changes`          | Apply the most recent voice spec from `.voice-changes/` to the current branch |
+
+---
+
+## Voice Toolchain
+
+Designers and PMs can dictate PR changes by voice instead of typing prompts. The flow has two halves:
+
+1. **`apps/voice-bridge`** — Next.js companion app at `http://localhost:3100`. Open `/pr/<n>`, hold to talk, the ElevenLabs Conversational AI agent confirms intent, and writes a spec to `.voice-changes/`.
+2. **`/voice-changes`** — Claude Code slash command that reads the newest spec, asks for confirmation, applies the edits, runs `pnpm type-check && pnpm lint`, and commits.
+
+Spec files are gitignored. Read [ADR-005](./decisions/ADR-005-voice-input-via-elevenlabs.md) for the scoping decision and the documented migration path away from ElevenLabs.
 
 ---
 

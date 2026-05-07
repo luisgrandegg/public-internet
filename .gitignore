@@ -28,3 +28,7 @@ next-env.d.ts
 
 # Claude Code local settings (personal overrides — not shared)
 .claude/settings.local.json
+
+# Voice-bridge change specs (transcripts may contain incidental sensitive content)
+.voice-changes/*.md
+!.voice-changes/applied/.gitkeep
