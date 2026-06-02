@@ -2,7 +2,7 @@
 
 Open-source replacements for extractive platforms — built for municipalities, cooperatives, and civic infrastructure.
 
-> Read [CONSTITUTION.md](./CONSTITUTION.md) for the principles that govern every product and technical decision in this repo.
+> Read [MANIFESTO.md](./MANIFESTO.md) for why this project exists, and [CONSTITUTION.md](./CONSTITUTION.md) for the principles that govern every product and technical decision in this repo.
 
 ---
 
