@@ -186,6 +186,18 @@ Every PR must pass:
 
 ---
 
+## Deployment
+
+Each app is designed to run as an independent local node — a municipality or cooperative can deploy one without the others. Per-app deployment guides:
+
+| App | Guide |
+|---|---|
+| **Stay** (`touristical-renting`) | [apps/touristical-renting/DEPLOYMENT.md](./apps/touristical-renting/DEPLOYMENT.md) |
+| **Eats** (`eats`) | [apps/eats/DEPLOYMENT.md](./apps/eats/DEPLOYMENT.md) |
+| **voice-bridge** (internal tool) | [apps/voice-bridge/DEPLOYMENT.md](./apps/voice-bridge/DEPLOYMENT.md) |
+
+---
+
 ## Architecture decisions
 
 Significant decisions are documented in [`decisions/`](./decisions/):
