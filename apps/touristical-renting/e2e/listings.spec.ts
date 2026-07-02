@@ -34,4 +34,56 @@ test.describe('Listings search page', () => {
     await expect(page).toHaveURL(/\/listings\?.*location=Madrid/)
     await expect(page.getByText(/\d+ place/)).toBeVisible()
   })
+
+  test('search from home carries dates and guests into the URL', async ({ page }) => {
+    await page.goto('/')
+    await page.getByLabel('Check in').fill('2027-08-01')
+    await page.getByLabel('Check out').fill('2027-08-08')
+    await page.getByLabel('Guests').fill('2')
+    await page.getByRole('button', { name: 'Search' }).click()
+    await expect(page).toHaveURL(/\/listings\?.*checkIn=2027-08-01/)
+    await expect(page).toHaveURL(/checkOut=2027-08-08/)
+    await expect(page).toHaveURL(/guests=2/)
+    await expect(page.getByText(/\d+ place/)).toBeVisible()
+  })
+})
+
+test.describe('Search by dates and guests', () => {
+  test('renders results or empty state with date and guest params', async ({ page }) => {
+    await page.goto('/listings?guests=2&checkIn=2027-08-01&checkOut=2027-08-08')
+    // Page renders without crashing — the results count is always shown
+    await expect(page.getByText(/\d+ place/)).toBeVisible()
+  })
+
+  test('shows active filters for dates and guests', async ({ page }) => {
+    await page.goto('/listings?guests=2&checkIn=2027-08-01&checkOut=2027-08-08')
+    const activeFilters = page.getByRole('list', { name: 'Active search filters' })
+    await expect(activeFilters).toBeVisible()
+    await expect(activeFilters.getByText(/Check in/)).toBeVisible()
+    await expect(activeFilters.getByText(/Check out/)).toBeVisible()
+    await expect(activeFilters.getByText(/2 guests/)).toBeVisible()
+  })
+
+  test('API returns 422 for an invalid date range', async ({ request }) => {
+    const response = await request.get('/api/listings?checkIn=2027-08-08&checkOut=2027-08-01')
+    expect(response.status()).toBe(422)
+    const body = await response.json()
+    expect(body.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  test('API returns 422 when only one end of the date range is provided', async ({ request }) => {
+    const response = await request.get('/api/listings?checkIn=2027-08-01')
+    expect(response.status()).toBe(422)
+    const body = await response.json()
+    expect(body.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  test('API accepts a valid date range and guests', async ({ request }) => {
+    const response = await request.get(
+      '/api/listings?checkIn=2027-08-01&checkOut=2027-08-08&guests=2',
+    )
+    expect(response.status()).toBe(200)
+    const body = await response.json()
+    expect(Array.isArray(body.data.listings)).toBe(true)
+  })
 })

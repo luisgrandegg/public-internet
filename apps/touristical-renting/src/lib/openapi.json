@@ -655,6 +655,37 @@
           }
         }
       },
+      "GuestEnquiry": {
+        "description": "An enquiry as seen by the guest who sent it, including the listing it concerns. reply and repliedAt are null until the host replies.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Enquiry"
+          },
+          {
+            "type": "object",
+            "required": [
+              "listing"
+            ],
+            "properties": {
+              "listing": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "title"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
       "Review": {
         "type": "object",
         "required": [
@@ -1098,6 +1129,50 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enquiries": {
+      "get": {
+        "operationId": "enquiries_list",
+        "summary": "List the authenticated guest's enquiries, newest first",
+        "tags": [
+          "enquiries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enquiries sent by the guest, each including the listing it concerns and the host reply (null until the host replies)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/GuestEnquiry"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
             "content": {
               "application/json": {
                 "schema": {
@@ -1795,6 +1870,33 @@
               "type": "integer"
             },
             "description": "Maximum nightly rate in cents"
+          },
+          {
+            "in": "query",
+            "name": "checkIn",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Desired check-in date (YYYY-MM-DD). Must be provided together with checkOut and be before it. Listings with a Booking or AvailabilityBlock overlapping [checkIn, checkOut) are excluded from results.\n"
+          },
+          {
+            "in": "query",
+            "name": "checkOut",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Desired check-out date (YYYY-MM-DD). Must be provided together with checkIn and be after it."
+          },
+          {
+            "in": "query",
+            "name": "guests",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Number of guests. Only listings with maxGuests >= guests are returned."
           },
           {
             "in": "query",

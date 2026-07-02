@@ -7,15 +7,33 @@ import type {
 
 /**
  * Paginated list of active restaurants.
+ * Supports filtering by city (exact, case-insensitive), free-text keyword
+ * (`q` — matched against name OR description, case-insensitive) and menu
+ * category (`category` — restaurants with at least one available MenuItem
+ * in that category, case-insensitive).
  * Constitution: deterministic alphabetical ordering — no promoted placements.
  */
 export async function listRestaurants(query: RestaurantsQuery) {
-  const { city, page, limit } = query
+  const { city, q, category, page, limit } = query
   const skip = (page - 1) * limit
 
   const where = {
     isActive: true,
     ...(city && { city: { equals: city, mode: 'insensitive' as const } }),
+    ...(q && {
+      OR: [
+        { name: { contains: q, mode: 'insensitive' as const } },
+        { description: { contains: q, mode: 'insensitive' as const } },
+      ],
+    }),
+    ...(category && {
+      menuItems: {
+        some: {
+          isAvailable: true,
+          category: { equals: category, mode: 'insensitive' as const },
+        },
+      },
+    }),
   }
 
   const [restaurants, total] = await Promise.all([
@@ -29,6 +47,32 @@ export async function listRestaurants(query: RestaurantsQuery) {
   ])
 
   return { restaurants, total, page, limit }
+}
+
+/**
+ * Distinct categories of available menu items across active restaurants.
+ * Feeds the category filter on /restaurants. Deduplicated case-insensitively
+ * (first spelling encountered wins) and sorted alphabetically — neutral
+ * ordering, no promoted categories.
+ */
+export async function listMenuItemCategories(): Promise<string[]> {
+  const rows = await db.menuItem.findMany({
+    where: { isAvailable: true, restaurant: { isActive: true } },
+    distinct: ['category'],
+    select: { category: true },
+    orderBy: { category: 'asc' },
+  })
+
+  const seen = new Set<string>()
+  const categories: string[] = []
+  for (const { category } of rows) {
+    const key = category.toLowerCase()
+    if (!seen.has(key)) {
+      seen.add(key)
+      categories.push(category)
+    }
+  }
+  return categories.sort((a, b) => a.localeCompare(b))
 }
 
 export async function getRestaurantById(id: string, opts: { includeInactive?: boolean } = {}) {

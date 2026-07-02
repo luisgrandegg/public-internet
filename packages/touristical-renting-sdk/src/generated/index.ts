@@ -2,6 +2,7 @@
 export * from './types.js'
 export { BookingsReviewResource } from './bookings-review.resource.js'
 export { BookingsResource } from './bookings.resource.js'
+export { EnquiriesResource } from './enquiries.resource.js'
 export { HostBookingsResource } from './host-bookings.resource.js'
 export { HostEnquiriesReplyResource } from './host-enquiries-reply.resource.js'
 export { HostEnquiriesResource } from './host-enquiries.resource.js'

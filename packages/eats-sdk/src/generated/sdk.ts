@@ -8,11 +8,13 @@ import { RestaurantRestaurantsMenuResource } from './restaurant-restaurants-menu
 import { RestaurantRestaurantsResource } from './restaurant-restaurants.resource.js'
 import { RestaurantsMenuResource } from './restaurants-menu.resource.js'
 import { RestaurantsResource } from './restaurants.resource.js'
+import { RestaurantsCategoriesResource } from './restaurants-categories.resource.js'
 
 export class EatsSDK {
   readonly orders: OrdersResource
   readonly restaurantsMenu: RestaurantsMenuResource
   readonly restaurants: RestaurantsResource
+  readonly restaurantsCategories: RestaurantsCategoriesResource
   readonly courier: {
     deliveries: CourierDeliveriesResource
   }
@@ -27,6 +29,7 @@ export class EatsSDK {
     this.orders = new OrdersResource(client)
     this.restaurantsMenu = new RestaurantsMenuResource(client)
     this.restaurants = new RestaurantsResource(client)
+    this.restaurantsCategories = new RestaurantsCategoriesResource(client)
     this.courier = {
       deliveries: new CourierDeliveriesResource(client),
     }

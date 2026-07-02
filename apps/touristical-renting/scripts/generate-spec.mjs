@@ -281,6 +281,27 @@ const options = {
             repliedAt: { type: 'string', format: 'date-time', nullable: true },
           },
         },
+        GuestEnquiry: {
+          description:
+            "An enquiry as seen by the guest who sent it, including the listing it concerns. reply and repliedAt are null until the host replies.",
+          allOf: [
+            { $ref: '#/components/schemas/Enquiry' },
+            {
+              type: 'object',
+              required: ['listing'],
+              properties: {
+                listing: {
+                  type: 'object',
+                  required: ['id', 'title'],
+                  properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' },
+                  },
+                },
+              },
+            },
+          ],
+        },
         Review: {
           type: 'object',
           required: ['id', 'bookingId', 'listingId', 'authorId', 'targetId', 'targetRole', 'rating', 'body', 'submittedAt'],

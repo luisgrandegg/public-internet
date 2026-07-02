@@ -23,6 +23,9 @@ export async function SiteHeader() {
               <Link href="/bookings" className={styles.navLink}>
                 Bookings
               </Link>
+              <Link href="/enquiries" className={styles.navLink}>
+                Enquiries
+              </Link>
               <Link href="/profile" className={styles.navLink}>
                 Profile
               </Link>

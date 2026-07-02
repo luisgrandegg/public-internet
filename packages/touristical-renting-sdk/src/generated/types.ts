@@ -176,6 +176,14 @@ export interface Enquiry {
   repliedAt?: string | null
 }
 
+/** An enquiry as seen by the guest who sent it, including the listing it concerns. reply and repliedAt are null until the host replies. */
+export type GuestEnquiry = Enquiry & {
+  listing: {
+    id: string
+    title: string
+  }
+}
+
 export interface Review {
   id: string
   bookingId: string

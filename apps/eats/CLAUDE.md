@@ -55,11 +55,11 @@ The app uses the Next.js App Router under `src/app/`. Plan routes here before ad
 | Route | Page | Status |
 |---|---|---|
 | `/` | Home — value proposition, search entry point, restaurant/courier CTA | Scaffolded |
-| `/restaurants` | Restaurant browse — list by city/category | Planned |
+| `/restaurants` | Restaurant browse — keyword search, city + category filter | Built |
 | `/restaurants/[id]` | Restaurant detail — menu, hours, location | Planned |
 | `/restaurants/[id]/order` | Order flow — build cart, see complete cost before confirming | Planned |
 | `/orders` | Customer order history | Planned |
-| `/orders/[id]` | Order detail — status, items, delivery tracking | Planned |
+| `/orders/[id]` | Order detail — live status timeline (polling), items, delivery tracking | Built |
 | `/courier` | Courier dashboard — available deliveries, history, pay breakdown | Planned |
 | `/courier/register` | Courier registration | Planned |
 | `/restaurant` | Restaurant owner dashboard — orders, menu management | Planned |
@@ -84,7 +84,8 @@ Before adding a new route, add it to this table with its status.
 | `POST` | `/api/auth/sign-in` | No | Authenticate; sets session cookie |
 | `POST` | `/api/auth/sign-out` | Yes | Destroy session |
 | `POST` | `/api/auth/forgot-password` | No | Send reset email (always 204 to prevent enumeration) |
-| `GET` | `/api/restaurants` | No | List restaurants; supports `?city`, `?page` |
+| `GET` | `/api/restaurants` | No | List restaurants; supports `?city`, `?q` (name/description keyword), `?category` (available menu item category), `?page` |
+| `GET` | `/api/restaurants/categories` | No | List distinct categories of available menu items (feeds the category filter) |
 | `GET` | `/api/restaurants/:id` | No | Get restaurant detail |
 | `GET` | `/api/restaurants/:id/menu` | No | List menu items for a restaurant |
 | `POST` | `/api/orders` | Yes (Customer) | Place an order |

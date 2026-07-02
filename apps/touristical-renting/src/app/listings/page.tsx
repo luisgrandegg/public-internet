@@ -37,11 +37,24 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
   const maxPrice = filters.maxPrice ? Math.round(parseFloat(filters.maxPrice) * 100) : undefined
   const page = params.page ? parseInt(params.page, 10) : 1
 
+  // Only apply the availability filter when both dates form a valid range.
+  // A half-filled range (user still picking dates in the sidebar) is ignored, not an error.
+  const isIsoDate = (value: string) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value))
+  const hasValidDateRange =
+    isIsoDate(filters.checkIn) && isIsoDate(filters.checkOut) && filters.checkIn < filters.checkOut
+
+  const parsedGuests = filters.guests ? parseInt(filters.guests, 10) : NaN
+  const guests = Number.isInteger(parsedGuests) && parsedGuests >= 1 ? parsedGuests : undefined
+
   const { listings } = await getListings({
     location: filters.location || undefined,
     propertyType: propertyType as PropertyType | undefined,
     minPrice,
     maxPrice,
+    checkIn: hasValidDateRange ? filters.checkIn : undefined,
+    checkOut: hasValidDateRange ? filters.checkOut : undefined,
+    guests,
     page,
     limit: 20,
   })

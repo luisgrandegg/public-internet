@@ -57,6 +57,7 @@ The app uses the Next.js App Router under `src/app/`. Plan routes here before ad
 | `/listings/[id]` | Listing detail — photos, description, availability, price, host | Planned |
 | `/listings/[id]/book` | Booking flow | Planned |
 | `/bookings` | Guest's booking history | Planned |
+| `/enquiries` | Guest's enquiries inbox — sent messages and host replies | Built |
 | `/bookings/[id]` | Individual booking detail | Planned |
 | `/host` | Host dashboard — listings, bookings, earnings | Planned |
 | `/host/listings/new` | Create a new listing | Planned |
@@ -107,13 +108,14 @@ This app uses Next.js Route Handlers as its REST API. See `apps/CLAUDE.md § Ful
 | `POST` | `/api/auth/sign-in` | No | Authenticate; sets session cookie |
 | `POST` | `/api/auth/sign-out` | Yes | Destroy session |
 | `POST` | `/api/auth/forgot-password` | No | Send reset email (always 204 to prevent enumeration) |
-| `GET` | `/api/listings` | No | List listings; supports `?location`, `?propertyType`, `?minPrice`, `?maxPrice`, `?page` |
+| `GET` | `/api/listings` | No | List listings; supports `?location`, `?propertyType`, `?minPrice`, `?maxPrice`, `?checkIn`, `?checkOut`, `?guests`, `?page` |
 | `POST` | `/api/listings` | Yes (Host) | Create a listing |
 | `GET` | `/api/listings/:id` | No | Get single listing |
 | `PATCH` | `/api/listings/:id` | Yes (owner) | Update listing |
 | `DELETE` | `/api/listings/:id` | Yes (owner) | Delete listing |
 | `POST` | `/api/bookings` | Yes (Guest) | Create a booking |
 | `GET` | `/api/bookings/:id` | Yes (owner) | Get booking detail |
+| `GET` | `/api/enquiries` | Yes (Guest) | List the signed-in guest's enquiries with host replies |
 | `GET` | `/api/host/listings` | Yes (Host) | List host's own listings |
 | `GET` | `/api/host/bookings` | Yes (Host) | List bookings for host's listings |
 

@@ -67,6 +67,14 @@ export default async function HomePage() {
               type="date"
             />
           </div>
+          <div className={styles.searchFieldNarrow}>
+            <Input
+              name="guests"
+              label="Guests"
+              type="number"
+              min="1"
+            />
+          </div>
           <Button type="submit" variant="primary">
             Search
           </Button>

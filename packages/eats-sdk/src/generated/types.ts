@@ -96,6 +96,8 @@ export interface OrderItem {
   id: string
   orderId: string
   menuItemId: string
+  /** Menu item name snapshotted at order time */
+  nameSnapshot?: string | null
   quantity: number
   /** Unit price in cents, snapshotted at order time */
   unitPrice: number
@@ -108,6 +110,8 @@ export interface Order {
   restaurantId: string
   restaurant?: RestaurantSummary
   items: Array<OrderItem>
+  /** Delivery record for the order, when one exists */
+  delivery?: Delivery | null
   /** Sum of all item costs in cents */
   itemsCost: number
   /** Flat infrastructure fee in cents — transparent and published. Not a commission. */
@@ -140,6 +144,11 @@ export interface Delivery {
   deliveredAt?: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface MenuCategories {
+  /** Distinct categories of available menu items across active restaurants, sorted alphabetically */
+  categories: Array<string>
 }
 
 export interface PaginatedRestaurants {

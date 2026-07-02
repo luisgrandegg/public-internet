@@ -27,6 +27,16 @@ export async function createEnquiry(
   })
 }
 
+export async function getGuestEnquiries(guestId: string) {
+  return db.enquiry.findMany({
+    where: { guestId },
+    include: {
+      listing: { select: { id: true, title: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
 export async function getHostEnquiries(hostId: string) {
   return db.enquiry.findMany({
     where: { hostId, reply: null },

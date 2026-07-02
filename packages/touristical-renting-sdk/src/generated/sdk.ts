@@ -2,6 +2,7 @@
 import type { ApiClient } from '../client.js'
 import { BookingsReviewResource } from './bookings-review.resource.js'
 import { BookingsResource } from './bookings.resource.js'
+import { EnquiriesResource } from './enquiries.resource.js'
 import { HostBookingsResource } from './host-bookings.resource.js'
 import { HostEnquiriesReplyResource } from './host-enquiries-reply.resource.js'
 import { HostEnquiriesResource } from './host-enquiries.resource.js'
@@ -17,6 +18,7 @@ import { UsersMeResource } from './users-me.resource.js'
 export class TouristicalRentingSDK {
   readonly bookingsReview: BookingsReviewResource
   readonly bookings: BookingsResource
+  readonly enquiries: EnquiriesResource
   readonly listingsAvailability: ListingsAvailabilityResource
   readonly listingsEnquiries: ListingsEnquiriesResource
   readonly listingsReviews: ListingsReviewsResource
@@ -34,6 +36,7 @@ export class TouristicalRentingSDK {
   constructor(client: ApiClient) {
     this.bookingsReview = new BookingsReviewResource(client)
     this.bookings = new BookingsResource(client)
+    this.enquiries = new EnquiriesResource(client)
     this.listingsAvailability = new ListingsAvailabilityResource(client)
     this.listingsEnquiries = new ListingsEnquiriesResource(client)
     this.listingsReviews = new ListingsReviewsResource(client)

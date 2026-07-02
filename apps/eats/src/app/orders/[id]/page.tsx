@@ -3,7 +3,8 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { findOrderWithDetails } from '@/lib/services/orders'
-import { formatEuros, orderStatusLabel, deliveryStatusLabel } from '@/lib/format'
+import { formatEuros } from '@/lib/format'
+import { OrderStatusLive } from './OrderStatusLive'
 import styles from './page.module.css'
 
 interface PageProps {
@@ -30,15 +31,23 @@ export default async function OrderDetailPage({ params }: PageProps) {
       <h1 className={styles.heading}>Order from {order.restaurant.name}</h1>
       <div className={styles.meta}>
         <span>Placed {new Date(order.createdAt).toLocaleString()}</span>
-        <span className={styles.status}>
-          Status: <strong>{orderStatusLabel(order.status)}</strong>
-        </span>
-        {order.delivery && (
-          <span className={styles.status}>
-            Delivery: <strong>{deliveryStatusLabel(order.delivery.status)}</strong>
-          </span>
-        )}
       </div>
+
+      <OrderStatusLive
+        initialOrder={{
+          id: order.id,
+          status: order.status,
+          createdAt: order.createdAt.toISOString(),
+          updatedAt: order.updatedAt.toISOString(),
+          delivery: order.delivery
+            ? {
+                status: order.delivery.status,
+                pickedUpAt: order.delivery.pickedUpAt?.toISOString() ?? null,
+                deliveredAt: order.delivery.deliveredAt?.toISOString() ?? null,
+              }
+            : null,
+        }}
+      />
 
       <section className={styles.section} aria-label="Items">
         <h2 className={styles.sectionHeading}>Items</h2>

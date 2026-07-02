@@ -1,17 +1,26 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Input, Button } from '@public-internet/design-system'
 import { signIn } from '@/lib/actions/auth'
 import type { AuthResult } from '@/lib/actions/auth'
 import styles from './page.module.css'
 
 export default function SignInPage() {
+  const router = useRouter()
   const [state, formAction, isPending] = useActionState<AuthResult | null, FormData>(
     signIn,
     null
   )
+
+  useEffect(() => {
+    if (state?.ok) {
+      router.push('/')
+      router.refresh()
+    }
+  }, [state, router])
 
   return (
     <form action={formAction} className={styles.form}>

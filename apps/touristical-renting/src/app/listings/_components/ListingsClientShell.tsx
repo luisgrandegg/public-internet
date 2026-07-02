@@ -25,8 +25,28 @@ interface ListingsClientShellProps {
   filters: ListingFilters
 }
 
+function formatFilterDate(value: string): string {
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
 export function ListingsClientShell({ listings, filters }: ListingsClientShellProps) {
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null)
+
+  const activeFilters: Array<{ key: string; label?: string; value: string }> = []
+  if (filters.checkIn) {
+    activeFilters.push({ key: 'checkIn', label: 'Check in', value: formatFilterDate(filters.checkIn) })
+  }
+  if (filters.checkOut) {
+    activeFilters.push({ key: 'checkOut', label: 'Check out', value: formatFilterDate(filters.checkOut) })
+  }
+  if (filters.guests) {
+    activeFilters.push({
+      key: 'guests',
+      value: filters.guests === '1' ? '1 guest' : `${filters.guests} guests`,
+    })
+  }
 
   return (
     <div className={styles.root}>
@@ -36,6 +56,19 @@ export function ListingsClientShell({ listings, filters }: ListingsClientShellPr
 
       <div className={styles.mainContent}>
         <ListingsMap listings={listings} hoveredListingId={hoveredListingId} />
+
+        {activeFilters.length > 0 && (
+          <ul className={styles.activeFilters} aria-label="Active search filters">
+            {activeFilters.map((filter) => (
+              <li key={filter.key} className={styles.activeFilter}>
+                {filter.label ? (
+                  <span className={styles.activeFilterLabel}>{filter.label}:</span>
+                ) : null}
+                {filter.value}
+              </li>
+            ))}
+          </ul>
+        )}
 
         <p className={styles.resultsHeading}>
           {listings.length} {listings.length === 1 ? 'place' : 'places'} found

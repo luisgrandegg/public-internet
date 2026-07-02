@@ -2,8 +2,14 @@ import { db } from '@/lib/db'
 import type { CreateListingInput, ListingsQuery, UpdateListingInput } from '@/lib/schemas/listings'
 
 export async function getListings(query: ListingsQuery) {
-  const { location, propertyType, minPrice, maxPrice, page, limit } = query
+  const { location, propertyType, minPrice, maxPrice, checkIn, checkOut, guests, page, limit } =
+    query
   const skip = (page - 1) * limit
+
+  // Availability: exclude listings with any Booking or AvailabilityBlock overlapping
+  // [checkIn, checkOut). Overlap rule: existing.start < requested.end AND existing.end > requested.start.
+  const requestedStart = checkIn && checkOut ? new Date(checkIn) : undefined
+  const requestedEnd = checkIn && checkOut ? new Date(checkOut) : undefined
 
   const where = {
     ...(location && {
@@ -15,6 +21,16 @@ export async function getListings(query: ListingsQuery) {
     ...(propertyType && { propertyType }),
     ...(minPrice !== undefined && { nightlyRate: { gte: minPrice } }),
     ...(maxPrice !== undefined && { nightlyRate: { lte: maxPrice } }),
+    ...(guests !== undefined && { maxGuests: { gte: guests } }),
+    ...(requestedStart &&
+      requestedEnd && {
+        bookings: {
+          none: { checkIn: { lt: requestedEnd }, checkOut: { gt: requestedStart } },
+        },
+        availabilityBlocks: {
+          none: { startDate: { lt: requestedEnd }, endDate: { gt: requestedStart } },
+        },
+      }),
   }
 
   const [listings, total] = await Promise.all([

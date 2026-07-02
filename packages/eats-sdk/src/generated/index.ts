@@ -8,4 +8,5 @@ export { RestaurantRestaurantsMenuResource } from './restaurant-restaurants-menu
 export { RestaurantRestaurantsResource } from './restaurant-restaurants.resource.js'
 export { RestaurantsMenuResource } from './restaurants-menu.resource.js'
 export { RestaurantsResource } from './restaurants.resource.js'
+export { RestaurantsCategoriesResource } from './restaurants-categories.resource.js'
 export { EatsSDK } from './sdk.js'

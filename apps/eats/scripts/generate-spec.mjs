@@ -160,6 +160,7 @@ const options = {
             id: { type: 'string' },
             orderId: { type: 'string' },
             menuItemId: { type: 'string' },
+            nameSnapshot: { type: 'string', nullable: true, description: 'Menu item name snapshotted at order time' },
             quantity: { type: 'integer' },
             unitPrice: { type: 'integer', description: 'Unit price in cents, snapshotted at order time' },
           },
@@ -174,6 +175,11 @@ const options = {
             restaurantId: { type: 'string' },
             restaurant: { $ref: '#/components/schemas/RestaurantSummary' },
             items: { type: 'array', items: { $ref: '#/components/schemas/OrderItem' } },
+            delivery: {
+              allOf: [{ $ref: '#/components/schemas/Delivery' }],
+              nullable: true,
+              description: 'Delivery record for the order, when one exists',
+            },
             itemsCost: { type: 'integer', description: 'Sum of all item costs in cents' },
             infrastructureFee: { type: 'integer', description: 'Flat infrastructure fee in cents — transparent and published. Not a commission.' },
             totalCost: { type: 'integer', description: 'Total cost in cents = itemsCost + infrastructureFee. Complete price — no hidden fees.' },
@@ -207,6 +213,17 @@ const options = {
             deliveredAt: { type: 'string', format: 'date-time', nullable: true },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        MenuCategories: {
+          type: 'object',
+          required: ['categories'],
+          properties: {
+            categories: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Distinct categories of available menu items across active restaurants, sorted alphabetically',
+            },
           },
         },
         PaginatedRestaurants: {

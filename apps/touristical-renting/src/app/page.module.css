@@ -41,6 +41,11 @@
   min-width: 160px;
 }
 
+.searchFieldNarrow {
+  flex: 0 1 auto;
+  min-width: 96px;
+}
+
 .section {
   max-width: 1200px;
   margin: 0 auto;

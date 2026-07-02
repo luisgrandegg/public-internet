@@ -35,6 +35,27 @@ import { getListings, createListing } from '@/lib/services/listings'
  *           type: integer
  *         description: Maximum nightly rate in cents
  *       - in: query
+ *         name: checkIn
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: >
+ *           Desired check-in date (YYYY-MM-DD). Must be provided together with checkOut and be
+ *           before it. Listings with a Booking or AvailabilityBlock overlapping [checkIn, checkOut)
+ *           are excluded from results.
+ *       - in: query
+ *         name: checkOut
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Desired check-out date (YYYY-MM-DD). Must be provided together with checkIn and be after it.
+ *       - in: query
+ *         name: guests
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Number of guests. Only listings with maxGuests >= guests are returned.
+ *       - in: query
  *         name: page
  *         schema:
  *           type: integer

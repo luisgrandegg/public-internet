@@ -51,6 +51,55 @@
   margin-bottom: var(--ds-space-3);
 }
 
+.liveStatus {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-900);
+  margin-bottom: var(--ds-space-4);
+}
+
+.cancelledNotice {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-900);
+  background-color: var(--ds-color-danger-subtle);
+  border: 1px solid var(--ds-color-danger);
+  border-radius: var(--ds-radius-md);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  margin-bottom: var(--ds-space-4);
+}
+
+.timestampList {
+  margin: var(--ds-space-4) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+}
+
+.timestampRow {
+  display: flex;
+  gap: var(--ds-space-2);
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-700);
+}
+
+.timestampRow dt {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-neutral-900);
+}
+
+.timestampRow dt::after {
+  content: ':';
+}
+
+.timestampRow dd {
+  margin: 0;
+}
+
+.pollNote {
+  margin-top: var(--ds-space-3);
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-neutral-700);
+}
+
 .itemList {
   list-style: none;
   padding: 0;

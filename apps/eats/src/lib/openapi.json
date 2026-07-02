@@ -364,6 +364,11 @@
           "menuItemId": {
             "type": "string"
           },
+          "nameSnapshot": {
+            "type": "string",
+            "nullable": true,
+            "description": "Menu item name snapshotted at order time"
+          },
           "quantity": {
             "type": "integer"
           },
@@ -409,6 +414,15 @@
             "items": {
               "$ref": "#/components/schemas/OrderItem"
             }
+          },
+          "delivery": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Delivery"
+              }
+            ],
+            "nullable": true,
+            "description": "Delivery record for the order, when one exists"
           },
           "itemsCost": {
             "type": "integer",
@@ -515,6 +529,21 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "MenuCategories": {
+        "type": "object",
+        "required": [
+          "categories"
+        ],
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Distinct categories of available menu items across active restaurants, sorted alphabetically"
           }
         }
       },
@@ -1541,6 +1570,33 @@
         }
       }
     },
+    "/api/restaurants/categories": {
+      "get": {
+        "operationId": "restaurants_categories_list",
+        "summary": "List distinct menu categories with available items",
+        "description": "Distinct categories of available menu items across active restaurants, sorted alphabetically. Feeds the category filter on the restaurant browse page. Neutral ordering — no promoted categories.",
+        "tags": [
+          "restaurants"
+        ],
+        "responses": {
+          "200": {
+            "description": "Alphabetical list of distinct menu categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MenuCategories"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/restaurants": {
       "get": {
         "operationId": "restaurants_list",
@@ -1556,6 +1612,24 @@
               "type": "string"
             },
             "description": "Exact-match filter by city (case-insensitive)"
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Keyword search — case-insensitive substring match against restaurant name or description"
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "description": "Only restaurants with at least one available menu item in this category (case-insensitive)"
           },
           {
             "in": "query",

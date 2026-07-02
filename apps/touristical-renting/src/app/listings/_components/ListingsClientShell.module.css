@@ -20,6 +20,32 @@
   gap: var(--ds-space-6);
 }
 
+.activeFilters {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+}
+
+.activeFilter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  padding: var(--ds-space-1) var(--ds-space-3);
+  background-color: var(--ds-color-neutral-100);
+  border: 1px solid var(--ds-color-neutral-300);
+  border-radius: var(--ds-radius-full);
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-900);
+}
+
+.activeFilterLabel {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-neutral-700);
+}
+
 .resultsHeading {
   font-size: var(--ds-font-size-md);
   font-weight: var(--ds-font-weight-medium);

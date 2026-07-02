@@ -34,6 +34,45 @@ test.describe('Restaurants browse', () => {
   })
 })
 
+test.describe('Restaurant search and category filter', () => {
+  test('keyword search ?q=pizza renders without crash', async ({ page }) => {
+    const response = await page.goto('/restaurants?q=pizza')
+    expect(response?.status()).toBe(200)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    // The search input keeps the submitted keyword (params flow via URL).
+    await expect(page.getByLabel(/search by name or keyword/i)).toHaveValue('pizza')
+    // Empty state is fine — either results or the empty state must render.
+    await expect(page.getByRole('button', { name: /search/i })).toBeVisible()
+  })
+
+  test('combined q + city + category params render without crash', async ({ page }) => {
+    const response = await page.goto('/restaurants?q=pizza&city=Barcelona&category=Mains')
+    expect(response?.status()).toBe(200)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  })
+
+  test('search API accepts q and category params', async ({ request }) => {
+    const res = await request.get('/api/restaurants?q=pizza&category=Mains', {
+      failOnStatusCode: false,
+    })
+    expect(res.status()).toBe(200)
+    const body = await res.json()
+    expect(Array.isArray(body.data.restaurants)).toBe(true)
+  })
+
+  test('categories endpoint returns 200 with array shape', async ({ request }) => {
+    const res = await request.get('/api/restaurants/categories', {
+      failOnStatusCode: false,
+    })
+    expect(res.status()).toBe(200)
+    const body = await res.json()
+    expect(Array.isArray(body.data.categories)).toBe(true)
+    for (const category of body.data.categories) {
+      expect(typeof category).toBe('string')
+    }
+  })
+})
+
 test.describe('Restaurant detail', () => {
   test('unknown restaurant yields 404 page', async ({ page }) => {
     const response = await page.goto('/restaurants/does-not-exist')

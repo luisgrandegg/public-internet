@@ -38,6 +38,16 @@ export const RestaurantsQuerySchema = z.object({
     .string()
     .optional()
     .transform((val) => (val === '' ? undefined : val)),
+  q: z
+    .string()
+    .max(200)
+    .optional()
+    .transform((val) => (val?.trim() === '' ? undefined : val?.trim())),
+  category: z
+    .string()
+    .max(120)
+    .optional()
+    .transform((val) => (val?.trim() === '' ? undefined : val?.trim())),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 })
