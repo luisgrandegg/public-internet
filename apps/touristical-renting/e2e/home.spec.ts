@@ -58,6 +58,16 @@ test.describe('Home page', () => {
     await expect(header.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible()
   })
 
+  test('site header shows signed-out state when not authenticated', async ({ page }) => {
+    const header = page.getByRole('banner')
+    await expect(header.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible()
+    // Session-only navigation must not appear for signed-out visitors
+    await expect(header.getByRole('link', { name: 'Bookings', exact: true })).toHaveCount(0)
+    await expect(header.getByRole('link', { name: 'Profile', exact: true })).toHaveCount(0)
+    await expect(header.getByRole('link', { name: 'Host dashboard', exact: true })).toHaveCount(0)
+    await expect(header.getByRole('button', { name: 'Sign out', exact: true })).toHaveCount(0)
+  })
+
   test('has a skip-to-main-content link', async ({ page }) => {
     // Tab to reveal the skip link (it may be visually hidden until focused)
     await page.keyboard.press('Tab')

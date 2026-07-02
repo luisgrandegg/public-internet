@@ -70,8 +70,8 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
     maxGuests: l.maxGuests,
     bedrooms: l.bedrooms,
     bathrooms: l.bathrooms,
-    rating: null,
-    reviewCount: 0,
+    rating: l.rating,
+    reviewCount: l.reviewCount,
   }))
 
   return <ListingsClientShell listings={normalisedListings} filters={filters} />

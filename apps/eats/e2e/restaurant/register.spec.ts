@@ -12,8 +12,15 @@ test.describe('Restaurant registration', () => {
     // copy lives on the home page and is verified there.
     await page.goto('/')
     const body = await page.textContent('body')
-    expect(body).not.toMatch(/commission/i)
-    expect(body).not.toMatch(/exclusivity/i)
-    expect(body).not.toMatch(/premium tier/i)
+    // The home page promises "no commission" and "no exclusivity requirement" —
+    // that negated copy is constitution-aligned. Only a non-negated mention
+    // (e.g. "15% commission", "exclusivity required") is a violation.
+    const withoutNegations = body!.replace(
+      /(?:no|zero|without(?: any)?) (?:commission|exclusivity(?: requirement)?)|commission-free/gi,
+      '',
+    )
+    expect(withoutNegations).not.toMatch(/commission/i)
+    expect(withoutNegations).not.toMatch(/exclusivity/i)
+    expect(withoutNegations).not.toMatch(/premium tier/i)
   })
 })

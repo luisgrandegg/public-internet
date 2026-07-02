@@ -47,7 +47,7 @@ import { getListings, createListing } from '@/lib/services/listings'
  *           maximum: 100
  *     responses:
  *       200:
- *         description: Paginated list of listings
+ *         description: Paginated list of listings. Each listing includes its aggregate published-review rating (nullable) and reviewCount.
  *         content:
  *           application/json:
  *             schema:

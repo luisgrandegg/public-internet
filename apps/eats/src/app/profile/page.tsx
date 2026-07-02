@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
@@ -48,8 +49,22 @@ export default async function ProfilePage() {
           <li>Customer — everyone can order food</li>
           <li>
             Restaurant owner — {user.isRestaurantOwner ? 'enabled' : 'not enabled'}
+            {!user.isRestaurantOwner && (
+              <>
+                {' · '}
+                <Link href="/restaurant/onboarding">Add your restaurant</Link>
+              </>
+            )}
           </li>
-          <li>Courier — {user.isCourier ? 'enabled' : 'not enabled'}</li>
+          <li>
+            Courier — {user.isCourier ? 'enabled' : 'not enabled'}
+            {!user.isCourier && (
+              <>
+                {' · '}
+                <Link href="/courier/register">Deliver with Eats</Link>
+              </>
+            )}
+          </li>
         </ul>
       </section>
 

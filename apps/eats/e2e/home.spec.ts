@@ -14,7 +14,10 @@ test.describe('Home page', () => {
     expect(body).not.toMatch(/only \d+ left/i)
     expect(body).not.toMatch(/hurry/i)
     expect(body).not.toMatch(/offer ends soon/i)
-    expect(body).not.toMatch(/surge pricing/i)
+    // Copy that promises the absence of surge pricing is constitution-aligned;
+    // only a non-negated mention is a violation.
+    const withoutNegations = body!.replace(/no surge pricing/gi, '')
+    expect(withoutNegations).not.toMatch(/surge pricing/i)
   })
 
   test('search form navigates to /restaurants', async ({ page }) => {

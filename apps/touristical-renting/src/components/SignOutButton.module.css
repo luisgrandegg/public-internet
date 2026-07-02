@@ -1,0 +1,26 @@
+.root {
+  font-family: inherit;
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-brand-primary);
+  background-color: transparent;
+  padding: var(--ds-space-2) var(--ds-space-4);
+  border: 1px solid var(--ds-color-brand-primary);
+  border-radius: var(--ds-radius-md);
+  cursor: pointer;
+}
+
+.root:hover {
+  background-color: var(--ds-color-brand-primary);
+  color: var(--ds-color-neutral-0);
+}
+
+.root:focus-visible {
+  outline: 2px solid var(--ds-color-brand-primary);
+  outline-offset: 2px;
+}
+
+.root:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

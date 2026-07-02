@@ -17,10 +17,13 @@ test.describe('Restaurants browse', () => {
   test('no promoted or surge-pricing copy', async ({ page }) => {
     await page.goto('/restaurants')
     const body = await page.textContent('body')
-    expect(body).not.toMatch(/surge pricing/i)
-    expect(body).not.toMatch(/promoted/i)
-    expect(body).not.toMatch(/sponsored/i)
-    expect(body).not.toMatch(/featured placement/i)
+    // Copy that promises the absence of these practices is constitution-aligned;
+    // only a non-negated mention is a violation.
+    const withoutNegations = body!.replace(/no (surge pricing|promoted|sponsored)/gi, '')
+    expect(withoutNegations).not.toMatch(/surge pricing/i)
+    expect(withoutNegations).not.toMatch(/promoted/i)
+    expect(withoutNegations).not.toMatch(/sponsored/i)
+    expect(withoutNegations).not.toMatch(/featured placement/i)
   })
 
   test('api returns 422 on invalid page param', async ({ request }) => {

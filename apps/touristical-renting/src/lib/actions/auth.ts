@@ -75,14 +75,50 @@ export async function forgotPassword(
   // Always return ok to prevent user enumeration — the email is sent asynchronously.
   // The emailProvider will log the reset link in dev (stub) or send it in production.
   try {
-    // Use the HTTP endpoint directly to avoid TypeScript method name drift with better-auth versions
-    await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth/forget-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(Object.fromEntries(await headers())) },
-      body: JSON.stringify({ email, redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password` }),
+    // redirectTo is relative so better-auth accepts it as a trusted origin.
+    // The emailed link redirects to /auth/reset-password?token=… after verification.
+    await auth.api.requestPasswordReset({
+      body: { email, redirectTo: '/auth/reset-password' },
+      headers: await headers(),
     })
   } catch {
     // Intentionally swallow errors — do not reveal whether the email exists
   }
   return { ok: true }
+}
+
+export async function resetPassword(
+  _prev: AuthResult | null,
+  formData: FormData,
+): Promise<AuthResult> {
+  const token = String(formData.get('token') ?? '')
+  const password = String(formData.get('password') ?? '')
+  const confirmPassword = String(formData.get('confirmPassword') ?? '')
+
+  const fieldErrors: Record<string, string> = {}
+  if (!password || password.length < 8) fieldErrors.password = 'Password must be at least 8 characters'
+  if (password !== confirmPassword) fieldErrors.confirmPassword = 'Passwords do not match'
+  if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors }
+
+  if (!token) {
+    return {
+      ok: false,
+      fieldErrors: {},
+      globalError: 'This reset link is invalid or has already been used. Please request a new one.',
+    }
+  }
+
+  try {
+    await auth.api.resetPassword({
+      body: { newPassword: password, token },
+      headers: await headers(),
+    })
+    return { ok: true }
+  } catch {
+    return {
+      ok: false,
+      fieldErrors: {},
+      globalError: 'This reset link is invalid or has already been used. Please request a new one.',
+    }
+  }
 }

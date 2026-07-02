@@ -59,6 +59,10 @@ export interface Listing {
   host: HostSummary
   createdAt: string
   updatedAt: string
+  /** Average rating (1–5) across published reviews. Null when the listing has no published reviews. Present on list responses (listings_list). */
+  rating?: number | null
+  /** Number of published reviews. Present on list responses (listings_list). */
+  reviewCount?: number
 }
 
 export type HostListing = Listing & {

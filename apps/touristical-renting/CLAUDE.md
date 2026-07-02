@@ -64,6 +64,8 @@ The app uses the Next.js App Router under `src/app/`. Plan routes here before ad
 | `/profile` | User profile and settings | Planned |
 | `/auth/signin` | Sign in | Planned |
 | `/auth/signup` | Sign up | Planned |
+| `/auth/forgot-password` | Request a password reset link | Built |
+| `/auth/reset-password` | Choose a new password (from emailed reset link) | Built |
 
 Before adding a new route, add it to this table with its status.
 

@@ -235,6 +235,15 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "rating": {
+            "type": "number",
+            "nullable": true,
+            "description": "Average rating (1–5) across published reviews. Null when the listing has no published reviews. Present on list responses (listings_list)."
+          },
+          "reviewCount": {
+            "type": "integer",
+            "description": "Number of published reviews. Present on list responses (listings_list)."
           }
         }
       },
@@ -1807,7 +1816,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Paginated list of listings",
+            "description": "Paginated list of listings. Each listing includes its aggregate published-review rating (nullable) and reviewCount.",
             "content": {
               "application/json": {
                 "schema": {

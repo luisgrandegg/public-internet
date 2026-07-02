@@ -123,6 +123,15 @@ const options = {
             host: { $ref: '#/components/schemas/HostSummary' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+            rating: {
+              type: 'number',
+              nullable: true,
+              description: 'Average rating (1–5) across published reviews. Null when the listing has no published reviews. Present on list responses (listings_list).',
+            },
+            reviewCount: {
+              type: 'integer',
+              description: 'Number of published reviews. Present on list responses (listings_list).',
+            },
           },
         },
         HostListing: {

@@ -12,7 +12,7 @@ export default async function RestaurantDashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect('/auth/signin')
   const user = session.user as { id: string; isRestaurantOwner?: boolean; name: string }
-  if (!user.isRestaurantOwner) redirect('/')
+  if (!user.isRestaurantOwner) redirect('/restaurant/onboarding')
 
   const [orders, restaurants] = await Promise.all([
     listOrdersForOwner(user.id),
@@ -59,9 +59,14 @@ export default async function RestaurantDashboardPage() {
                     {r.city} · {r.isActive ? 'Active' : 'Inactive'}
                   </div>
                 </div>
-                <Link href={`/restaurant/${r.id}/menu`} className={styles.menuLink}>
-                  Manage menu →
-                </Link>
+                <div className={styles.rowActions}>
+                  <Link href={`/restaurant/${r.id}/menu`} className={styles.menuLink}>
+                    Manage menu →
+                  </Link>
+                  <Link href={`/restaurant/${r.id}/settings`} className={styles.menuLink}>
+                    Settings →
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>

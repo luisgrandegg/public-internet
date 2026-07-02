@@ -63,11 +63,14 @@ The app uses the Next.js App Router under `src/app/`. Plan routes here before ad
 | `/courier` | Courier dashboard — available deliveries, history, pay breakdown | Planned |
 | `/courier/register` | Courier registration | Planned |
 | `/restaurant` | Restaurant owner dashboard — orders, menu management | Planned |
+| `/restaurant/onboarding` | Restaurant owner onboarding — commission-free model explanation + explicit opt-in | Built |
 | `/restaurant/register` | Restaurant registration | Planned |
 | `/restaurant/[id]/menu` | Menu item management | Planned |
+| `/restaurant/[id]/settings` | Restaurant settings — edit details, toggle active | Built |
 | `/profile` | User profile and settings | Planned |
 | `/auth/signin` | Sign in | Planned |
 | `/auth/signup` | Sign up | Planned |
+| `/auth/reset-password` | Set a new password from an emailed reset link | Built |
 
 Before adding a new route, add it to this table with its status.
 

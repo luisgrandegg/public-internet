@@ -79,6 +79,13 @@
   margin-top: var(--ds-space-1);
 }
 
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  flex-wrap: wrap;
+}
+
 .menuLink {
   color: var(--ds-color-brand-primary);
   text-decoration: none;

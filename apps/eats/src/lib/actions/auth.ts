@@ -95,3 +95,43 @@ export async function forgotPassword(
   }
   return { ok: true }
 }
+
+export async function resetPassword(
+  _prev: AuthResult | null,
+  formData: FormData,
+): Promise<AuthResult> {
+  const token = String(formData.get('token') ?? '')
+  const newPassword = String(formData.get('newPassword') ?? '')
+  const confirmPassword = String(formData.get('confirmPassword') ?? '')
+
+  const fieldErrors: Record<string, string> = {}
+  if (!newPassword || newPassword.length < 8) {
+    fieldErrors.newPassword = 'Password must be at least 8 characters'
+  }
+  if (newPassword !== confirmPassword) {
+    fieldErrors.confirmPassword = 'Passwords do not match'
+  }
+  if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors }
+
+  if (!token) {
+    return {
+      ok: false,
+      fieldErrors: {},
+      globalError: 'This reset link is invalid or has expired. Please request a new one.',
+    }
+  }
+
+  try {
+    await auth.api.resetPassword({
+      body: { newPassword, token },
+      headers: await headers(),
+    })
+    return { ok: true }
+  } catch {
+    return {
+      ok: false,
+      fieldErrors: {},
+      globalError: 'This reset link is invalid or has expired. Please request a new one.',
+    }
+  }
+}

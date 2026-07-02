@@ -50,7 +50,7 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
               ? `No active restaurants are listed for “${city}”.`
               : 'No active restaurants are listed on this node yet.'}
           </p>
-          <Link href="/restaurant/register" className={styles.emptyLink}>
+          <Link href="/restaurant/onboarding" className={styles.emptyLink}>
             Own a restaurant? List it for free.
           </Link>
         </div>

@@ -28,7 +28,36 @@ export async function getListings(query: ListingsQuery) {
     db.listing.count({ where }),
   ])
 
-  return { listings, total, page, limit }
+  // Aggregate published review ratings for the returned page in a single
+  // grouped query — avoids an N+1 per listing.
+  const listingIds = listings.map((l) => l.id)
+  const reviewAggregates =
+    listingIds.length > 0
+      ? await db.review.groupBy({
+          by: ['listingId'],
+          where: { listingId: { in: listingIds }, publishedAt: { not: null } },
+          _avg: { rating: true },
+          _count: { _all: true },
+        })
+      : []
+  const aggregatesByListing = new Map(
+    reviewAggregates.map((agg) => [
+      agg.listingId,
+      { rating: agg._avg.rating, reviewCount: agg._count._all },
+    ]),
+  )
+
+  const listingsWithRatings = listings.map((listing) => {
+    const agg = aggregatesByListing.get(listing.id)
+    return {
+      ...listing,
+      // null = no published reviews yet — the UI shows its no-reviews state
+      rating: agg?.rating ?? null,
+      reviewCount: agg?.reviewCount ?? 0,
+    }
+  })
+
+  return { listings: listingsWithRatings, total, page, limit }
 }
 
 export async function getListingById(id: string) {

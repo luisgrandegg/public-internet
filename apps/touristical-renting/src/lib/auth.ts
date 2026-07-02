@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth'
+import { nextCookies } from 'better-auth/next-js'
 import { prismaAdapter } from '@better-auth/prisma-adapter'
 import { db } from './db'
 import { emailProvider } from './email'
@@ -26,6 +27,10 @@ export const auth = betterAuth({
       },
     },
   },
+  // Must be last — lets auth.api calls inside Server Actions set the session
+  // cookie via next/headers. Without it, sign-in/sign-up return ok but the
+  // browser never receives a session.
+  plugins: [nextCookies()],
 })
 
 export type Session = typeof auth.$Infer.Session
