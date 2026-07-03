@@ -13,11 +13,14 @@ import { paymentProvider } from '@/lib/payments'
  *       Receives payment events from the node's configured payment provider
  *       (ADR-006). The request is authenticated by the provider implementation
  *       itself (e.g. Stripe signature verification) — no session cookie is
- *       required. A payment.succeeded event marks the payment SUCCEEDED and
- *       stores the provider's payment reference; payment.canceled marks a
- *       PENDING payment CANCELED. Events that don't affect payment state are
- *       acknowledged and ignored. When no payment provider is configured
- *       (offline settlement mode) the endpoint returns 503.
+ *       required. A payment.succeeded event marks the PENDING payment
+ *       SUCCEEDED and stores the provider's payment reference. A
+ *       payment.canceled event (canceled/expired checkout — the booking will
+ *       never be paid) deletes the still-PENDING booking, releasing its dates
+ *       for other guests per ADR-006 §4; the payment record is removed with
+ *       it. Events that don't affect payment state are acknowledged and
+ *       ignored. When no payment provider is configured (offline settlement
+ *       mode) the endpoint returns 503.
  *     tags:
  *       - webhooks
  *     requestBody:
@@ -74,32 +77,34 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Both branches below are single atomic writes whose state guard lives in
+  // the WHERE clause itself — no read-then-write window. Replayed or
+  // out-of-order events, and events for sessions this node doesn't know,
+  // match zero rows and are acknowledged with 200 so the provider stops
+  // retrying.
   try {
-    if (event.type === 'payment.succeeded' || event.type === 'payment.canceled') {
-      const payment = await db.payment.findFirst({
-        where: { providerSessionId: event.sessionId },
+    if (event.type === 'payment.succeeded') {
+      // Only a still-PENDING payment can succeed — idempotent under retries.
+      await db.payment.updateMany({
+        where: { providerSessionId: event.sessionId, status: 'PENDING' },
+        data: {
+          status: 'SUCCEEDED',
+          providerPaymentReference: event.paymentReference,
+        },
       })
-
-      // Unknown payment: acknowledge with 200 so the provider does not retry
-      // an event this node can never process.
-      if (payment) {
-        if (event.type === 'payment.succeeded') {
-          await db.payment.update({
-            where: { id: payment.id },
-            data: {
-              status: 'SUCCEEDED',
-              providerPaymentReference: event.paymentReference,
-            },
-          })
-        } else if (payment.status === 'PENDING') {
-          // Cancellation only moves a payment out of PENDING — a settled
-          // payment is never un-settled by an expiry event.
-          await db.payment.update({
-            where: { id: payment.id },
-            data: { status: 'CANCELED' },
-          })
-        }
-      }
+    } else if (event.type === 'payment.canceled') {
+      // A canceled/expired checkout session will never be paid — delete the
+      // booking so its dates are released for other guests (ADR-006 §4).
+      // Deleting the booking cascade-deletes its Payment row, so flipping the
+      // payment to CANCELED first would be redundant. The PENDING guard is
+      // part of the delete's WHERE (not a prior read), so a retried cancel
+      // racing a concurrent payment.succeeded can never delete a settled
+      // booking — it simply matches zero rows.
+      await db.booking.deleteMany({
+        where: {
+          payment: { providerSessionId: event.sessionId, status: 'PENDING' },
+        },
+      })
     }
 
     return ok({ received: true })

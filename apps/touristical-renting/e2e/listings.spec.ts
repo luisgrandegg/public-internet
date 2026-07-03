@@ -27,6 +27,12 @@ test.describe('Listings search page', () => {
     await expect(page.getByText('No listings match your search')).toBeVisible()
   })
 
+  test('a non-numeric page param renders page 1 instead of crashing', async ({ page }) => {
+    await page.goto('/listings?page=abc')
+    // The invalid value falls back to page 1 — the page renders normally
+    await expect(page.getByText(/\d+ place/)).toBeVisible()
+  })
+
   test('search from home navigates here with location param', async ({ page }) => {
     await page.goto('/')
     await page.getByLabel('Where are you going?').fill('Madrid')
@@ -62,6 +68,14 @@ test.describe('Search by dates and guests', () => {
     await expect(activeFilters.getByText(/Check in/)).toBeVisible()
     await expect(activeFilters.getByText(/Check out/)).toBeVisible()
     await expect(activeFilters.getByText(/2 guests/)).toBeVisible()
+  })
+
+  test('shows no filter chips for a half-filled date range', async ({ page }) => {
+    // Only checkIn is set — the query ignores the incomplete range, so the
+    // chips must not claim a date filter was applied.
+    await page.goto('/listings?checkIn=2027-08-01')
+    await expect(page.getByText(/\d+ place/)).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Active search filters' })).toHaveCount(0)
   })
 
   test('API returns 422 for an invalid date range', async ({ request }) => {

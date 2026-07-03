@@ -23,10 +23,13 @@ interface AvailabilityBlocksManagerProps {
 }
 
 function formatDate(value: string): string {
+  // The value is a plain YYYY-MM-DD date parsed as UTC midnight — render it
+  // in UTC too, otherwise the day shifts back in timezones west of UTC.
   return new Date(value).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
+    timeZone: 'UTC',
   })
 }
 

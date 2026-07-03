@@ -272,6 +272,19 @@ const options = {
             photos: { type: 'array', minItems: 1, items: { $ref: '#/components/schemas/PhotoInput' } },
           },
         },
+        BookingPaymentResume: {
+          type: 'object',
+          description:
+            "Response of bookings_pay: a live hosted-checkout URL for the booking's pending online payment. The session is resumed when still open, or freshly created when the stored one expired.",
+          required: ['checkoutUrl'],
+          properties: {
+            checkoutUrl: {
+              type: 'string',
+              format: 'uri',
+              description: "The payment provider's hosted checkout URL to redirect the guest to",
+            },
+          },
+        },
         CreateBookingInput: {
           type: 'object',
           required: ['listingId', 'checkIn', 'checkOut'],

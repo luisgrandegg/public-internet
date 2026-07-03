@@ -8,6 +8,7 @@ type ErrorCode =
   | 'VALIDATION_ERROR'
   | 'INTERNAL_ERROR'
   | 'PAYMENTS_NOT_CONFIGURED'
+  | 'PAYMENT_ALREADY_SETTLING'
 
 interface ErrorBody {
   code: ErrorCode

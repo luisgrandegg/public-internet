@@ -24,4 +24,9 @@ export interface PaymentProvider {
    * Returns { type: 'ignored' } for events that don't affect payment state.
    */
   parseWebhookEvent(rawBody: string, headers: Headers): Promise<PaymentWebhookEvent>
+  /**
+   * Optional: report the live status of a previously created checkout session.
+   * Used to avoid offering dead links and to regenerate expired sessions.
+   */
+  getCheckoutSession?(sessionId: string): Promise<{ status: 'open' | 'complete' | 'expired'; checkoutUrl: string | null }>
 }

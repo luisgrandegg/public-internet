@@ -1,5 +1,6 @@
 // GENERATED — do not edit manually. Run: pnpm --filter @public-internet/touristical-renting-sdk generate
 import type { ApiClient } from '../client.js'
+import { BookingsPayResource } from './bookings-pay.resource.js'
 import { BookingsReviewResource } from './bookings-review.resource.js'
 import { BookingsResource } from './bookings.resource.js'
 import { EnquiriesResource } from './enquiries.resource.js'
@@ -20,6 +21,7 @@ import { UsersMeResource } from './users-me.resource.js'
 import { WebhooksPaymentsResource } from './webhooks-payments.resource.js'
 
 export class TouristicalRentingSDK {
+  readonly bookingsPay: BookingsPayResource
   readonly bookingsReview: BookingsReviewResource
   readonly bookings: BookingsResource
   readonly enquiries: EnquiriesResource
@@ -42,6 +44,7 @@ export class TouristicalRentingSDK {
   }
 
   constructor(client: ApiClient) {
+    this.bookingsPay = new BookingsPayResource(client)
     this.bookingsReview = new BookingsReviewResource(client)
     this.bookings = new BookingsResource(client)
     this.enquiries = new EnquiriesResource(client)

@@ -152,4 +152,25 @@ test.describe.serial('Booking flow', () => {
     expect(body.error.code).toBe('CONFLICT')
     expect(body.error.message).toMatch(/dates are not available/i)
   })
+
+  test('resume-payment endpoint answers 503 in offline settlement mode', async ({ page }) => {
+    // Sign in as the guest again — CI runs without a payment provider, so
+    // there is never an online payment to resume: the endpoint must say so
+    // with 503 PAYMENTS_NOT_CONFIGURED rather than hand out a checkout URL.
+    await page.goto('/auth/signin')
+    await page.getByLabel('Email address', { exact: true }).fill(guestEmail)
+    await page.getByLabel('Password', { exact: true }).fill(password)
+    await page.getByRole('button', { name: /sign in/i }).click()
+    await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible({ timeout: 15_000 })
+
+    const bookingsRes = await page.request.get('/api/bookings')
+    expect(bookingsRes.status()).toBe(200)
+    const bookings = (await bookingsRes.json()).data
+    expect(bookings.length).toBeGreaterThan(0)
+
+    const payRes = await page.request.post(`/api/bookings/${bookings[0].id}/pay`)
+    expect(payRes.status()).toBe(503)
+    const payBody = await payRes.json()
+    expect(payBody.error.code).toBe('PAYMENTS_NOT_CONFIGURED')
+  })
 })

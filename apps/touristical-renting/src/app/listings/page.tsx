@@ -38,7 +38,11 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
   const propertyType = filters.propertyType || undefined
   const minPrice = filters.minPrice ? Math.round(parseFloat(filters.minPrice) * 100) : undefined
   const maxPrice = filters.maxPrice ? Math.round(parseFloat(filters.maxPrice) * 100) : undefined
-  const page = params.page ? parseInt(params.page, 10) : 1
+
+  // Guard the page param like guests below — a non-numeric or non-positive
+  // value (e.g. ?page=abc) falls back to page 1 instead of crashing the query.
+  const parsedPage = params.page ? parseInt(params.page, 10) : NaN
+  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1
 
   // Only apply the availability filter when both dates form a valid range.
   // A half-filled range (user still picking dates in the sidebar) is ignored, not an error.
@@ -49,6 +53,16 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
 
   const parsedGuests = filters.guests ? parseInt(filters.guests, 10) : NaN
   const guests = Number.isInteger(parsedGuests) && parsedGuests >= 1 ? parsedGuests : undefined
+
+  // The filters that were actually APPLIED to the query — the chips must
+  // mirror these exactly, not the raw URL params (a half-filled date range is
+  // ignored by the query above, so it must not be announced as active).
+  const appliedFilters: ListingFilters = {
+    ...filters,
+    checkIn: hasValidDateRange ? filters.checkIn : '',
+    checkOut: hasValidDateRange ? filters.checkOut : '',
+    guests: guests !== undefined ? String(guests) : '',
+  }
 
   const [{ listings }, session] = await Promise.all([
     getListings({
@@ -101,6 +115,7 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
     <ListingsClientShell
       listings={normalisedListings}
       filters={filters}
+      appliedFilters={appliedFilters}
       favoritedListingIds={favoritedListingIds}
     />
   )

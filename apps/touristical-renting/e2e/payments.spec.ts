@@ -35,3 +35,12 @@ test.describe('Payments webhook endpoint (offline mode)', () => {
     expect(body.error.code).toBe('PAYMENTS_NOT_CONFIGURED')
   })
 })
+
+test.describe('Resume payment endpoint', () => {
+  test('POST /api/bookings/:id/pay without a session returns 401', async ({ request }) => {
+    const response = await request.post('/api/bookings/some-booking-id/pay')
+    expect(response.status()).toBe(401)
+    const body = await response.json()
+    expect(body.error.code).toBe('UNAUTHORIZED')
+  })
+})

@@ -150,6 +150,12 @@ export interface UpdateListingInput {
   photos?: Array<PhotoInput>
 }
 
+/** Response of bookings_pay: a live hosted-checkout URL for the booking's pending online payment. The session is resumed when still open, or freshly created when the stored one expired. */
+export interface BookingPaymentResume {
+  /** The payment provider's hosted checkout URL to redirect the guest to */
+  checkoutUrl: string
+}
+
 export interface CreateBookingInput {
   listingId: string
   /** ISO date YYYY-MM-DD */

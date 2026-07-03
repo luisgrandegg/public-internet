@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { getBookingById } from '@/lib/services/bookings'
 import { LeaveReviewForm } from './_components/LeaveReviewForm'
+import { CompletePaymentButton } from './_components/CompletePaymentButton'
 import styles from './page.module.css'
 
 export const metadata = { title: 'Booking details' }
@@ -29,9 +30,6 @@ export default async function BookingDetailPage({ params, searchParams }: Bookin
   const isOnline = payment != null && payment.provider !== 'offline'
   const isPaid = isOnline && payment.status === 'SUCCEEDED'
   const isPaymentPending = isOnline && payment.status === 'PENDING'
-  // The hosted checkout URL is stored at creation (providerCheckoutUrl), so a
-  // guest can complete an interrupted checkout without a provider API call.
-  const completePaymentUrl = isPaymentPending ? payment.providerCheckoutUrl : null
 
   const checkInStr = new Date(booking.checkIn).toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -145,18 +143,16 @@ export default async function BookingDetailPage({ params, searchParams }: Bookin
               <p className={styles.paymentNote}>
                 If you have just paid, confirmation can take a moment — refresh this page shortly.
               </p>
-            ) : completePaymentUrl ? (
-              <p className={styles.paymentNote}>
-                Your booking holds these dates.{' '}
-                <a href={completePaymentUrl} className={styles.paymentLink}>
-                  Complete payment
-                </a>{' '}
-                to finish checkout.
-              </p>
             ) : (
-              <p className={styles.paymentNote}>
-                Your booking holds these dates. The payment has not been completed yet.
-              </p>
+              <>
+                <p className={styles.paymentNote}>
+                  Your booking holds these dates. Complete the payment to finish checkout.
+                </p>
+                {/* Never link the stored checkout URL directly — hosted
+                    sessions expire. The button fetches a live (or freshly
+                    regenerated) checkout URL from POST /api/bookings/:id/pay. */}
+                <CompletePaymentButton bookingId={booking.id} />
+              </>
             )}
           </>
         )}

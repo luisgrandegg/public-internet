@@ -1,5 +1,6 @@
 // GENERATED — do not edit manually.
 export * from './types.js'
+export { BookingsPayResource } from './bookings-pay.resource.js'
 export { BookingsReviewResource } from './bookings-review.resource.js'
 export { BookingsResource } from './bookings.resource.js'
 export { EnquiriesResource } from './enquiries.resource.js'

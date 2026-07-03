@@ -22,7 +22,14 @@ const ListingsMap = dynamic(() => import('./ListingsMap'), {
 
 interface ListingsClientShellProps {
   listings: Listing[]
+  /** Raw URL params — prefill the sidebar form so the user can keep editing them. */
   filters: ListingFilters
+  /**
+   * The filters the server actually applied to the query (e.g. a half-filled
+   * date range is ignored, an invalid guests value is dropped). The active
+   * filter chips render from these so they exactly mirror the results.
+   */
+  appliedFilters: ListingFilters
   /** IDs the signed-in user has saved. Null for signed-out visitors — hides the save toggle. */
   favoritedListingIds?: string[] | null
 }
@@ -30,27 +37,35 @@ interface ListingsClientShellProps {
 function formatFilterDate(value: string): string {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  // The value is a plain YYYY-MM-DD date parsed as UTC midnight — render it
+  // in UTC too, otherwise the day shifts back in timezones west of UTC.
+  return parsed.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
 }
 
 export function ListingsClientShell({
   listings,
   filters,
+  appliedFilters,
   favoritedListingIds = null,
 }: ListingsClientShellProps) {
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null)
 
   const activeFilters: Array<{ key: string; label?: string; value: string }> = []
-  if (filters.checkIn) {
-    activeFilters.push({ key: 'checkIn', label: 'Check in', value: formatFilterDate(filters.checkIn) })
+  if (appliedFilters.checkIn) {
+    activeFilters.push({ key: 'checkIn', label: 'Check in', value: formatFilterDate(appliedFilters.checkIn) })
   }
-  if (filters.checkOut) {
-    activeFilters.push({ key: 'checkOut', label: 'Check out', value: formatFilterDate(filters.checkOut) })
+  if (appliedFilters.checkOut) {
+    activeFilters.push({ key: 'checkOut', label: 'Check out', value: formatFilterDate(appliedFilters.checkOut) })
   }
-  if (filters.guests) {
+  if (appliedFilters.guests) {
     activeFilters.push({
       key: 'guests',
-      value: filters.guests === '1' ? '1 guest' : `${filters.guests} guests`,
+      value: appliedFilters.guests === '1' ? '1 guest' : `${appliedFilters.guests} guests`,
     })
   }
 

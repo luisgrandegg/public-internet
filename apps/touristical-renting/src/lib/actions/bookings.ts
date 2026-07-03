@@ -43,3 +43,45 @@ export async function createBookingAction(
     return { ok: false, error: 'Could not create booking. Please try again.' }
   }
 }
+
+export type ResumePaymentActionResult =
+  | { ok: true; checkoutUrl: string }
+  | { ok: false; error: string }
+
+/**
+ * Thin wrapper around POST /api/bookings/:id/pay — returns a live hosted
+ * checkout URL for a booking's pending online payment (the stored URL may
+ * have expired, so the route consults the provider and regenerates it when
+ * needed).
+ */
+export async function resumeBookingPaymentAction(
+  bookingId: string,
+): Promise<ResumePaymentActionResult> {
+  try {
+    const cookie = (await headers()).get('cookie') ?? ''
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+    const res = await fetch(`${appUrl}/api/bookings/${encodeURIComponent(bookingId)}/pay`, {
+      method: 'POST',
+      headers: { cookie },
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      if (data?.error?.code === 'PAYMENT_ALREADY_SETTLING') {
+        return {
+          ok: false,
+          error: 'Your payment is already being confirmed — refresh this page in a moment.',
+        }
+      }
+      return {
+        ok: false,
+        error: data?.error?.message ?? 'Could not prepare the payment. Please try again.',
+      }
+    }
+
+    return { ok: true, checkoutUrl: data.data.checkoutUrl }
+  } catch {
+    return { ok: false, error: 'Could not prepare the payment. Please try again.' }
+  }
+}

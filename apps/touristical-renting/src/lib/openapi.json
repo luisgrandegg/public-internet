@@ -563,6 +563,20 @@
           }
         }
       },
+      "BookingPaymentResume": {
+        "type": "object",
+        "description": "Response of bookings_pay: a live hosted-checkout URL for the booking's pending online payment. The session is resumed when still open, or freshly created when the stored one expired.",
+        "required": [
+          "checkoutUrl"
+        ],
+        "properties": {
+          "checkoutUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "The payment provider's hosted checkout URL to redirect the guest to"
+          }
+        }
+      },
       "CreateBookingInput": {
         "type": "object",
         "required": [
@@ -1018,6 +1032,99 @@
     }
   ],
   "paths": {
+    "/api/bookings/{id}/pay": {
+      "post": {
+        "operationId": "bookings_pay",
+        "summary": "Get a live checkout URL for a booking's pending online payment",
+        "description": "Returns a hosted-checkout URL the guest can be redirected to in order to complete a PENDING online payment. The stored checkout URL is never handed out blindly — providers expire hosted sessions, so when the provider can report the stored session's live status it is consulted first: an open session is resumed as-is; a completed session means the payment is already settling and the webhook will confirm it shortly (409 PAYMENT_ALREADY_SETTLING); an expired or unknown session is replaced with a fresh checkout session for exactly the stored payment amount. Only the booking's guest may call this, the payment must be PENDING with an online (non-offline) provider, and a node in offline settlement mode answers 503.\n",
+        "tags": [
+          "bookings"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Booking ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live hosted-checkout URL to redirect the guest to",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BookingPaymentResume"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the guest of this booking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Booking not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No pending online payment to complete (CONFLICT), or the checkout session is already completing and the webhook will confirm it (PAYMENT_ALREADY_SETTLING)\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No payment provider configured (offline settlement mode)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bookings/{id}/review": {
       "post": {
         "operationId": "bookings_create_review",
@@ -2789,7 +2896,7 @@
       "post": {
         "operationId": "webhooks_payments",
         "summary": "Payment provider webhook receiver",
-        "description": "Receives payment events from the node's configured payment provider (ADR-006). The request is authenticated by the provider implementation itself (e.g. Stripe signature verification) — no session cookie is required. A payment.succeeded event marks the payment SUCCEEDED and stores the provider's payment reference; payment.canceled marks a PENDING payment CANCELED. Events that don't affect payment state are acknowledged and ignored. When no payment provider is configured (offline settlement mode) the endpoint returns 503.\n",
+        "description": "Receives payment events from the node's configured payment provider (ADR-006). The request is authenticated by the provider implementation itself (e.g. Stripe signature verification) — no session cookie is required. A payment.succeeded event marks the PENDING payment SUCCEEDED and stores the provider's payment reference. A payment.canceled event (canceled/expired checkout — the booking will never be paid) deletes the still-PENDING booking, releasing its dates for other guests per ADR-006 §4; the payment record is removed with it. Events that don't affect payment state are acknowledged and ignored. When no payment provider is configured (offline settlement mode) the endpoint returns 503.\n",
         "tags": [
           "webhooks"
         ],

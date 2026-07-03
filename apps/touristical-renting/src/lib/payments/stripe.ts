@@ -60,6 +60,22 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   /**
+   * Reports the live status of a hosted checkout session so the app never
+   * offers a dead checkout link. Stripe checkout sessions expire (24h by
+   * default) — an 'expired' result tells the caller to create a fresh one.
+   */
+  async getCheckoutSession(
+    sessionId: string,
+  ): Promise<{ status: 'open' | 'complete' | 'expired'; checkoutUrl: string | null }> {
+    const session = await this.getClient().checkout.sessions.retrieve(sessionId)
+    // Stripe reports 'open' | 'complete' | 'expired' | null — anything that is
+    // not resumable or already settling is treated as expired (regenerate).
+    const status =
+      session.status === 'open' || session.status === 'complete' ? session.status : 'expired'
+    return { status, checkoutUrl: session.url ?? null }
+  }
+
+  /**
    * Verifies the Stripe-Signature header against STRIPE_WEBHOOK_SECRET and
    * maps the Stripe event onto the generic payment lifecycle:
    * - checkout.session.completed → payment.succeeded (payment_intent as reference)
