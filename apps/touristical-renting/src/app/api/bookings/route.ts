@@ -65,14 +65,19 @@ export async function GET(req: NextRequest) {
  *             $ref: '#/components/schemas/CreateBookingInput'
  *     responses:
  *       201:
- *         description: Booking created
+ *         description: >
+ *           Booking created, together with its payment record (ADR-006).
+ *           In offline mode the payment is settled directly with the host
+ *           (provider 'offline', status SUCCEEDED) and checkoutUrl is null.
+ *           In Stripe mode the payment is PENDING and checkoutUrl is the
+ *           hosted Stripe Checkout URL to redirect the guest to.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
  *                 data:
- *                   $ref: '#/components/schemas/Booking'
+ *                   $ref: '#/components/schemas/BookingCreated'
  *       401:
  *         description: Not authenticated
  *         content:
@@ -113,8 +118,8 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return validationError(flattenZodErrors(parsed.error))
 
   try {
-    const booking = await createBooking(session.user.id, parsed.data)
-    return created(booking)
+    const { booking, checkoutUrl } = await createBooking(session.user.id, parsed.data)
+    return created({ ...booking, checkoutUrl })
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'LISTING_NOT_FOUND') return notFound('Listing not found')

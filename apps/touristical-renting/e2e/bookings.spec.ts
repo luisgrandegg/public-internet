@@ -122,10 +122,18 @@ test.describe.serial('Booking flow', () => {
     await expect(page.getByRole('heading', { name: 'Booking details', exact: true })).toBeVisible()
     await expect(page.getByText(listingTitle)).toBeVisible()
 
-    // The booking appears in the guest's booking history
+    // Offline settlement (ADR-006): with no STRIPE_SECRET_KEY the payment is
+    // settled directly with the host — the copy says so plainly, and no
+    // online payment step ever appears.
+    await expect(page.getByRole('heading', { name: 'Payment', exact: true })).toBeVisible()
+    await expect(page.getByText('Pay at the property', { exact: true })).toBeVisible()
+    await expect(page.getByText(/settled directly with the host/i)).toBeVisible()
+
+    // The booking appears in the guest's booking history with its payment state
     await page.goto('/bookings')
     await expect(page.getByRole('heading', { name: 'My bookings', exact: true })).toBeVisible()
     await expect(page.getByText(listingTitle)).toBeVisible()
+    await expect(page.getByText('Pay at the property', { exact: true })).toBeVisible()
   })
 
   test('booking the same date range again is rejected with a clear message', async ({ page }) => {

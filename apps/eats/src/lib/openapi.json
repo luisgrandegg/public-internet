@@ -354,6 +354,80 @@
           }
         }
       },
+      "PaymentStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "SUCCEEDED",
+          "FAILED",
+          "CANCELED"
+        ],
+        "description": "Lifecycle status of a payment (ADR-006). Only the signature-verified Stripe webhook moves an online payment to SUCCEEDED."
+      },
+      "Payment": {
+        "type": "object",
+        "required": [
+          "id",
+          "orderId",
+          "provider",
+          "status",
+          "amount",
+          "currency",
+          "createdAt",
+          "updatedAt"
+        ],
+        "description": "One payment per order (ADR-006). provider \"offline\" documents direct settlement (pay on delivery) — a first-class commission-free mode, not a stub.",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "stripe",
+              "offline"
+            ],
+            "description": "Payment provider for this node"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "amount": {
+            "type": "integer",
+            "description": "Amount in cents — exactly the pre-confirmation totalCost. Never recomputed after creation."
+          },
+          "currency": {
+            "type": "string",
+            "description": "ISO currency code, default \"eur\""
+          },
+          "stripeCheckoutSessionId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Set only for provider \"stripe\""
+          },
+          "stripePaymentIntentId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Set by the checkout.session.completed webhook"
+          },
+          "stripeCheckoutUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Hosted checkout URL for completing a PENDING online payment"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "OrderItem": {
         "type": "object",
         "required": [
@@ -433,6 +507,15 @@
             "nullable": true,
             "description": "Delivery record for the order, when one exists"
           },
+          "payment": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Payment"
+              }
+            ],
+            "nullable": true,
+            "description": "Payment record for the order (ADR-006). Null only on orders created before payments existed."
+          },
           "itemsCost": {
             "type": "integer",
             "description": "Sum of all item costs in cents"
@@ -461,6 +544,27 @@
             "format": "date-time"
           }
         }
+      },
+      "PlacedOrder": {
+        "description": "Order as returned from placement. On a Stripe-configured node checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Order"
+          },
+          {
+            "type": "object",
+            "required": [
+              "checkoutUrl"
+            ],
+            "properties": {
+              "checkoutUrl": {
+                "type": "string",
+                "nullable": true,
+                "description": "Hosted Stripe Checkout URL to redirect the customer to, or null in offline-settlement mode"
+              }
+            }
+          }
+        ]
       },
       "CreateOrderInput": {
         "type": "object",
@@ -737,6 +841,10 @@
     {
       "name": "restaurant-owner",
       "description": "Restaurant owner management operations"
+    },
+    {
+      "name": "webhooks",
+      "description": "Provider webhook receivers — called by external services, not SDK consumers"
     }
   ],
   "paths": {
@@ -1097,14 +1205,14 @@
         },
         "responses": {
           "201": {
-            "description": "Order placed",
+            "description": "Order placed. On a Stripe-configured node the payment is PENDING and `checkoutUrl` points to the hosted Stripe Checkout page (the client must redirect there); on an offline node the payment is created as provider `offline` / SUCCEEDED and `checkoutUrl` is null.\n",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/Order"
+                      "$ref": "#/components/schemas/PlacedOrder"
                     }
                   }
                 }
@@ -1123,6 +1231,16 @@
           },
           "422": {
             "description": "Validation failed or menu item conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The payment provider could not create a checkout session",
             "content": {
               "application/json": {
                 "schema": {
@@ -1956,6 +2074,70 @@
           },
           "422": {
             "description": "Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks/stripe": {
+      "post": {
+        "operationId": "webhooks_stripe",
+        "summary": "Stripe webhook receiver (signature-verified, no session auth)",
+        "description": "Webhook endpoint called by Stripe — not by SDK consumers. Requests are authenticated by verifying the `stripe-signature` header against STRIPE_WEBHOOK_SECRET; session cookies are ignored. Handles `checkout.session.completed` (payment → SUCCEEDED, stores the payment intent id) and `checkout.session.expired` (payment → CANCELED, which releases the abandoned checkout per ADR-006 §4). Other event types are acknowledged without action.\n",
+        "tags": [
+          "webhooks"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "stripe-signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Stripe webhook signature for the raw request body"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "description": "Raw Stripe event JSON — must not be re-serialised before verification"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Event verified and processed (or acknowledged as unhandled)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "received": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or invalid signature, or the node has no Stripe webhook configuration",
             "content": {
               "application/json": {
                 "schema": {

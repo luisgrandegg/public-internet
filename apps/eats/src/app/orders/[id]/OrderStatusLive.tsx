@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Stepper } from '@public-internet/design-system'
-import { orderStatusLabel, deliveryStatusLabel } from '@/lib/format'
+import { orderStatusLabel, deliveryStatusLabel, paymentStateLabel } from '@/lib/format'
 import styles from './page.module.css'
 
 /**
@@ -27,12 +27,18 @@ export interface LiveDeliveryData {
   deliveredAt: string | null
 }
 
+export interface LivePaymentData {
+  provider: string
+  status: string
+}
+
 export interface LiveOrderData {
   id: string
   status: string
   createdAt: string
   updatedAt: string
   delivery: LiveDeliveryData | null
+  payment: LivePaymentData | null
 }
 
 interface OrderApiPayload {
@@ -42,6 +48,7 @@ interface OrderApiPayload {
     createdAt: string
     updatedAt: string
     delivery?: LiveDeliveryData | null
+    payment?: LivePaymentData | null
   }
 }
 
@@ -95,6 +102,9 @@ export function OrderStatusLive({ initialOrder }: { initialOrder: LiveOrderData 
                 pickedUpAt: next.delivery.pickedUpAt ?? null,
                 deliveredAt: next.delivery.deliveredAt ?? null,
               }
+            : null,
+          payment: next.payment
+            ? { provider: next.payment.provider, status: next.payment.status }
             : null,
         })
       } catch {
@@ -159,6 +169,12 @@ export function OrderStatusLive({ initialOrder }: { initialOrder: LiveOrderData 
           <>
             {' '}
             · Delivery: <strong>{deliveryStatusLabel(order.delivery.status)}</strong>
+          </>
+        )}
+        {order.payment && (
+          <>
+            {' '}
+            · Payment: <strong>{paymentStateLabel(order.payment)}</strong>
           </>
         )}
       </p>

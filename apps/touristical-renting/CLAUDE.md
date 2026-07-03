@@ -115,8 +115,9 @@ This app uses Next.js Route Handlers as its REST API. See `apps/CLAUDE.md § Ful
 | `GET` | `/api/listings/:id` | No | Get single listing |
 | `PATCH` | `/api/listings/:id` | Yes (owner) | Update listing |
 | `DELETE` | `/api/listings/:id` | Yes (owner) | Delete listing |
-| `POST` | `/api/bookings` | Yes (Guest) | Create a booking |
-| `GET` | `/api/bookings/:id` | Yes (owner) | Get booking detail |
+| `POST` | `/api/bookings` | Yes (Guest) | Create a booking + payment record (ADR-006); Stripe mode returns a `checkoutUrl` to redirect to |
+| `GET` | `/api/bookings/:id` | Yes (owner) | Get booking detail (includes `payment`) |
+| `POST` | `/api/webhooks/stripe` | No (Stripe signature) | Stripe webhook — `checkout.session.completed` → payment SUCCEEDED, `checkout.session.expired` → CANCELED |
 | `GET` | `/api/enquiries` | Yes (Guest) | List the signed-in guest's enquiries with host replies |
 | `GET` | `/api/host/listings` | Yes (Host) | List host's own listings |
 | `GET` | `/api/host/bookings` | Yes (Host) | List bookings for host's listings |
@@ -200,7 +201,20 @@ model Session {
 DATABASE_URL="postgresql://user:password@localhost:5432/touristical_renting"
 BETTER_AUTH_SECRET="<random 32-char secret>"
 NEXT_PUBLIC_API_BASE="http://localhost:3000"
+
+# Optional — Stripe payments (ADR-006). When unset the node runs in offline
+# settlement mode ("pay at the property") and no online payment is taken.
+STRIPE_SECRET_KEY="<node operator's own Stripe secret key>"
+STRIPE_WEBHOOK_SECRET="<signing secret for POST /api/webhooks/stripe>"
 ```
+
+### Payments (ADR-006)
+
+- Every Booking gets a 1:1 `Payment` record created in the same transaction: `provider` `'stripe' | 'offline'`, `status` `PENDING | SUCCEEDED | FAILED | CANCELED`, `amount` in cents (exactly the pre-confirmation total — never recomputed), `currency` (default `eur`).
+- `src/lib/payments.ts` owns the entire Stripe surface — no other module imports `stripe`.
+- Booking API responses include the `payment` object; `POST /api/bookings` additionally returns `checkoutUrl` (null in offline mode).
+- Payment confirmation arrives only via the signature-verified webhook — the success redirect is never trusted.
+- Bookings block their dates regardless of payment status (ADR-006 §4) so a paying guest is never double-booked mid-checkout.
 
 ---
 

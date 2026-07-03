@@ -14,6 +14,7 @@ export async function getHostBookings(hostId: string) {
     include: {
       listing: { select: { id: true, title: true, nightlyRate: true } },
       guest: { select: { id: true, name: true, email: true } },
+      payment: true,
     },
     orderBy: { createdAt: 'desc' },
   })

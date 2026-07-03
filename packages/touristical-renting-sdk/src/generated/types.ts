@@ -71,6 +71,24 @@ export type HostListing = Listing & {
   }
 }
 
+/** Payment settlement status (ADR-006). Offline payments are created SUCCEEDED; Stripe payments start PENDING and are confirmed by webhook. */
+export type PaymentStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED'
+
+/** Payment record accompanying every booking (ADR-006). provider 'stripe' settles online via Stripe Checkout; provider 'offline' is settled directly with the host (pay at the property). */
+export interface Payment {
+  id: string
+  bookingId: string
+  provider: 'stripe' | 'offline'
+  status: PaymentStatus
+  /** Amount in cents — exactly the pre-confirmation total. Never recomputed. */
+  amount: number
+  currency: string
+  stripeCheckoutSessionId?: string | null
+  stripePaymentIntentId?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Booking {
   id: string
   listingId: string
@@ -85,6 +103,13 @@ export interface Booking {
     photos?: Array<Photo>
   }
   guest: GuestSummary
+  /** The 1:1 payment record for this booking (ADR-006). */
+  payment?: Payment | null
+}
+
+/** Response of bookings_create: the booking plus its payment record. checkoutUrl is the hosted Stripe Checkout URL to redirect the guest to (Stripe mode) or null (offline settlement). */
+export type BookingCreated = Booking & {
+  checkoutUrl: string | null
 }
 
 export interface CreateListingInput {

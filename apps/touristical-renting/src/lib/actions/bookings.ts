@@ -3,7 +3,7 @@
 import { headers } from 'next/headers'
 
 export type BookingActionResult =
-  | { ok: true; bookingId: string }
+  | { ok: true; bookingId: string; checkoutUrl: string | null }
   | { ok: false; error: string }
 
 export async function createBookingAction(
@@ -35,7 +35,9 @@ export async function createBookingAction(
       return { ok: false, error: data?.error?.message ?? 'Could not create booking. Please try again.' }
     }
 
-    return { ok: true, bookingId: data.data.id }
+    // checkoutUrl is set when the node runs online payments (Stripe mode);
+    // null when payment is settled directly with the host (offline mode).
+    return { ok: true, bookingId: data.data.id, checkoutUrl: data.data.checkoutUrl ?? null }
   } catch {
     return { ok: false, error: 'Could not create booking. Please try again.' }
   }

@@ -96,6 +96,30 @@ export interface OrderItemInput {
   quantity: number
 }
 
+/** Lifecycle status of a payment (ADR-006). Only the signature-verified Stripe webhook moves an online payment to SUCCEEDED. */
+export type PaymentStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED'
+
+/** One payment per order (ADR-006). provider "offline" documents direct settlement (pay on delivery) — a first-class commission-free mode, not a stub. */
+export interface Payment {
+  id: string
+  orderId: string
+  /** Payment provider for this node */
+  provider: 'stripe' | 'offline'
+  status: PaymentStatus
+  /** Amount in cents — exactly the pre-confirmation totalCost. Never recomputed after creation. */
+  amount: number
+  /** ISO currency code, default "eur" */
+  currency: string
+  /** Set only for provider "stripe" */
+  stripeCheckoutSessionId?: string | null
+  /** Set by the checkout.session.completed webhook */
+  stripePaymentIntentId?: string | null
+  /** Hosted checkout URL for completing a PENDING online payment */
+  stripeCheckoutUrl?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface OrderItem {
   id: string
   orderId: string
@@ -116,6 +140,8 @@ export interface Order {
   items: Array<OrderItem>
   /** Delivery record for the order, when one exists */
   delivery?: Delivery | null
+  /** Payment record for the order (ADR-006). Null only on orders created before payments existed. */
+  payment?: Payment | null
   /** Sum of all item costs in cents */
   itemsCost: number
   /** Flat infrastructure fee in cents — transparent and published. Not a commission. */
@@ -126,6 +152,12 @@ export interface Order {
   notes?: string | null
   createdAt: string
   updatedAt: string
+}
+
+/** Order as returned from placement. On a Stripe-configured node checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED. */
+export type PlacedOrder = Order & {
+  /** Hosted Stripe Checkout URL to redirect the customer to, or null in offline-settlement mode */
+  checkoutUrl: string | null
 }
 
 export interface CreateOrderInput {

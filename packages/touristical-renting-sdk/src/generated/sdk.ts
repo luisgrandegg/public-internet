@@ -17,6 +17,7 @@ import { ListingsResource } from './listings.resource.js'
 import { UsersMeBecomeHostResource } from './users-me-become-host.resource.js'
 import { UsersMeExportResource } from './users-me-export.resource.js'
 import { UsersMeResource } from './users-me.resource.js'
+import { WebhooksStripeResource } from './webhooks-stripe.resource.js'
 
 export class TouristicalRentingSDK {
   readonly bookingsReview: BookingsReviewResource
@@ -31,6 +32,7 @@ export class TouristicalRentingSDK {
   readonly usersMeBecomeHost: UsersMeBecomeHostResource
   readonly usersMeExport: UsersMeExportResource
   readonly usersMe: UsersMeResource
+  readonly webhooksStripe: WebhooksStripeResource
   readonly host: {
     bookings: HostBookingsResource
     enquiriesReply: HostEnquiriesReplyResource
@@ -52,6 +54,7 @@ export class TouristicalRentingSDK {
     this.usersMeBecomeHost = new UsersMeBecomeHostResource(client)
     this.usersMeExport = new UsersMeExportResource(client)
     this.usersMe = new UsersMeResource(client)
+    this.webhooksStripe = new WebhooksStripeResource(client)
     this.host = {
       bookings: new HostBookingsResource(client),
       enquiriesReply: new HostEnquiriesReplyResource(client),

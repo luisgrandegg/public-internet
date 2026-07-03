@@ -45,6 +45,18 @@ export default async function BookingsPage() {
             const totalEur = (booking.totalCost / 100).toFixed(2)
             const firstPhoto = booking.listing.photos[0]
 
+            // Payment state as plain text — never colour alone (WCAG).
+            const payment = booking.payment
+            let paymentLabel: string | null = null
+            if (payment?.provider === 'offline') {
+              paymentLabel = 'Pay at the property'
+            } else if (payment?.provider === 'stripe') {
+              if (payment.status === 'SUCCEEDED') paymentLabel = 'Paid'
+              else if (payment.status === 'PENDING') paymentLabel = 'Payment pending — complete payment'
+              else if (payment.status === 'CANCELED') paymentLabel = 'Payment canceled'
+              else if (payment.status === 'FAILED') paymentLabel = 'Payment failed'
+            }
+
             return (
               <li key={booking.id}>
                 <Link href={`/bookings/${booking.id}`} className={styles.bookingCard}>
@@ -75,6 +87,9 @@ export default async function BookingsPage() {
                     >
                       {isUpcoming ? 'Upcoming' : 'Completed'}
                     </span>
+                    {paymentLabel && (
+                      <div className={styles.paymentLabel}>{paymentLabel}</div>
+                    )}
                   </div>
                 </Link>
               </li>

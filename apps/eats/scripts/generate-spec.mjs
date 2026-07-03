@@ -162,6 +162,29 @@ const options = {
             quantity: { type: 'integer', minimum: 1 },
           },
         },
+        PaymentStatus: {
+          type: 'string',
+          enum: ['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED'],
+          description: 'Lifecycle status of a payment (ADR-006). Only the signature-verified Stripe webhook moves an online payment to SUCCEEDED.',
+        },
+        Payment: {
+          type: 'object',
+          required: ['id', 'orderId', 'provider', 'status', 'amount', 'currency', 'createdAt', 'updatedAt'],
+          description: 'One payment per order (ADR-006). provider "offline" documents direct settlement (pay on delivery) — a first-class commission-free mode, not a stub.',
+          properties: {
+            id: { type: 'string' },
+            orderId: { type: 'string' },
+            provider: { type: 'string', enum: ['stripe', 'offline'], description: 'Payment provider for this node' },
+            status: { $ref: '#/components/schemas/PaymentStatus' },
+            amount: { type: 'integer', description: 'Amount in cents — exactly the pre-confirmation totalCost. Never recomputed after creation.' },
+            currency: { type: 'string', description: 'ISO currency code, default "eur"' },
+            stripeCheckoutSessionId: { type: 'string', nullable: true, description: 'Set only for provider "stripe"' },
+            stripePaymentIntentId: { type: 'string', nullable: true, description: 'Set by the checkout.session.completed webhook' },
+            stripeCheckoutUrl: { type: 'string', nullable: true, description: 'Hosted checkout URL for completing a PENDING online payment' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
         OrderItem: {
           type: 'object',
           required: ['id', 'orderId', 'menuItemId', 'quantity', 'unitPrice'],
@@ -189,6 +212,11 @@ const options = {
               nullable: true,
               description: 'Delivery record for the order, when one exists',
             },
+            payment: {
+              allOf: [{ $ref: '#/components/schemas/Payment' }],
+              nullable: true,
+              description: 'Payment record for the order (ADR-006). Null only on orders created before payments existed.',
+            },
             itemsCost: { type: 'integer', description: 'Sum of all item costs in cents' },
             infrastructureFee: { type: 'integer', description: 'Flat infrastructure fee in cents — transparent and published. Not a commission.' },
             totalCost: { type: 'integer', description: 'Total cost in cents = itemsCost + infrastructureFee. Complete price — no hidden fees.' },
@@ -197,6 +225,23 @@ const options = {
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },
+        },
+        PlacedOrder: {
+          description: 'Order as returned from placement. On a Stripe-configured node checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED.',
+          allOf: [
+            { $ref: '#/components/schemas/Order' },
+            {
+              type: 'object',
+              required: ['checkoutUrl'],
+              properties: {
+                checkoutUrl: {
+                  type: 'string',
+                  nullable: true,
+                  description: 'Hosted Stripe Checkout URL to redirect the customer to, or null in offline-settlement mode',
+                },
+              },
+            },
+          ],
         },
         CreateOrderInput: {
           type: 'object',
@@ -310,6 +355,7 @@ const options = {
       { name: 'reviews', description: 'Verified-order restaurant reviews and ratings' },
       { name: 'courier', description: 'Courier delivery operations' },
       { name: 'restaurant-owner', description: 'Restaurant owner management operations' },
+      { name: 'webhooks', description: 'Provider webhook receivers — called by external services, not SDK consumers' },
     ],
   },
   // Using glob pattern — swagger-jsdoc resolves from cwd (app root).

@@ -117,6 +117,7 @@ model Order {
   items           OrderItem[]
   delivery        Delivery?
   review          Review?
+  payment         Payment?
   // All costs stored in cents. Shown in full to customer before confirmation.
   itemsCost       Int
   // Flat infrastructure fee — transparent and published. Not a commission.
@@ -178,6 +179,36 @@ enum DeliveryStatus {
   PICKED_UP
   DELIVERED
   FAILED
+}
+
+// One Payment per Order (ADR-006). Created in the same transaction as the order.
+// provider 'offline' documents direct settlement (pay on delivery) — a first-class
+// mode for commission-free nodes, not a stub. provider 'stripe' tracks a hosted
+// Checkout Session; only the signature-verified webhook moves it to SUCCEEDED.
+model Payment {
+  id      String @id @default(cuid())
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId String @unique
+  // 'stripe' | 'offline' — string (not enum) so new providers need no migration (ADR-006).
+  provider String
+  status   PaymentStatus @default(PENDING)
+  // Cents — exactly the pre-confirmation totalCost. Never recomputed after creation.
+  amount   Int
+  currency String @default("eur")
+  // Set only for provider 'stripe'.
+  stripeCheckoutSessionId String?
+  stripePaymentIntentId   String?
+  // Hosted Checkout URL so a customer can complete a PENDING payment later.
+  stripeCheckoutUrl       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
 }
 
 model Review {

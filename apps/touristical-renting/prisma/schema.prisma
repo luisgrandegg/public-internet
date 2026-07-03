@@ -118,8 +118,36 @@ model Booking {
   // Total cost in cents — the complete price paid. No additional fees.
   totalCost Int
   reviews   Review[]
+  payment   Payment?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Payment settlement status (ADR-006).
+// PENDING → SUCCEEDED / FAILED / CANCELED. Offline payments are created SUCCEEDED.
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+// One Payment per Booking, created in the same transaction (ADR-006).
+// provider 'stripe' — settled online via Stripe Checkout, confirmed by webhook.
+// provider 'offline' — settled directly with the host (pay at the property).
+model Payment {
+  id                      String        @id @default(cuid())
+  booking                 Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId               String        @unique
+  provider                String        // 'stripe' | 'offline'
+  status                  PaymentStatus
+  // Amount in cents — exactly the pre-confirmation total. Never recomputed.
+  amount                  Int
+  currency                String        @default("eur")
+  stripeCheckoutSessionId String?
+  stripePaymentIntentId   String?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 }
 
 model AvailabilityBlock {

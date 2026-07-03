@@ -11,6 +11,16 @@ import styles from './page.module.css'
 
 export const metadata = { title: 'Host dashboard' }
 
+// Payment state as plain text — never colour alone (WCAG).
+function paymentText(payment: { provider: string; status: string } | null): string {
+  if (!payment) return '—'
+  if (payment.provider === 'offline') return 'Pay at the property'
+  if (payment.status === 'SUCCEEDED') return 'Paid'
+  if (payment.status === 'PENDING') return 'Unpaid (pending)'
+  if (payment.status === 'CANCELED') return 'Unpaid (canceled)'
+  return 'Unpaid (failed)'
+}
+
 export default async function HostDashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect('/auth/signin')
@@ -125,6 +135,7 @@ export default async function HostDashboardPage() {
                 <th>Check-in</th>
                 <th>Check-out</th>
                 <th>Earned</th>
+                <th>Payment</th>
               </tr>
             </thead>
             <tbody>
@@ -139,6 +150,7 @@ export default async function HostDashboardPage() {
                   <td>{new Date(booking.checkIn).toLocaleDateString('en-GB')}</td>
                   <td>{new Date(booking.checkOut).toLocaleDateString('en-GB')}</td>
                   <td>€{(booking.totalCost / 100).toFixed(2)}</td>
+                  <td>{paymentText(booking.payment)}</td>
                 </tr>
               ))}
             </tbody>
@@ -160,6 +172,7 @@ export default async function HostDashboardPage() {
                 <th>Check-in</th>
                 <th>Check-out</th>
                 <th>Earned</th>
+                <th>Payment</th>
                 <th>Review guest</th>
               </tr>
             </thead>
@@ -177,6 +190,7 @@ export default async function HostDashboardPage() {
                     <td>{new Date(booking.checkIn).toLocaleDateString('en-GB')}</td>
                     <td>{new Date(booking.checkOut).toLocaleDateString('en-GB')}</td>
                     <td>€{(booking.totalCost / 100).toFixed(2)}</td>
+                    <td>{paymentText(booking.payment)}</td>
                     <td>
                       {isCompleted ? (
                         <ReviewGuestForm

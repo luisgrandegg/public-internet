@@ -1,6 +1,6 @@
 // GENERATED — do not edit manually. Run: pnpm --filter @public-internet/touristical-renting-sdk generate
 import type { ApiClient } from '../client.js'
-import type { Booking, CreateBookingInput } from './types.js'
+import type { Booking, BookingCreated, CreateBookingInput } from './types.js'
 
 export class BookingsResource {
   constructor(private readonly client: ApiClient) {}
@@ -25,7 +25,7 @@ export class BookingsResource {
    * Create a booking
    * Requires authentication.
    */
-  create(body: CreateBookingInput): Promise<Booking> {
+  create(body: CreateBookingInput): Promise<BookingCreated> {
     return this.client.post('/api/bookings', body)
   }
 

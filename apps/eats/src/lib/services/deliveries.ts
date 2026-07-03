@@ -1,4 +1,5 @@
 import { db } from '@/lib/db'
+import { EXCLUDE_UNPAID_ONLINE_ORDERS } from '@/lib/services/orders'
 
 export type DeliveryStatus = 'UNASSIGNED' | 'ASSIGNED' | 'PICKED_UP' | 'DELIVERED' | 'FAILED'
 
@@ -7,6 +8,9 @@ export type DeliveryStatus = 'UNASSIGNED' | 'ASSIGNED' | 'PICKED_UP' | 'DELIVERE
  *   - `status=UNASSIGNED` → available deliveries (anyone can accept)
  *   - `status=ASSIGNED`   → the courier's own active deliveries
  *   - otherwise           → the courier's delivery history (all statuses except UNASSIGNED)
+ *
+ * ADR-006 §4: unpaid online orders are inert — a delivery whose order's Stripe
+ * payment has not SUCCEEDED is never offered to couriers as available.
  */
 export async function listDeliveriesForCourier(
   courierId: string,
@@ -14,7 +18,7 @@ export async function listDeliveriesForCourier(
 ) {
   const where =
     status === 'UNASSIGNED'
-      ? { status: 'UNASSIGNED' as const }
+      ? { status: 'UNASSIGNED' as const, order: EXCLUDE_UNPAID_ONLINE_ORDERS }
       : status === 'ASSIGNED'
       ? { courierId, status: 'ASSIGNED' as const }
       : { courierId }
@@ -37,7 +41,11 @@ export async function getDeliveryById(id: string) {
   return db.delivery.findUnique({
     where: { id },
     include: {
-      order: true,
+      order: {
+        include: {
+          payment: { select: { provider: true, status: true } },
+        },
+      },
     },
   })
 }
@@ -67,6 +75,15 @@ export async function transitionDelivery(
   // Ownership checks
   if (action === 'accept') {
     if (delivery.status !== 'UNASSIGNED') {
+      return {
+        ok: false,
+        error: { code: 'INVALID_TRANSITION', message: 'Delivery is no longer available' },
+      }
+    }
+    // ADR-006 §4: an order whose online payment has not succeeded is inert —
+    // it is filtered out of the available list, and cannot be accepted directly.
+    const payment = delivery.order.payment
+    if (payment && payment.provider === 'stripe' && payment.status !== 'SUCCEEDED') {
       return {
         ok: false,
         error: { code: 'INVALID_TRANSITION', message: 'Delivery is no longer available' },

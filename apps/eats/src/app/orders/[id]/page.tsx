@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { findOrderWithDetails } from '@/lib/services/orders'
 import { findReviewForOrder } from '@/lib/services/reviews'
-import { formatEuros } from '@/lib/format'
+import { formatEuros, paymentStateLabel } from '@/lib/format'
 import { OrderStatusLive } from './OrderStatusLive'
 import { ReviewForm } from './ReviewForm'
 import styles from './page.module.css'
@@ -50,6 +50,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 deliveredAt: order.delivery.deliveredAt?.toISOString() ?? null,
               }
             : null,
+          payment: order.payment
+            ? { provider: order.payment.provider, status: order.payment.status }
+            : null,
         }}
       />
 
@@ -84,6 +87,47 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      {order.payment && (
+        <section className={styles.section} aria-label="Payment">
+          <h2 className={styles.sectionHeading}>Payment</h2>
+          {/* Payment state is conveyed with plain text — never colour alone. */}
+          <p className={styles.paymentState}>
+            <strong>{paymentStateLabel(order.payment)}</strong>
+          </p>
+          {order.payment.provider === 'offline' && (
+            <p className={styles.paymentNote}>
+              This node settles payments directly: you pay the total above on delivery.
+              No online payment is needed, and nothing is ever added on top of it.
+            </p>
+          )}
+          {order.payment.provider === 'stripe' && order.payment.status === 'PENDING' && (
+            <>
+              <p className={styles.paymentNote}>
+                Your order will be sent to the restaurant once the payment completes.
+                The amount is exactly the total shown above — nothing more.
+              </p>
+              {order.payment.stripeCheckoutUrl && (
+                <a href={order.payment.stripeCheckoutUrl} className={styles.paymentLink}>
+                  Complete payment
+                </a>
+              )}
+            </>
+          )}
+          {order.payment.provider === 'stripe' && order.payment.status === 'SUCCEEDED' && (
+            <p className={styles.paymentNote}>
+              Paid online via card. The amount charged was exactly the total shown above.
+            </p>
+          )}
+          {order.payment.provider === 'stripe' &&
+            (order.payment.status === 'FAILED' || order.payment.status === 'CANCELED') && (
+              <p className={styles.paymentNote}>
+                This payment did not complete and you have not been charged. The order was
+                not sent to the restaurant. You can place a new order at any time.
+              </p>
+            )}
+        </section>
+      )}
 
       <section className={styles.section} aria-label="Delivery details">
         <h2 className={styles.sectionHeading}>Delivery</h2>

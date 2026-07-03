@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { listOrdersForCustomer } from '@/lib/services/orders'
-import { formatEuros, orderStatusLabel } from '@/lib/format'
+import { formatEuros, orderStatusLabel, paymentStateLabel } from '@/lib/format'
 import styles from './page.module.css'
 
 export default async function OrdersPage() {
@@ -34,6 +34,18 @@ export default async function OrdersPage() {
                     <span className={styles.statusLabel}>
                       {orderStatusLabel(order.status)}
                     </span>
+                    {order.payment && (
+                      <>
+                        {' '}
+                        ·{' '}
+                        <span className={styles.statusLabel}>
+                          {paymentStateLabel(order.payment)}
+                          {order.payment.provider === 'stripe' &&
+                            order.payment.status === 'PENDING' &&
+                            ' — open the order to complete payment'}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className={styles.rowTotal}>{formatEuros(order.totalCost)}</div>

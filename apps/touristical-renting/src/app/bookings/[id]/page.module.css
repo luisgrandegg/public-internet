@@ -91,3 +91,14 @@
   font-size: 0.8125rem;
   color: var(--color-neutral-500, #6b7280);
 }
+
+.paymentNote {
+  margin-top: 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--color-neutral-600, #4b5563);
+}
+
+.paymentLink {
+  color: var(--color-primary-600, #4f46e5);
+  text-decoration: underline;
+}

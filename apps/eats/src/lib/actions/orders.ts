@@ -11,7 +11,16 @@ export interface PlaceOrderInput {
 }
 
 export type PlaceOrderResult =
-  | { ok: true; orderId: string }
+  | {
+      ok: true
+      orderId: string
+      /**
+       * Hosted Stripe Checkout URL when this node takes online payments —
+       * the client redirects here instead of the internal confirmation route.
+       * Null on offline-settlement nodes (ADR-006).
+       */
+      checkoutUrl: string | null
+    }
   | { ok: false; fieldErrors: Record<string, string>; globalError?: string }
 
 export async function placeOrderAction(input: PlaceOrderInput): Promise<PlaceOrderResult> {
@@ -42,7 +51,7 @@ export async function placeOrderAction(input: PlaceOrderInput): Promise<PlaceOrd
 
     const { data } = await res.json()
     revalidatePath('/orders')
-    return { ok: true, orderId: data.id }
+    return { ok: true, orderId: data.id, checkoutUrl: data.checkoutUrl ?? null }
   } catch {
     return {
       ok: false,

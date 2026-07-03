@@ -267,6 +267,72 @@
           }
         ]
       },
+      "PaymentStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "SUCCEEDED",
+          "FAILED",
+          "CANCELED"
+        ],
+        "description": "Payment settlement status (ADR-006). Offline payments are created SUCCEEDED; Stripe payments start PENDING and are confirmed by webhook."
+      },
+      "Payment": {
+        "type": "object",
+        "description": "Payment record accompanying every booking (ADR-006). provider 'stripe' settles online via Stripe Checkout; provider 'offline' is settled directly with the host (pay at the property).",
+        "required": [
+          "id",
+          "bookingId",
+          "provider",
+          "status",
+          "amount",
+          "currency",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "bookingId": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "stripe",
+              "offline"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "amount": {
+            "type": "integer",
+            "description": "Amount in cents — exactly the pre-confirmation total. Never recomputed."
+          },
+          "currency": {
+            "type": "string",
+            "example": "eur"
+          },
+          "stripeCheckoutSessionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "stripePaymentIntentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "Booking": {
         "type": "object",
         "required": [
@@ -331,8 +397,38 @@
           },
           "guest": {
             "$ref": "#/components/schemas/GuestSummary"
+          },
+          "payment": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Payment"
+              }
+            ],
+            "description": "The 1:1 payment record for this booking (ADR-006)."
           }
         }
+      },
+      "BookingCreated": {
+        "description": "Response of bookings_create: the booking plus its payment record. checkoutUrl is the hosted Stripe Checkout URL to redirect the guest to (Stripe mode) or null (offline settlement).",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Booking"
+          },
+          {
+            "type": "object",
+            "required": [
+              "checkoutUrl"
+            ],
+            "properties": {
+              "checkoutUrl": {
+                "type": "string",
+                "format": "uri",
+                "nullable": true
+              }
+            }
+          }
+        ]
       },
       "CreateListingInput": {
         "type": "object",
@@ -909,6 +1005,10 @@
     {
       "name": "favorites",
       "description": "Saved listings (wishlist)"
+    },
+    {
+      "name": "webhooks",
+      "description": "Inbound webhooks from payment providers (Stripe signature-verified, no session auth)"
     }
   ],
   "paths": {
@@ -1153,14 +1253,14 @@
         },
         "responses": {
           "201": {
-            "description": "Booking created",
+            "description": "Booking created, together with its payment record (ADR-006). In offline mode the payment is settled directly with the host (provider 'offline', status SUCCEEDED) and checkoutUrl is null. In Stripe mode the payment is PENDING and checkoutUrl is the hosted Stripe Checkout URL to redirect the guest to.\n",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/Booking"
+                      "$ref": "#/components/schemas/BookingCreated"
                     }
                   }
                 }
@@ -2668,6 +2768,59 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks/stripe": {
+      "post": {
+        "operationId": "webhooks_stripe",
+        "summary": "Stripe webhook receiver",
+        "description": "Receives Stripe events for online payments (ADR-006). The request is authenticated by verifying the Stripe-Signature header against STRIPE_WEBHOOK_SECRET — no session cookie is required. checkout.session.completed marks the booking's payment SUCCEEDED and stores the payment intent id; checkout.session.expired marks it CANCELED. Other event types are acknowledged and ignored.\n",
+        "tags": [
+          "webhooks"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "Raw Stripe event payload (signature-verified)"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Event received and processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "received": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or invalid Stripe signature",
             "content": {
               "application/json": {
                 "schema": {

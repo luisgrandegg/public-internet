@@ -148,6 +148,33 @@ const options = {
             },
           ],
         },
+        PaymentStatus: {
+          type: 'string',
+          enum: ['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED'],
+          description:
+            'Payment settlement status (ADR-006). Offline payments are created SUCCEEDED; Stripe payments start PENDING and are confirmed by webhook.',
+        },
+        Payment: {
+          type: 'object',
+          description:
+            "Payment record accompanying every booking (ADR-006). provider 'stripe' settles online via Stripe Checkout; provider 'offline' is settled directly with the host (pay at the property).",
+          required: ['id', 'bookingId', 'provider', 'status', 'amount', 'currency', 'createdAt', 'updatedAt'],
+          properties: {
+            id: { type: 'string' },
+            bookingId: { type: 'string' },
+            provider: { type: 'string', enum: ['stripe', 'offline'] },
+            status: { $ref: '#/components/schemas/PaymentStatus' },
+            amount: {
+              type: 'integer',
+              description: 'Amount in cents — exactly the pre-confirmation total. Never recomputed.',
+            },
+            currency: { type: 'string', example: 'eur' },
+            stripeCheckoutSessionId: { type: 'string', nullable: true },
+            stripePaymentIntentId: { type: 'string', nullable: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
         Booking: {
           type: 'object',
           required: [
@@ -170,7 +197,26 @@ const options = {
               ],
             },
             guest: { $ref: '#/components/schemas/GuestSummary' },
+            payment: {
+              nullable: true,
+              allOf: [{ $ref: '#/components/schemas/Payment' }],
+              description: 'The 1:1 payment record for this booking (ADR-006).',
+            },
           },
+        },
+        BookingCreated: {
+          description:
+            'Response of bookings_create: the booking plus its payment record. checkoutUrl is the hosted Stripe Checkout URL to redirect the guest to (Stripe mode) or null (offline settlement).',
+          allOf: [
+            { $ref: '#/components/schemas/Booking' },
+            {
+              type: 'object',
+              required: ['checkoutUrl'],
+              properties: {
+                checkoutUrl: { type: 'string', format: 'uri', nullable: true },
+              },
+            },
+          ],
         },
         CreateListingInput: {
           type: 'object',
@@ -386,6 +432,7 @@ const options = {
       { name: 'enquiries', description: 'Guest-to-host messaging' },
       { name: 'reviews', description: 'Mutual review system' },
       { name: 'favorites', description: 'Saved listings (wishlist)' },
+      { name: 'webhooks', description: 'Inbound webhooks from payment providers (Stripe signature-verified, no session auth)' },
     ],
   },
   // Using absolute paths so the script can be run from any directory.

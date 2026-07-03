@@ -47,3 +47,27 @@ export type DeliveryStatusKey = keyof typeof DELIVERY_STATUS_LABELS
 export function deliveryStatusLabel(status: string): string {
   return (DELIVERY_STATUS_LABELS as Record<string, string>)[status] ?? status
 }
+
+/**
+ * Short, honest payment-state label (ADR-006).
+ * Constitution: state is conveyed with plain text — never colour alone,
+ * never urgency copy. Offline settlement is a first-class mode, not an error.
+ */
+export function paymentStateLabel(
+  payment: { provider: string; status: string } | null | undefined,
+): string {
+  if (!payment) return ''
+  if (payment.provider === 'offline') return 'Settled directly — pay on delivery'
+  switch (payment.status) {
+    case 'SUCCEEDED':
+      return 'Paid'
+    case 'PENDING':
+      return 'Payment pending'
+    case 'FAILED':
+      return 'Payment failed'
+    case 'CANCELED':
+      return 'Payment canceled'
+    default:
+      return payment.status
+  }
+}

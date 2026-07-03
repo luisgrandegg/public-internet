@@ -72,7 +72,15 @@ export function BookingForm({
     startTransition(async () => {
       const result = await createBookingAction(listingId, checkIn, checkOut)
       if (result.ok) {
-        router.push(`/bookings/${result.bookingId}`)
+        if (result.checkoutUrl) {
+          // Online payment (Stripe mode): hand off to the hosted checkout.
+          // A full-page navigation is required — the checkout is external.
+          window.location.assign(result.checkoutUrl)
+        } else {
+          // Offline settlement: the booking is confirmed; payment happens
+          // directly with the host (pay at the property).
+          router.push(`/bookings/${result.bookingId}`)
+        }
       } else {
         setError(result.error)
       }
