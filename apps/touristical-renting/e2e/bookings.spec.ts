@@ -122,9 +122,9 @@ test.describe.serial('Booking flow', () => {
     await expect(page.getByRole('heading', { name: 'Booking details', exact: true })).toBeVisible()
     await expect(page.getByText(listingTitle)).toBeVisible()
 
-    // Offline settlement (ADR-006): with no STRIPE_SECRET_KEY the payment is
-    // settled directly with the host — the copy says so plainly, and no
-    // online payment step ever appears.
+    // Offline settlement (ADR-006): with no payment provider configured the
+    // payment is settled directly with the host — the copy says so plainly,
+    // and no online payment step ever appears.
     await expect(page.getByRole('heading', { name: 'Payment', exact: true })).toBeVisible()
     await expect(page.getByText('Pay at the property', { exact: true })).toBeVisible()
     await expect(page.getByText(/settled directly with the host/i)).toBeVisible()

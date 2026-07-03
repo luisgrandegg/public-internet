@@ -69,8 +69,9 @@ export async function GET(req: NextRequest) {
  *           Booking created, together with its payment record (ADR-006).
  *           In offline mode the payment is settled directly with the host
  *           (provider 'offline', status SUCCEEDED) and checkoutUrl is null.
- *           In Stripe mode the payment is PENDING and checkoutUrl is the
- *           hosted Stripe Checkout URL to redirect the guest to.
+ *           When a payment provider is configured the payment is PENDING and
+ *           checkoutUrl is the provider's hosted checkout URL to redirect
+ *           the guest to.
  *         content:
  *           application/json:
  *             schema:

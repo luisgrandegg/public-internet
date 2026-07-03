@@ -133,21 +133,27 @@ enum PaymentStatus {
 }
 
 // One Payment per Booking, created in the same transaction (ADR-006).
-// provider 'stripe' — settled online via Stripe Checkout, confirmed by webhook.
-// provider 'offline' — settled directly with the host (pay at the property).
+// provider stores the PaymentProvider id ('stripe', a custom id, …) for
+// payments settled online, or 'offline' when settled directly with the host
+// (pay at the property).
 model Payment {
-  id                      String        @id @default(cuid())
-  booking                 Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  bookingId               String        @unique
-  provider                String        // 'stripe' | 'offline'
-  status                  PaymentStatus
+  id                       String        @id @default(cuid())
+  booking                  Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId                String        @unique
+  provider                 String        // PaymentProvider id ('stripe', …) or 'offline'
+  status                   PaymentStatus
   // Amount in cents — exactly the pre-confirmation total. Never recomputed.
-  amount                  Int
-  currency                String        @default("eur")
-  stripeCheckoutSessionId String?
-  stripePaymentIntentId   String?
-  createdAt               DateTime      @default(now())
-  updatedAt               DateTime      @updatedAt
+  amount                   Int
+  currency                 String        @default("eur")
+  // Provider-neutral references (ADR-006 amendment): the hosted checkout
+  // session id, the provider's settlement reference (e.g. a Stripe payment
+  // intent id), and the checkout URL stored at creation so a pending payment
+  // can be resumed without a provider API call.
+  providerSessionId        String?
+  providerPaymentReference String?
+  providerCheckoutUrl      String?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
 }
 
 model AvailabilityBlock {

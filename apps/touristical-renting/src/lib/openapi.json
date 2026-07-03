@@ -275,11 +275,11 @@
           "FAILED",
           "CANCELED"
         ],
-        "description": "Payment settlement status (ADR-006). Offline payments are created SUCCEEDED; Stripe payments start PENDING and are confirmed by webhook."
+        "description": "Payment settlement status (ADR-006). Offline payments are created SUCCEEDED; online payments start PENDING and are confirmed by the provider's webhook."
       },
       "Payment": {
         "type": "object",
-        "description": "Payment record accompanying every booking (ADR-006). provider 'stripe' settles online via Stripe Checkout; provider 'offline' is settled directly with the host (pay at the property).",
+        "description": "Payment record accompanying every booking (ADR-006). provider is the PaymentProvider id (e.g. 'stripe') for payments settled online via the provider's hosted checkout, or 'offline' when settled directly with the host (pay at the property).",
         "required": [
           "id",
           "bookingId",
@@ -299,10 +299,8 @@
           },
           "provider": {
             "type": "string",
-            "enum": [
-              "stripe",
-              "offline"
-            ]
+            "example": "stripe",
+            "description": "PaymentProvider id ('stripe', a custom id, …) or 'offline'"
           },
           "status": {
             "$ref": "#/components/schemas/PaymentStatus"
@@ -315,13 +313,21 @@
             "type": "string",
             "example": "eur"
           },
-          "stripeCheckoutSessionId": {
+          "providerSessionId": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "The provider's hosted checkout session id"
           },
-          "stripePaymentIntentId": {
+          "providerPaymentReference": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "The provider's settlement reference (e.g. a Stripe payment intent id), set when the payment succeeds"
+          },
+          "providerCheckoutUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "Hosted checkout URL stored at creation so a pending payment can be resumed"
           },
           "createdAt": {
             "type": "string",
@@ -410,7 +416,7 @@
         }
       },
       "BookingCreated": {
-        "description": "Response of bookings_create: the booking plus its payment record. checkoutUrl is the hosted Stripe Checkout URL to redirect the guest to (Stripe mode) or null (offline settlement).",
+        "description": "Response of bookings_create: the booking plus its payment record. checkoutUrl is the configured payment provider's hosted checkout URL to redirect the guest to, or null (offline settlement).",
         "allOf": [
           {
             "$ref": "#/components/schemas/Booking"
@@ -1008,7 +1014,7 @@
     },
     {
       "name": "webhooks",
-      "description": "Inbound webhooks from payment providers (Stripe signature-verified, no session auth)"
+      "description": "Inbound webhooks from the configured payment provider (provider-authenticated, e.g. signature-verified — no session auth)"
     }
   ],
   "paths": {
@@ -1253,7 +1259,7 @@
         },
         "responses": {
           "201": {
-            "description": "Booking created, together with its payment record (ADR-006). In offline mode the payment is settled directly with the host (provider 'offline', status SUCCEEDED) and checkoutUrl is null. In Stripe mode the payment is PENDING and checkoutUrl is the hosted Stripe Checkout URL to redirect the guest to.\n",
+            "description": "Booking created, together with its payment record (ADR-006). In offline mode the payment is settled directly with the host (provider 'offline', status SUCCEEDED) and checkoutUrl is null. When a payment provider is configured the payment is PENDING and checkoutUrl is the provider's hosted checkout URL to redirect the guest to.\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -2779,11 +2785,11 @@
         }
       }
     },
-    "/api/webhooks/stripe": {
+    "/api/webhooks/payments": {
       "post": {
-        "operationId": "webhooks_stripe",
-        "summary": "Stripe webhook receiver",
-        "description": "Receives Stripe events for online payments (ADR-006). The request is authenticated by verifying the Stripe-Signature header against STRIPE_WEBHOOK_SECRET — no session cookie is required. checkout.session.completed marks the booking's payment SUCCEEDED and stores the payment intent id; checkout.session.expired marks it CANCELED. Other event types are acknowledged and ignored.\n",
+        "operationId": "webhooks_payments",
+        "summary": "Payment provider webhook receiver",
+        "description": "Receives payment events from the node's configured payment provider (ADR-006). The request is authenticated by the provider implementation itself (e.g. Stripe signature verification) — no session cookie is required. A payment.succeeded event marks the payment SUCCEEDED and stores the provider's payment reference; payment.canceled marks a PENDING payment CANCELED. Events that don't affect payment state are acknowledged and ignored. When no payment provider is configured (offline settlement mode) the endpoint returns 503.\n",
         "tags": [
           "webhooks"
         ],
@@ -2793,7 +2799,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "description": "Raw Stripe event payload (signature-verified)"
+                "description": "Raw provider event payload (authenticated by the provider)"
               }
             }
           }
@@ -2820,7 +2826,17 @@
             }
           },
           "400": {
-            "description": "Missing or invalid Stripe signature",
+            "description": "Webhook authentication failed (bad or missing signature)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No payment provider configured (offline settlement mode)",
             "content": {
               "application/json": {
                 "schema": {

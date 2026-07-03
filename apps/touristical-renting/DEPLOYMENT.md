@@ -58,6 +58,8 @@ cp apps/touristical-renting/.env.example apps/touristical-renting/.env
 | `BETTER_AUTH_SECRET` | ✅ | Signs session tokens. **Min 32 chars.** Generate: `openssl rand -base64 32` |
 | `NEXT_PUBLIC_APP_URL` | ✅ | The public URL of this node, e.g. `https://stay.yourcity.org` |
 | `NODE_ENV` | ✅ | Set to `production` |
+| `STRIPE_SECRET_KEY` | optional | Enables online payments via the built-in Stripe provider. Unset → offline settlement mode (see [Plugging in your own payment gateway](#plugging-in-your-own-payment-gateway)) |
+| `STRIPE_WEBHOOK_SECRET` | optional | Signing secret for `POST /api/webhooks/payments` — required when `STRIPE_SECRET_KEY` is set |
 
 > ⚠️ **`NEXT_PUBLIC_APP_URL` is inlined at _build_ time.** Next.js bakes any `NEXT_PUBLIC_*` variable into the client bundle during `pnpm build`. Set it to the final public URL **before** you build — changing it afterwards requires a rebuild, not just a restart.
 
@@ -151,6 +153,51 @@ pnpm --filter @public-internet/touristical-renting db:deploy   # if migrations c
 ```
 
 Always run `db:deploy` after pulling changes that touch `prisma/`.
+
+---
+
+## Plugging in your own payment gateway
+
+Online payments go through a pluggable `PaymentProvider` interface (ADR-006, amended) — Stripe is the built-in implementation, not a hard dependency. A node can run with Stripe, with a regional PSP you integrate yourself, or with **no provider at all**: when none is configured, the node runs in offline settlement mode (bookings are confirmed with a "pay at the property" payment record and no online payment is taken). Offline mode is a legitimate operating mode, not a degraded one.
+
+To integrate another gateway:
+
+1. **Implement the interface** in `src/lib/payments/<yourprovider>.ts`:
+
+   ```ts
+   import type { PaymentProvider, CheckoutSessionRequest, CheckoutSession, PaymentWebhookEvent } from './types'
+
+   export class YourProviderPaymentProvider implements PaymentProvider {
+     readonly id = 'yourprovider' // stored in Payment.provider
+
+     async createCheckoutSession(request: CheckoutSessionRequest): Promise<CheckoutSession> {
+       // Create a hosted checkout session charging exactly request.amountCents
+       // (never add fees or surcharges) and return its id and redirect URL.
+     }
+
+     async parseWebhookEvent(rawBody: string, headers: Headers): Promise<PaymentWebhookEvent> {
+       // MUST throw if the request is not authentically from your PSP
+       // (bad/missing signature). Map settled → 'payment.succeeded',
+       // expired/aborted → 'payment.canceled', anything else → 'ignored'.
+     }
+   }
+   ```
+
+2. **Select it** in `src/lib/payments/index.ts` — provider selection is configuration, not code scattered through the app:
+
+   ```ts
+   export const paymentProvider: PaymentProvider | null = process.env.YOURPROVIDER_API_KEY
+     ? new YourProviderPaymentProvider()
+     : process.env.STRIPE_SECRET_KEY
+       ? new StripePaymentProvider()
+       : null // offline settlement mode
+   ```
+
+3. **Point your PSP's webhook** at `POST https://<your-node>/api/webhooks/payments`. This single route serves every provider: it hands the raw body and headers to your `parseWebhookEvent()`, marks the payment SUCCEEDED or CANCELED, and returns 400 on authentication failure (503 when no provider is configured).
+
+4. **Define your own env vars** (API key, webhook secret, …) — read them inside your provider file only, and document them in `.env.example`. No module outside `src/lib/payments/` may import a PSP SDK.
+
+Constraints that apply to every provider: the charged amount is exactly the displayed total (no fees, no surcharges — CONSTITUTION.md), and payment confirmation comes only from the authenticated webhook, never from the success redirect.
 
 ---
 

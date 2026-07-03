@@ -7,6 +7,7 @@ type ErrorCode =
   | 'CONFLICT'
   | 'VALIDATION_ERROR'
   | 'INTERNAL_ERROR'
+  | 'PAYMENTS_NOT_CONFIGURED'
 
 interface ErrorBody {
   code: ErrorCode

@@ -115,9 +115,9 @@ This app uses Next.js Route Handlers as its REST API. See `apps/CLAUDE.md § Ful
 | `GET` | `/api/listings/:id` | No | Get single listing |
 | `PATCH` | `/api/listings/:id` | Yes (owner) | Update listing |
 | `DELETE` | `/api/listings/:id` | Yes (owner) | Delete listing |
-| `POST` | `/api/bookings` | Yes (Guest) | Create a booking + payment record (ADR-006); Stripe mode returns a `checkoutUrl` to redirect to |
+| `POST` | `/api/bookings` | Yes (Guest) | Create a booking + payment record (ADR-006); with a payment provider configured, returns a `checkoutUrl` to redirect to |
 | `GET` | `/api/bookings/:id` | Yes (owner) | Get booking detail (includes `payment`) |
-| `POST` | `/api/webhooks/stripe` | No (Stripe signature) | Stripe webhook — `checkout.session.completed` → payment SUCCEEDED, `checkout.session.expired` → CANCELED |
+| `POST` | `/api/webhooks/payments` | No (provider-authenticated) | Payment provider webhook — `payment.succeeded` → SUCCEEDED, `payment.canceled` → CANCELED; 503 when no provider is configured |
 | `GET` | `/api/enquiries` | Yes (Guest) | List the signed-in guest's enquiries with host replies |
 | `GET` | `/api/host/listings` | Yes (Host) | List host's own listings |
 | `GET` | `/api/host/bookings` | Yes (Host) | List bookings for host's listings |
@@ -202,19 +202,24 @@ DATABASE_URL="postgresql://user:password@localhost:5432/touristical_renting"
 BETTER_AUTH_SECRET="<random 32-char secret>"
 NEXT_PUBLIC_API_BASE="http://localhost:3000"
 
-# Optional — Stripe payments (ADR-006). When unset the node runs in offline
-# settlement mode ("pay at the property") and no online payment is taken.
+# Optional — online payments (ADR-006). Stripe is the built-in provider.
+# When no provider is configured the node runs in offline settlement mode
+# ("pay at the property") and no online payment is taken.
 STRIPE_SECRET_KEY="<node operator's own Stripe secret key>"
-STRIPE_WEBHOOK_SECRET="<signing secret for POST /api/webhooks/stripe>"
+STRIPE_WEBHOOK_SECRET="<signing secret for POST /api/webhooks/payments>"
 ```
 
-### Payments (ADR-006)
+### Payments (ADR-006, amended)
 
-- Every Booking gets a 1:1 `Payment` record created in the same transaction: `provider` `'stripe' | 'offline'`, `status` `PENDING | SUCCEEDED | FAILED | CANCELED`, `amount` in cents (exactly the pre-confirmation total — never recomputed), `currency` (default `eur`).
-- `src/lib/payments.ts` owns the entire Stripe surface — no other module imports `stripe`.
+- The payment layer is a **pluggable provider interface, not a Stripe module** — mirroring the `EmailProvider` pattern in `src/lib/email/`. `src/lib/payments/` contains `types.ts` (the `PaymentProvider` interface: `id`, `createCheckoutSession()`, `parseWebhookEvent()`), `stripe.ts` (the Stripe implementation), and `index.ts` (provider selection from environment: `paymentProvider` is the `StripePaymentProvider` when `STRIPE_SECRET_KEY` is set, otherwise `null` → offline settlement mode).
+- **No module outside `src/lib/payments/` may import a PSP SDK** (`stripe` or any other). Services, routes, and UI depend only on the interface and the generic `Payment` record.
+- Every Booking gets a 1:1 `Payment` record created in the same transaction: `provider` (the `PaymentProvider.id`, e.g. `'stripe'`, or `'offline'`), `status` `PENDING | SUCCEEDED | FAILED | CANCELED`, `amount` in cents (exactly the pre-confirmation total — never recomputed), `currency` (default `eur`).
+- The `Payment` columns are provider-neutral: `providerSessionId` (hosted checkout session id), `providerPaymentReference` (the provider's settlement reference, e.g. a Stripe payment intent id), and `providerCheckoutUrl` (stored at creation so a pending payment can be resumed without a provider API call).
+- The webhook route is `POST /api/webhooks/payments` for every provider. It hands the raw body and headers to the active provider's `parseWebhookEvent()`, which authenticates the event (signature verification for Stripe) and maps it to the generic lifecycle: `payment.succeeded` → SUCCEEDED (+ `providerPaymentReference`), `payment.canceled` → CANCELED (only from PENDING), ignored → acknowledged with 200. Authentication failure → 400. With no provider configured it returns 503.
 - Booking API responses include the `payment` object; `POST /api/bookings` additionally returns `checkoutUrl` (null in offline mode).
-- Payment confirmation arrives only via the signature-verified webhook — the success redirect is never trusted.
+- Payment confirmation arrives only via the provider-authenticated webhook — the success redirect is never trusted.
 - Bookings block their dates regardless of payment status (ADR-006 §4) so a paying guest is never double-booked mid-checkout.
+- Plugging in a gateway = implementing the interface in one file and selecting it in `index.ts` — see `DEPLOYMENT.md § Plugging in your own payment gateway`.
 
 ---
 

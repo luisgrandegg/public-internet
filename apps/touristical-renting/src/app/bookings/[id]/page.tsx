@@ -3,7 +3,6 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { getBookingById } from '@/lib/services/bookings'
-import { getCheckoutSessionUrl } from '@/lib/payments'
 import { LeaveReviewForm } from './_components/LeaveReviewForm'
 import styles from './page.module.css'
 
@@ -27,14 +26,12 @@ export default async function BookingDetailPage({ params, searchParams }: Bookin
 
   const payment = booking.payment
   const isOffline = payment?.provider === 'offline'
-  const isPaid = payment?.provider === 'stripe' && payment.status === 'SUCCEEDED'
-  const isPaymentPending = payment?.provider === 'stripe' && payment.status === 'PENDING'
-  // Fetch a fresh checkout URL for pending online payments so the guest can
-  // complete an interrupted checkout.
-  const completePaymentUrl =
-    isPaymentPending && payment?.stripeCheckoutSessionId
-      ? await getCheckoutSessionUrl(payment.stripeCheckoutSessionId)
-      : null
+  const isOnline = payment != null && payment.provider !== 'offline'
+  const isPaid = isOnline && payment.status === 'SUCCEEDED'
+  const isPaymentPending = isOnline && payment.status === 'PENDING'
+  // The hosted checkout URL is stored at creation (providerCheckoutUrl), so a
+  // guest can complete an interrupted checkout without a provider API call.
+  const completePaymentUrl = isPaymentPending ? payment.providerCheckoutUrl : null
 
   const checkInStr = new Date(booking.checkIn).toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -163,7 +160,7 @@ export default async function BookingDetailPage({ params, searchParams }: Bookin
             )}
           </>
         )}
-        {payment && payment.provider === 'stripe' && (payment.status === 'CANCELED' || payment.status === 'FAILED') && (
+        {isOnline && (payment.status === 'CANCELED' || payment.status === 'FAILED') && (
           <>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Status</span>

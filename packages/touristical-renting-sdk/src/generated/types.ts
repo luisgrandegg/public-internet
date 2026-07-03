@@ -71,20 +71,25 @@ export type HostListing = Listing & {
   }
 }
 
-/** Payment settlement status (ADR-006). Offline payments are created SUCCEEDED; Stripe payments start PENDING and are confirmed by webhook. */
+/** Payment settlement status (ADR-006). Offline payments are created SUCCEEDED; online payments start PENDING and are confirmed by the provider's webhook. */
 export type PaymentStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED'
 
-/** Payment record accompanying every booking (ADR-006). provider 'stripe' settles online via Stripe Checkout; provider 'offline' is settled directly with the host (pay at the property). */
+/** Payment record accompanying every booking (ADR-006). provider is the PaymentProvider id (e.g. 'stripe') for payments settled online via the provider's hosted checkout, or 'offline' when settled directly with the host (pay at the property). */
 export interface Payment {
   id: string
   bookingId: string
-  provider: 'stripe' | 'offline'
+  /** PaymentProvider id ('stripe', a custom id, …) or 'offline' */
+  provider: string
   status: PaymentStatus
   /** Amount in cents — exactly the pre-confirmation total. Never recomputed. */
   amount: number
   currency: string
-  stripeCheckoutSessionId?: string | null
-  stripePaymentIntentId?: string | null
+  /** The provider's hosted checkout session id */
+  providerSessionId?: string | null
+  /** The provider's settlement reference (e.g. a Stripe payment intent id), set when the payment succeeds */
+  providerPaymentReference?: string | null
+  /** Hosted checkout URL stored at creation so a pending payment can be resumed */
+  providerCheckoutUrl?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -107,7 +112,7 @@ export interface Booking {
   payment?: Payment | null
 }
 
-/** Response of bookings_create: the booking plus its payment record. checkoutUrl is the hosted Stripe Checkout URL to redirect the guest to (Stripe mode) or null (offline settlement). */
+/** Response of bookings_create: the booking plus its payment record. checkoutUrl is the configured payment provider's hosted checkout URL to redirect the guest to, or null (offline settlement). */
 export type BookingCreated = Booking & {
   checkoutUrl: string | null
 }

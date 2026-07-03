@@ -50,7 +50,7 @@ export default async function BookingsPage() {
             let paymentLabel: string | null = null
             if (payment?.provider === 'offline') {
               paymentLabel = 'Pay at the property'
-            } else if (payment?.provider === 'stripe') {
+            } else if (payment) {
               if (payment.status === 'SUCCEEDED') paymentLabel = 'Paid'
               else if (payment.status === 'PENDING') paymentLabel = 'Payment pending — complete payment'
               else if (payment.status === 'CANCELED') paymentLabel = 'Payment canceled'

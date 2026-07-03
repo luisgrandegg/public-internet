@@ -73,7 +73,7 @@ export function BookingForm({
       const result = await createBookingAction(listingId, checkIn, checkOut)
       if (result.ok) {
         if (result.checkoutUrl) {
-          // Online payment (Stripe mode): hand off to the hosted checkout.
+          // Online payment (provider configured): hand off to the hosted checkout.
           // A full-page navigation is required — the checkout is external.
           window.location.assign(result.checkoutUrl)
         } else {

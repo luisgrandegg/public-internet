@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import type { CreateBookingInput } from '@/lib/schemas/bookings'
-import { isStripeConfigured, createCheckoutSession, PAYMENT_CURRENCY } from '@/lib/payments'
+import { paymentProvider, PAYMENT_CURRENCY } from '@/lib/payments'
 
 const bookingInclude = {
   listing: { include: { photos: true } },
@@ -47,11 +47,12 @@ export async function createBooking(guestId: string, input: CreateBookingInput) 
   )
   const totalCost = listing.nightlyRate * nights
 
-  const stripeMode = isStripeConfigured()
+  const provider = paymentProvider
 
   // Booking + Payment are created in one transaction (ADR-006).
-  // Offline mode: settled directly with the host — SUCCEEDED immediately.
-  // Stripe mode: PENDING until the checkout.session.completed webhook.
+  // Offline mode (no provider configured): settled directly with the host —
+  // SUCCEEDED immediately. Online mode: PENDING until the provider's webhook
+  // reports payment.succeeded.
   const booking = await db.$transaction(async (tx) => {
     const createdBooking = await tx.booking.create({
       data: {
@@ -65,8 +66,8 @@ export async function createBooking(guestId: string, input: CreateBookingInput) 
     await tx.payment.create({
       data: {
         bookingId: createdBooking.id,
-        provider: stripeMode ? 'stripe' : 'offline',
-        status: stripeMode ? 'PENDING' : 'SUCCEEDED',
+        provider: provider ? provider.id : 'offline',
+        status: provider ? 'PENDING' : 'SUCCEEDED',
         // Exactly the pre-confirmation total — never recomputed (ADR-006).
         amount: totalCost,
         currency: PAYMENT_CURRENCY,
@@ -78,22 +79,35 @@ export async function createBooking(guestId: string, input: CreateBookingInput) 
     })
   })
 
-  if (!stripeMode || !booking.payment) {
+  if (!provider || !booking.payment) {
     return { booking, checkoutUrl: null }
   }
 
-  // Stripe mode: create the hosted Checkout Session. A single line item whose
-  // amount equals the displayed total exactly — nothing is added on top.
+  // Online mode: create the provider's hosted checkout session. A single line
+  // item whose amount equals the displayed total exactly — nothing is added
+  // on top.
   try {
-    const { sessionId, checkoutUrl } = await createCheckoutSession({
-      bookingId: booking.id,
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+    const { sessionId, checkoutUrl } = await provider.createCheckoutSession({
       paymentId: booking.payment.id,
-      label: `${listing.title} — ${nights} night${nights !== 1 ? 's' : ''}`,
-      amount: totalCost,
+      referenceId: booking.id,
+      amountCents: totalCost,
+      currency: PAYMENT_CURRENCY,
+      lineItems: [
+        {
+          name: `${listing.title} — ${nights} night${nights !== 1 ? 's' : ''}`,
+          amountCents: totalCost,
+          quantity: 1,
+        },
+      ],
+      successUrl: `${appUrl}/bookings/${booking.id}?checkout=success`,
+      cancelUrl: `${appUrl}/bookings/${booking.id}?checkout=canceled`,
     })
+    // Store the checkout URL so a pending payment can be resumed later
+    // without a provider API call.
     const payment = await db.payment.update({
       where: { bookingId: booking.id },
-      data: { stripeCheckoutSessionId: sessionId },
+      data: { providerSessionId: sessionId, providerCheckoutUrl: checkoutUrl },
     })
     return { booking: { ...booking, payment }, checkoutUrl }
   } catch (error) {
