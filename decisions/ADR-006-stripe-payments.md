@@ -48,3 +48,13 @@ For the platforms to be a real functional replacement for AirBnB and UberEats, a
 - CI and local dev run in offline mode by default; e2e suites assert the offline copy and record. Stripe-mode logic is covered by unit-style route behavior (signature rejection, mode selection) without calling Stripe.
 - Each app's OpenAPI spec documents the webhook route and the payment fields on Booking/Order responses; SDKs regenerate accordingly.
 - Refunds, partial refunds, and Connect payouts are explicitly out of scope for this ADR.
+
+## Amendment (2026-07-03) — pluggable `PaymentProvider` interface
+
+Nodes deploy everywhere, and "everywhere" does not always mean Stripe (regional PSPs, public-sector procurement, co-op banking partners). The payment layer is therefore a **provider interface, not a Stripe module** — mirroring the existing `EmailProvider` pattern:
+
+- Each app has `src/lib/payments/` containing `types.ts` (the `PaymentProvider` interface: `id`, `createCheckoutSession()`, `parseWebhookEvent()`), `stripe.ts` (the Stripe implementation), and `index.ts` (provider selection from environment: Stripe when `STRIPE_SECRET_KEY` is set, otherwise `null` → offline settlement mode).
+- No module outside `src/lib/payments/` may import a PSP SDK. Services, routes, and UI depend only on the interface and the generic `Payment` record.
+- The `Payment` columns are provider-neutral: `providerSessionId`, `providerPaymentReference`, `providerCheckoutUrl`. `Payment.provider` stores the implementation's `id` (`'stripe'`, `'offline'`, or a custom id).
+- The webhook route is `POST /api/webhooks/payments` for every provider. It hands the raw body and headers to the active provider's `parseWebhookEvent()`, which authenticates the event (signature verification for Stripe) and maps it to the generic lifecycle (`payment.succeeded` / `payment.canceled` / ignored). With no provider configured it returns 503.
+- Plugging in a gateway = implementing the interface in one file and selecting it in `index.ts`. Each app's `DEPLOYMENT.md` documents the steps.
