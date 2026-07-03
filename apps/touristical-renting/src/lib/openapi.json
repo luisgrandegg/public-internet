@@ -772,6 +772,82 @@
           }
         }
       },
+      "AvailabilityBlock": {
+        "type": "object",
+        "required": [
+          "id",
+          "listingId",
+          "startDate",
+          "endDate",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "listingId": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "First blocked day (inclusive)"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "First available day after the block (exclusive)"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional host-facing note, e.g. \"Personal use\""
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateAvailabilityBlockInput": {
+        "type": "object",
+        "required": [
+          "startDate",
+          "endDate"
+        ],
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "ISO date YYYY-MM-DD — first blocked day (inclusive)"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "ISO date YYYY-MM-DD — first available day after the block (exclusive). Must be after startDate."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Optional host-facing note"
+          }
+        }
+      },
+      "FavoriteStatus": {
+        "type": "object",
+        "required": [
+          "listingId",
+          "favorited"
+        ],
+        "properties": {
+          "listingId": {
+            "type": "string"
+          },
+          "favorited": {
+            "type": "boolean"
+          }
+        }
+      },
       "ApiError": {
         "type": "object",
         "required": [
@@ -829,6 +905,10 @@
     {
       "name": "reviews",
       "description": "Mutual review system"
+    },
+    {
+      "name": "favorites",
+      "description": "Saved listings (wishlist)"
     }
   ],
   "paths": {
@@ -1184,6 +1264,51 @@
         }
       }
     },
+    "/api/favorites": {
+      "get": {
+        "operationId": "favorites_list",
+        "summary": "List the signed-in user's favorited listings",
+        "description": "Returns favorited listings in the same card shape as the listings search — including photos, host summary, rating, and reviewCount.",
+        "tags": [
+          "favorites"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Favorited listings, most recently saved first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Listing"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/host/bookings": {
       "get": {
         "operationId": "host_bookings_list",
@@ -1364,6 +1489,251 @@
           },
           "401": {
             "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/host/listings/{id}/availability-blocks/{blockId}": {
+      "delete": {
+        "operationId": "host_listings_availability_blocks_delete",
+        "summary": "Remove an availability block from one of the host's listings",
+        "tags": [
+          "host"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Listing ID"
+          },
+          {
+            "in": "path",
+            "name": "blockId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Availability block ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Availability block deleted"
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the listing host",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing or availability block not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/host/listings/{id}/availability-blocks": {
+      "get": {
+        "operationId": "host_listings_availability_blocks_list",
+        "summary": "List availability blocks for one of the host's listings",
+        "tags": [
+          "host"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Listing ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability blocks ordered by start date ascending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AvailabilityBlock"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the listing host",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "host_listings_availability_blocks_create",
+        "summary": "Block a date range on one of the host's listings",
+        "description": "Marks a date range as unavailable for booking. The range must not overlap an existing confirmed booking.",
+        "tags": [
+          "host"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Listing ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAvailabilityBlockInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Availability block created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AvailabilityBlock"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the listing host",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The range overlaps an existing confirmed booking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
             "content": {
               "application/json": {
                 "schema": {
@@ -1578,6 +1948,118 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/listings/{id}/favorite": {
+      "post": {
+        "operationId": "listings_favorite_create",
+        "summary": "Save a listing to the signed-in user's favorites",
+        "description": "Idempotent — saving an already-saved listing is a no-op.",
+        "tags": [
+          "favorites"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Listing ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listing is saved to favorites",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FavoriteStatus"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "listings_favorite_delete",
+        "summary": "Remove a listing from the signed-in user's favorites",
+        "description": "Idempotent — removing a listing that is not saved is a no-op.",
+        "tags": [
+          "favorites"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Listing ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Listing removed from favorites"
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found",
             "content": {
               "application/json": {
                 "schema": {

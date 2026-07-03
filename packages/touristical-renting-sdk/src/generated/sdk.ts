@@ -3,12 +3,15 @@ import type { ApiClient } from '../client.js'
 import { BookingsReviewResource } from './bookings-review.resource.js'
 import { BookingsResource } from './bookings.resource.js'
 import { EnquiriesResource } from './enquiries.resource.js'
+import { FavoritesResource } from './favorites.resource.js'
 import { HostBookingsResource } from './host-bookings.resource.js'
 import { HostEnquiriesReplyResource } from './host-enquiries-reply.resource.js'
 import { HostEnquiriesResource } from './host-enquiries.resource.js'
+import { HostListingsAvailabilityBlocksResource } from './host-listings-availability-blocks.resource.js'
 import { HostListingsResource } from './host-listings.resource.js'
 import { ListingsAvailabilityResource } from './listings-availability.resource.js'
 import { ListingsEnquiriesResource } from './listings-enquiries.resource.js'
+import { ListingsFavoriteResource } from './listings-favorite.resource.js'
 import { ListingsReviewsResource } from './listings-reviews.resource.js'
 import { ListingsResource } from './listings.resource.js'
 import { UsersMeBecomeHostResource } from './users-me-become-host.resource.js'
@@ -19,8 +22,10 @@ export class TouristicalRentingSDK {
   readonly bookingsReview: BookingsReviewResource
   readonly bookings: BookingsResource
   readonly enquiries: EnquiriesResource
+  readonly favorites: FavoritesResource
   readonly listingsAvailability: ListingsAvailabilityResource
   readonly listingsEnquiries: ListingsEnquiriesResource
+  readonly listingsFavorite: ListingsFavoriteResource
   readonly listingsReviews: ListingsReviewsResource
   readonly listings: ListingsResource
   readonly usersMeBecomeHost: UsersMeBecomeHostResource
@@ -30,6 +35,7 @@ export class TouristicalRentingSDK {
     bookings: HostBookingsResource
     enquiriesReply: HostEnquiriesReplyResource
     enquiries: HostEnquiriesResource
+    listingsAvailabilityBlocks: HostListingsAvailabilityBlocksResource
     listings: HostListingsResource
   }
 
@@ -37,8 +43,10 @@ export class TouristicalRentingSDK {
     this.bookingsReview = new BookingsReviewResource(client)
     this.bookings = new BookingsResource(client)
     this.enquiries = new EnquiriesResource(client)
+    this.favorites = new FavoritesResource(client)
     this.listingsAvailability = new ListingsAvailabilityResource(client)
     this.listingsEnquiries = new ListingsEnquiriesResource(client)
+    this.listingsFavorite = new ListingsFavoriteResource(client)
     this.listingsReviews = new ListingsReviewsResource(client)
     this.listings = new ListingsResource(client)
     this.usersMeBecomeHost = new UsersMeBecomeHostResource(client)
@@ -48,6 +56,7 @@ export class TouristicalRentingSDK {
       bookings: new HostBookingsResource(client),
       enquiriesReply: new HostEnquiriesReplyResource(client),
       enquiries: new HostEnquiriesResource(client),
+      listingsAvailabilityBlocks: new HostListingsAvailabilityBlocksResource(client),
       listings: new HostListingsResource(client),
     }
   }

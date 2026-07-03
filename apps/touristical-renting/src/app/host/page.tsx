@@ -72,6 +72,12 @@ export default async function HostDashboardPage() {
                       <Link href={`/host/listings/${listing.id}/edit`} className={styles.actionLink}>
                         Edit
                       </Link>
+                      <Link
+                        href={`/host/listings/${listing.id}/availability`}
+                        className={styles.actionLink}
+                      >
+                        Availability
+                      </Link>
                     </div>
                   </div>
                 </div>

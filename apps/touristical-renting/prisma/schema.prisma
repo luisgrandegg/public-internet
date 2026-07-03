@@ -29,6 +29,7 @@ model User {
   enquiriesAsHost    Enquiry[]  @relation("EnquiriesAsHost")
   reviewsWritten     Review[]   @relation("ReviewsWritten")
   reviewsReceived    Review[]   @relation("ReviewsReceived")
+  favorites          Favorite[]
 }
 
 model Session {
@@ -93,6 +94,7 @@ model Listing {
   availabilityBlocks AvailabilityBlock[]
   enquiries          Enquiry[]
   reviews            Review[]
+  favorites          Favorite[]
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 }
@@ -128,6 +130,17 @@ model AvailabilityBlock {
   endDate   DateTime
   reason    String?
   createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
 }
 
 model Enquiry {

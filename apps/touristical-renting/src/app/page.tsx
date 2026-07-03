@@ -1,5 +1,8 @@
+import { headers } from 'next/headers'
 import { Input, Button, Card } from '@public-internet/design-system'
+import { auth } from '@/lib/auth'
 import { getListings } from '@/lib/services/listings'
+import { getFavoritedListingIds } from '@/lib/services/favorites'
 
 // This page fetches live data from the database — disable static prerendering.
 export const dynamic = 'force-dynamic'
@@ -8,7 +11,14 @@ import { ListingCard } from './listings/_components/ListingCard'
 import styles from './page.module.css'
 
 export default async function HomePage() {
-  const { listings } = await getListings({ page: 1, limit: 4 })
+  const [{ listings }, session] = await Promise.all([
+    getListings({ page: 1, limit: 4 }),
+    auth.api.getSession({ headers: await headers() }),
+  ])
+
+  const favoritedIds = session
+    ? await getFavoritedListingIds(session.user.id, listings.map((l) => l.id))
+    : null
 
   const featuredListings = listings.map((l) => ({
     id: l.id,
@@ -92,7 +102,11 @@ export default async function HomePage() {
         ) : (
           <div className={styles.listingsGrid}>
             {featuredListings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                favorited={favoritedIds ? favoritedIds.includes(listing.id) : null}
+              />
             ))}
           </div>
         )}

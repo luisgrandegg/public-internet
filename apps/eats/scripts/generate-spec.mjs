@@ -74,6 +74,15 @@ const options = {
             imageUrl: { type: 'string', nullable: true },
             isActive: { type: 'boolean' },
             ownerId: { type: 'string' },
+            avgRating: {
+              type: 'number',
+              nullable: true,
+              description: 'Average review rating (1–5) rounded to one decimal, or null when the restaurant has no reviews',
+            },
+            reviewCount: {
+              type: 'integer',
+              description: 'Number of verified-order reviews for this restaurant',
+            },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },
@@ -226,6 +235,43 @@ const options = {
             },
           },
         },
+        Review: {
+          type: 'object',
+          required: ['id', 'orderId', 'restaurantId', 'authorId', 'rating', 'body', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            orderId: { type: 'string', description: 'The delivered order this review belongs to — one review per order' },
+            restaurantId: { type: 'string' },
+            authorId: { type: 'string' },
+            author: {
+              type: 'object',
+              required: ['name'],
+              properties: { name: { type: 'string' } },
+              description: 'The reviewing customer',
+            },
+            rating: { type: 'integer', minimum: 1, maximum: 5, description: 'Star rating from 1 to 5' },
+            body: { type: 'string', description: 'Optional free-text feedback — empty string when the customer left none' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CreateReviewInput: {
+          type: 'object',
+          required: ['rating'],
+          properties: {
+            rating: { type: 'integer', minimum: 1, maximum: 5, description: 'Star rating from 1 to 5' },
+            body: { type: 'string', maxLength: 2000, description: 'Optional free-text feedback' },
+          },
+        },
+        PaginatedReviews: {
+          type: 'object',
+          required: ['reviews', 'total', 'page', 'limit'],
+          properties: {
+            reviews: { type: 'array', items: { $ref: '#/components/schemas/Review' } },
+            total: { type: 'integer' },
+            page: { type: 'integer' },
+            limit: { type: 'integer' },
+          },
+        },
         PaginatedRestaurants: {
           type: 'object',
           required: ['restaurants', 'total', 'page', 'limit'],
@@ -261,6 +307,7 @@ const options = {
       { name: 'restaurants', description: 'Restaurant discovery' },
       { name: 'menu', description: 'Menu item browsing' },
       { name: 'orders', description: 'Order placement and tracking' },
+      { name: 'reviews', description: 'Verified-order restaurant reviews and ratings' },
       { name: 'courier', description: 'Courier delivery operations' },
       { name: 'restaurant-owner', description: 'Restaurant owner management operations' },
     ],

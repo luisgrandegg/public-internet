@@ -169,6 +169,15 @@ export function CreateListingWizard() {
               ))}
             </div>
           )}
+
+          {submitState && !submitState.ok && (
+            <div role="alert" className={styles.stepErrors}>
+              {submitState.globalError && <p>{submitState.globalError}</p>}
+              {Object.values(submitState.fieldErrors).map((err) => (
+                <p key={err}>{err}</p>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className={styles.navigation}>

@@ -33,6 +33,14 @@
   margin-bottom: 1.5rem;
 }
 
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .title {
   font-size: 1.75rem;
   font-weight: 700;

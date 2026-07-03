@@ -204,6 +204,32 @@ export interface CreateReviewInput {
   body: string
 }
 
+export interface AvailabilityBlock {
+  id: string
+  listingId: string
+  /** First blocked day (inclusive) */
+  startDate: string
+  /** First available day after the block (exclusive) */
+  endDate: string
+  /** Optional host-facing note, e.g. "Personal use" */
+  reason?: string | null
+  createdAt: string
+}
+
+export interface CreateAvailabilityBlockInput {
+  /** ISO date YYYY-MM-DD — first blocked day (inclusive) */
+  startDate: string
+  /** ISO date YYYY-MM-DD — first available day after the block (exclusive). Must be after startDate. */
+  endDate: string
+  /** Optional host-facing note */
+  reason?: string
+}
+
+export interface FavoriteStatus {
+  listingId: string
+  favorited: boolean
+}
+
 export interface ApiError {
   error: {
     code: string

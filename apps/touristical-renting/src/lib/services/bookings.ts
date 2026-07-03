@@ -13,15 +13,25 @@ export async function createBooking(guestId: string, input: CreateBookingInput) 
   const checkInDate = new Date(checkIn)
   const checkOutDate = new Date(checkOut)
 
-  // Check for overlapping bookings (double-booking prevention)
-  const overlap = await db.booking.count({
-    where: {
-      listingId,
-      checkIn: { lt: checkOutDate },
-      checkOut: { gt: checkInDate },
-    },
-  })
-  if (overlap > 0) throw new Error('DATES_UNAVAILABLE')
+  // Check for overlapping bookings (double-booking prevention) and
+  // host availability blocks — blocked dates cannot be booked.
+  const [bookingOverlap, blockOverlap] = await Promise.all([
+    db.booking.count({
+      where: {
+        listingId,
+        checkIn: { lt: checkOutDate },
+        checkOut: { gt: checkInDate },
+      },
+    }),
+    db.availabilityBlock.count({
+      where: {
+        listingId,
+        startDate: { lt: checkOutDate },
+        endDate: { gt: checkInDate },
+      },
+    }),
+  ])
+  if (bookingOverlap > 0 || blockOverlap > 0) throw new Error('DATES_UNAVAILABLE')
 
   // Calculate total cost in cents — complete price, no hidden fees
   const nights = Math.ceil(

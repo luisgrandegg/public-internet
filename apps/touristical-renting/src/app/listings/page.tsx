@@ -1,6 +1,9 @@
+import { headers } from 'next/headers'
 import type { ListingFilters, PropertyType } from '@/lib/types'
+import { auth } from '@/lib/auth'
 import { ListingsClientShell } from './_components/ListingsClientShell'
 import { getListings } from '@/lib/services/listings'
+import { getFavoritedListingIds } from '@/lib/services/favorites'
 
 interface ListingsPageProps {
   searchParams: Promise<{
@@ -47,17 +50,24 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
   const parsedGuests = filters.guests ? parseInt(filters.guests, 10) : NaN
   const guests = Number.isInteger(parsedGuests) && parsedGuests >= 1 ? parsedGuests : undefined
 
-  const { listings } = await getListings({
-    location: filters.location || undefined,
-    propertyType: propertyType as PropertyType | undefined,
-    minPrice,
-    maxPrice,
-    checkIn: hasValidDateRange ? filters.checkIn : undefined,
-    checkOut: hasValidDateRange ? filters.checkOut : undefined,
-    guests,
-    page,
-    limit: 20,
-  })
+  const [{ listings }, session] = await Promise.all([
+    getListings({
+      location: filters.location || undefined,
+      propertyType: propertyType as PropertyType | undefined,
+      minPrice,
+      maxPrice,
+      checkIn: hasValidDateRange ? filters.checkIn : undefined,
+      checkOut: hasValidDateRange ? filters.checkOut : undefined,
+      guests,
+      page,
+      limit: 20,
+    }),
+    auth.api.getSession({ headers: await headers() }),
+  ])
+
+  const favoritedListingIds = session
+    ? await getFavoritedListingIds(session.user.id, listings.map((l) => l.id))
+    : null
 
   // Normalise DB listings to the Listing type expected by components
   const normalisedListings = listings.map((l) => ({
@@ -87,5 +97,11 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
     reviewCount: l.reviewCount,
   }))
 
-  return <ListingsClientShell listings={normalisedListings} filters={filters} />
+  return (
+    <ListingsClientShell
+      listings={normalisedListings}
+      filters={filters}
+      favoritedListingIds={favoritedListingIds}
+    />
+  )
 }

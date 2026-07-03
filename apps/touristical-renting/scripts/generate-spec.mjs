@@ -328,6 +328,35 @@ const options = {
             body: { type: 'string', minLength: 10, maxLength: 2000 },
           },
         },
+        AvailabilityBlock: {
+          type: 'object',
+          required: ['id', 'listingId', 'startDate', 'endDate', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            listingId: { type: 'string' },
+            startDate: { type: 'string', format: 'date-time', description: 'First blocked day (inclusive)' },
+            endDate: { type: 'string', format: 'date-time', description: 'First available day after the block (exclusive)' },
+            reason: { type: 'string', nullable: true, description: 'Optional host-facing note, e.g. "Personal use"' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CreateAvailabilityBlockInput: {
+          type: 'object',
+          required: ['startDate', 'endDate'],
+          properties: {
+            startDate: { type: 'string', format: 'date', description: 'ISO date YYYY-MM-DD — first blocked day (inclusive)' },
+            endDate: { type: 'string', format: 'date', description: 'ISO date YYYY-MM-DD — first available day after the block (exclusive). Must be after startDate.' },
+            reason: { type: 'string', maxLength: 200, description: 'Optional host-facing note' },
+          },
+        },
+        FavoriteStatus: {
+          type: 'object',
+          required: ['listingId', 'favorited'],
+          properties: {
+            listingId: { type: 'string' },
+            favorited: { type: 'boolean' },
+          },
+        },
         ApiError: {
           type: 'object',
           required: ['error'],
@@ -356,6 +385,7 @@ const options = {
       { name: 'users', description: 'User profile and account management' },
       { name: 'enquiries', description: 'Guest-to-host messaging' },
       { name: 'reviews', description: 'Mutual review system' },
+      { name: 'favorites', description: 'Saved listings (wishlist)' },
     ],
   },
   // Using absolute paths so the script can be run from any directory.

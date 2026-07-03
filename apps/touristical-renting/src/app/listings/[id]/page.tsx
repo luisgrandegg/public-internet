@@ -5,6 +5,8 @@ import { auth } from '@/lib/auth'
 import { Button } from '@public-internet/design-system'
 import { getListingById, getListingAvailability } from '@/lib/services/listings'
 import { getListingReviews } from '@/lib/services/reviews'
+import { isFavorited } from '@/lib/services/favorites'
+import { FavoriteButton } from '@/components/FavoriteButton'
 import { AvailabilityCalendar } from './_components/AvailabilityCalendar'
 import { ContactHostForm } from './_components/ContactHostForm'
 import styles from './page.module.css'
@@ -24,6 +26,8 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
   ])
 
   if (!listing) notFound()
+
+  const favorited = session ? await isFavorited(session.user.id, listing.id) : null
 
   const nightlyRateEur = (listing.nightlyRate / 100).toFixed(2)
   const memberSinceYear = new Date(listing.host.createdAt).getFullYear()
@@ -65,7 +69,16 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
       )}
 
       <div className={styles.header}>
-        <h1 className={styles.title}>{listing.title}</h1>
+        <div className={styles.titleRow}>
+          <h1 className={styles.title}>{listing.title}</h1>
+          {favorited !== null && (
+            <FavoriteButton
+              listingId={listing.id}
+              listingTitle={listing.title}
+              initialFavorited={favorited}
+            />
+          )}
+        </div>
         <div className={styles.meta}>
           <span className={styles.metaItem}>{listing.propertyType.charAt(0).toUpperCase() + listing.propertyType.slice(1)}</span>
           <span className={styles.metaItem}>{listing.city}, {listing.country}</span>

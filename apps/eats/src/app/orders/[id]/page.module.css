@@ -137,3 +137,51 @@
   padding-top: var(--ds-space-2);
   margin-top: var(--ds-space-2);
 }
+
+.reviewForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+}
+
+.reviewError {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-danger-text);
+  background-color: var(--ds-color-danger-subtle);
+  border: 1px solid var(--ds-color-danger);
+  border-radius: var(--ds-radius-md);
+  padding: var(--ds-space-3) var(--ds-space-4);
+}
+
+.reviewedState {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+}
+
+.reviewedBadge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-success-text);
+  background-color: var(--ds-color-success-subtle);
+  border-radius: var(--ds-radius-full);
+  padding: var(--ds-space-1) var(--ds-space-3);
+}
+
+.reviewedRating {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-900);
+}
+
+.reviewedBody {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-700);
+  white-space: pre-wrap;
+}
+
+.reviewedDate {
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-neutral-700);
+}

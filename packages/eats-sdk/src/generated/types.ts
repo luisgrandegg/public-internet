@@ -26,6 +26,10 @@ export interface Restaurant {
   imageUrl?: string | null
   isActive: boolean
   ownerId: string
+  /** Average review rating (1–5) rounded to one decimal, or null when the restaurant has no reviews */
+  avgRating?: number | null
+  /** Number of verified-order reviews for this restaurant */
+  reviewCount?: number
   createdAt: string
   updatedAt: string
 }
@@ -149,6 +153,37 @@ export interface Delivery {
 export interface MenuCategories {
   /** Distinct categories of available menu items across active restaurants, sorted alphabetically */
   categories: Array<string>
+}
+
+export interface Review {
+  id: string
+  /** The delivered order this review belongs to — one review per order */
+  orderId: string
+  restaurantId: string
+  authorId: string
+  /** The reviewing customer */
+  author?: {
+    name: string
+  }
+  /** Star rating from 1 to 5 */
+  rating: number
+  /** Optional free-text feedback — empty string when the customer left none */
+  body: string
+  createdAt: string
+}
+
+export interface CreateReviewInput {
+  /** Star rating from 1 to 5 */
+  rating: number
+  /** Optional free-text feedback */
+  body?: string
+}
+
+export interface PaginatedReviews {
+  reviews: Array<Review>
+  total: number
+  page: number
+  limit: number
 }
 
 export interface PaginatedRestaurants {

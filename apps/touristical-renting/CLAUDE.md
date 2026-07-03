@@ -57,11 +57,13 @@ The app uses the Next.js App Router under `src/app/`. Plan routes here before ad
 | `/listings/[id]` | Listing detail — photos, description, availability, price, host | Planned |
 | `/listings/[id]/book` | Booking flow | Planned |
 | `/bookings` | Guest's booking history | Planned |
+| `/favorites` | Signed-in user's saved listings (wishlist) | Built |
 | `/enquiries` | Guest's enquiries inbox — sent messages and host replies | Built |
 | `/bookings/[id]` | Individual booking detail | Planned |
 | `/host` | Host dashboard — listings, bookings, earnings | Planned |
 | `/host/listings/new` | Create a new listing | Planned |
 | `/host/listings/[id]/edit` | Edit an existing listing | Planned |
+| `/host/listings/[id]/availability` | Manage availability blocks for a listing | Built |
 | `/profile` | User profile and settings | Planned |
 | `/auth/signin` | Sign in | Planned |
 | `/auth/signup` | Sign up | Planned |
@@ -118,6 +120,12 @@ This app uses Next.js Route Handlers as its REST API. See `apps/CLAUDE.md § Ful
 | `GET` | `/api/enquiries` | Yes (Guest) | List the signed-in guest's enquiries with host replies |
 | `GET` | `/api/host/listings` | Yes (Host) | List host's own listings |
 | `GET` | `/api/host/bookings` | Yes (Host) | List bookings for host's listings |
+| `GET` | `/api/host/listings/:id/availability-blocks` | Yes (owner) | List availability blocks for a listing |
+| `POST` | `/api/host/listings/:id/availability-blocks` | Yes (owner) | Block a date range; 409 if it overlaps a confirmed booking |
+| `DELETE` | `/api/host/listings/:id/availability-blocks/:blockId` | Yes (owner) | Remove an availability block |
+| `POST` | `/api/listings/:id/favorite` | Yes | Save a listing to favorites (idempotent) |
+| `DELETE` | `/api/listings/:id/favorite` | Yes | Remove a listing from favorites (idempotent) |
+| `GET` | `/api/favorites` | Yes | List the signed-in user's favorited listings |
 
 ### Prisma schema (initial entities)
 

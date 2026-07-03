@@ -4,6 +4,7 @@ import type {
   RestaurantsQuery,
   UpdateRestaurantInput,
 } from '@/lib/schemas/restaurants'
+import { getRatingSummaries } from '@/lib/services/reviews'
 
 /**
  * Paginated list of active restaurants.
@@ -46,7 +47,20 @@ export async function listRestaurants(query: RestaurantsQuery) {
     db.restaurant.count({ where }),
   ])
 
-  return { restaurants, total, page, limit }
+  // Attach rating summaries via a single groupBy (no N+1).
+  // Constitution: ratings are informational only — ordering stays neutral
+  // (alphabetical), never sorted by rating or paid placement.
+  const summaries = await getRatingSummaries(restaurants.map((r) => r.id))
+  const withRatings = restaurants.map((r) => {
+    const summary = summaries.get(r.id)
+    return {
+      ...r,
+      avgRating: summary?.avgRating ?? null,
+      reviewCount: summary?.reviewCount ?? 0,
+    }
+  })
+
+  return { restaurants: withRatings, total, page, limit }
 }
 
 /**
@@ -79,7 +93,14 @@ export async function getRestaurantById(id: string, opts: { includeInactive?: bo
   const restaurant = await db.restaurant.findUnique({ where: { id } })
   if (!restaurant) return null
   if (!opts.includeInactive && !restaurant.isActive) return null
-  return restaurant
+
+  const summaries = await getRatingSummaries([restaurant.id])
+  const summary = summaries.get(restaurant.id)
+  return {
+    ...restaurant,
+    avgRating: summary?.avgRating ?? null,
+    reviewCount: summary?.reviewCount ?? 0,
+  }
 }
 
 /**

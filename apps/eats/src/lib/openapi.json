@@ -132,6 +132,15 @@
           "ownerId": {
             "type": "string"
           },
+          "avgRating": {
+            "type": "number",
+            "nullable": true,
+            "description": "Average review rating (1–5) rounded to one decimal, or null when the restaurant has no reviews"
+          },
+          "reviewCount": {
+            "type": "integer",
+            "description": "Number of verified-order reviews for this restaurant"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -547,6 +556,104 @@
           }
         }
       },
+      "Review": {
+        "type": "object",
+        "required": [
+          "id",
+          "orderId",
+          "restaurantId",
+          "authorId",
+          "rating",
+          "body",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string",
+            "description": "The delivered order this review belongs to — one review per order"
+          },
+          "restaurantId": {
+            "type": "string"
+          },
+          "authorId": {
+            "type": "string"
+          },
+          "author": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "description": "The reviewing customer"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Star rating from 1 to 5"
+          },
+          "body": {
+            "type": "string",
+            "description": "Optional free-text feedback — empty string when the customer left none"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateReviewInput": {
+        "type": "object",
+        "required": [
+          "rating"
+        ],
+        "properties": {
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Star rating from 1 to 5"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Optional free-text feedback"
+          }
+        }
+      },
+      "PaginatedReviews": {
+        "type": "object",
+        "required": [
+          "reviews",
+          "total",
+          "page",
+          "limit"
+        ],
+        "properties": {
+          "reviews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Review"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
       "PaginatedRestaurants": {
         "type": "object",
         "required": [
@@ -618,6 +725,10 @@
     {
       "name": "orders",
       "description": "Order placement and tracking"
+    },
+    {
+      "name": "reviews",
+      "description": "Verified-order restaurant reviews and ratings"
     },
     {
       "name": "courier",
@@ -778,6 +889,108 @@
           },
           "403": {
             "description": "User is not a courier",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/review": {
+      "post": {
+        "operationId": "orders_review_create",
+        "summary": "Review a delivered order's restaurant (order owner only, once per order)",
+        "description": "Only the customer who placed the order can review it, only after it was DELIVERED, and only once. Reviews are honest feedback — never incentivised, never removable by the restaurant.",
+        "tags": [
+          "reviews"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Review"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the order owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Order already reviewed, or not yet delivered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (rating must be an integer 1–5)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1513,6 +1726,82 @@
           },
           "404": {
             "description": "Restaurant not found or inactive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/restaurants/{id}/reviews": {
+      "get": {
+        "operationId": "restaurants_reviews_list",
+        "summary": "List reviews for a restaurant (public, recent first)",
+        "description": "Paginated, recent-first list of verified-order reviews with the author's name. Reviews cannot be hidden or reordered by the restaurant.",
+        "tags": [
+          "reviews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of reviews, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PaginatedReviews"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Restaurant not found or inactive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid pagination parameters",
             "content": {
               "application/json": {
                 "schema": {

@@ -23,6 +23,8 @@ const ListingsMap = dynamic(() => import('./ListingsMap'), {
 interface ListingsClientShellProps {
   listings: Listing[]
   filters: ListingFilters
+  /** IDs the signed-in user has saved. Null for signed-out visitors — hides the save toggle. */
+  favoritedListingIds?: string[] | null
 }
 
 function formatFilterDate(value: string): string {
@@ -31,7 +33,11 @@ function formatFilterDate(value: string): string {
   return parsed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export function ListingsClientShell({ listings, filters }: ListingsClientShellProps) {
+export function ListingsClientShell({
+  listings,
+  filters,
+  favoritedListingIds = null,
+}: ListingsClientShellProps) {
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null)
 
   const activeFilters: Array<{ key: string; label?: string; value: string }> = []
@@ -80,6 +86,7 @@ export function ListingsClientShell({ listings, filters }: ListingsClientShellPr
               <ListingCard
                 key={listing.id}
                 listing={listing}
+                favorited={favoritedListingIds ? favoritedListingIds.includes(listing.id) : null}
                 onMouseEnter={() => setHoveredListingId(listing.id)}
                 onMouseLeave={() => setHoveredListingId(null)}
               />

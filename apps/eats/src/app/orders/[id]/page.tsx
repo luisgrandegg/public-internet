@@ -3,8 +3,10 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { findOrderWithDetails } from '@/lib/services/orders'
+import { findReviewForOrder } from '@/lib/services/reviews'
 import { formatEuros } from '@/lib/format'
 import { OrderStatusLive } from './OrderStatusLive'
+import { ReviewForm } from './ReviewForm'
 import styles from './page.module.css'
 
 interface PageProps {
@@ -22,6 +24,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
     // Not the owner — treat as not found to avoid leaking existence.
     notFound()
   }
+
+  const review = order.status === 'DELIVERED' ? await findReviewForOrder(order.id) : null
 
   return (
     <div className={styles.container}>
@@ -92,6 +96,26 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </p>
         )}
       </section>
+
+      {order.status === 'DELIVERED' && (
+        <section className={styles.section} aria-label="Review">
+          <h2 className={styles.sectionHeading}>Your review</h2>
+          {review ? (
+            <div className={styles.reviewedState}>
+              <p className={styles.reviewedBadge}>Reviewed</p>
+              <p className={styles.reviewedRating}>
+                You rated {order.restaurant.name} {review.rating} out of 5.
+              </p>
+              {review.body && <p className={styles.reviewedBody}>{review.body}</p>}
+              <p className={styles.reviewedDate}>
+                Submitted {new Date(review.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          ) : (
+            <ReviewForm orderId={order.id} restaurantName={order.restaurant.name} />
+          )}
+        </section>
+      )}
     </div>
   )
 }

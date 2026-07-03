@@ -24,10 +24,12 @@ export async function createListing(
     return { ok: false, fieldErrors: {}, globalError: 'You must be signed in to create a listing' }
   }
 
-  // Parse photos from formData (submitted as photo-0-url, photo-0-alt, photo-1-url, ...)
+  // Parse photos from formData. The create wizard submits URLs as
+  // photoUrls[0], photoUrls[1], ...; other forms may submit
+  // photo-0-url / photo-0-alt pairs. Accept both.
   const photos: Array<{ url: string; alt: string }> = []
   for (let i = 0; i < 10; i++) {
-    const url = formData.get(`photo-${i}-url`)
+    const url = formData.get(`photoUrls[${i}]`) ?? formData.get(`photo-${i}-url`)
     const alt = formData.get(`photo-${i}-alt`)
     if (url && String(url).trim()) {
       photos.push({ url: String(url).trim(), alt: String(alt ?? '').trim() })

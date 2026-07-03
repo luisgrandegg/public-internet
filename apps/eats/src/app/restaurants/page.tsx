@@ -130,6 +130,8 @@ export default async function RestaurantsPage({ searchParams }: PageProps) {
                 description={r.description}
                 city={r.city}
                 imageUrl={r.imageUrl}
+                avgRating={r.avgRating}
+                reviewCount={r.reviewCount}
               />
             </li>
           ))}

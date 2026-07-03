@@ -56,10 +56,10 @@ The app uses the Next.js App Router under `src/app/`. Plan routes here before ad
 |---|---|---|
 | `/` | Home — value proposition, search entry point, restaurant/courier CTA | Scaffolded |
 | `/restaurants` | Restaurant browse — keyword search, city + category filter | Built |
-| `/restaurants/[id]` | Restaurant detail — menu, hours, location | Planned |
-| `/restaurants/[id]/order` | Order flow — build cart, see complete cost before confirming | Planned |
-| `/orders` | Customer order history | Planned |
-| `/orders/[id]` | Order detail — live status timeline (polling), items, delivery tracking | Built |
+| `/restaurants/[id]` | Restaurant detail — menu, hours, location, rating, recent reviews | Built |
+| `/restaurants/[id]/order` | Order flow — build cart, see complete cost before confirming | Built |
+| `/orders` | Customer order history | Built |
+| `/orders/[id]` | Order detail — live status timeline (polling), items, delivery tracking, review form once DELIVERED | Built |
 | `/courier` | Courier dashboard — available deliveries, history, pay breakdown | Planned |
 | `/courier/register` | Courier registration | Planned |
 | `/restaurant` | Restaurant owner dashboard — orders, menu management | Planned |
@@ -86,10 +86,12 @@ Before adding a new route, add it to this table with its status.
 | `POST` | `/api/auth/forgot-password` | No | Send reset email (always 204 to prevent enumeration) |
 | `GET` | `/api/restaurants` | No | List restaurants; supports `?city`, `?q` (name/description keyword), `?category` (available menu item category), `?page` |
 | `GET` | `/api/restaurants/categories` | No | List distinct categories of available menu items (feeds the category filter) |
-| `GET` | `/api/restaurants/:id` | No | Get restaurant detail |
+| `GET` | `/api/restaurants/:id` | No | Get restaurant detail (includes `avgRating` + `reviewCount`) |
 | `GET` | `/api/restaurants/:id/menu` | No | List menu items for a restaurant |
+| `GET` | `/api/restaurants/:id/reviews` | No | List reviews for a restaurant (paginated, recent first, with author name) |
 | `POST` | `/api/orders` | Yes (Customer) | Place an order |
 | `GET` | `/api/orders/:id` | Yes (owner) | Get order detail |
+| `POST` | `/api/orders/:id/review` | Yes (order owner) | Review a DELIVERED order's restaurant — one review per order, rating 1–5, 409 if already reviewed |
 | `GET` | `/api/courier/deliveries` | Yes (Courier) | List available and assigned deliveries |
 | `PATCH` | `/api/courier/deliveries/:id` | Yes (Courier) | Accept delivery or update delivery status |
 | `GET` | `/api/restaurant/orders` | Yes (Restaurant Owner) | List orders for owner's restaurant(s) |
@@ -133,6 +135,7 @@ If a UI requirement cannot be met with existing design system components, **flag
 - `OrderItem.unitPrice` is snapshotted at order creation time — it must not be recalculated from the current `MenuItem.price` after the order is placed.
 - Courier pay breakdown (`basePay` + `distancePay`) must be visible to the courier **before** they accept a delivery.
 - No surge pricing under any circumstances. `infrastructureFee` is a fixed value, not dynamically adjusted by demand.
+- Reviews are honest feedback from verified customers: only the customer whose order was `DELIVERED` can review it, once per order. Never incentivise reviews (no discounts or prompts tied to leaving one), and never give restaurants a way to hide, remove, or pay away reviews. Ratings are informational only — restaurant list ordering stays neutral (alphabetical), never sorted by rating or paid placement by default.
 
 ---
 
