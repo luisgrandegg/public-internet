@@ -7,6 +7,7 @@ import { findReviewForOrder } from '@/lib/services/reviews'
 import { formatEuros, paymentStateLabel } from '@/lib/format'
 import { OrderStatusLive } from './OrderStatusLive'
 import { ReviewForm } from './ReviewForm'
+import { CompletePaymentButton } from './CompletePaymentButton'
 import styles from './page.module.css'
 
 interface PageProps {
@@ -107,11 +108,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 Your order will be sent to the restaurant once the payment completes.
                 The amount is exactly the total shown above — nothing more.
               </p>
-              {order.payment.providerCheckoutUrl && (
-                <a href={order.payment.providerCheckoutUrl} className={styles.paymentLink}>
-                  Complete payment
-                </a>
-              )}
+              {/* Asks the server for a live checkout URL (regenerating an
+                  expired session) instead of linking to the stored one. */}
+              <CompletePaymentButton orderId={order.id} />
             </>
           )}
           {order.payment.provider !== 'offline' && order.payment.status === 'SUCCEEDED' && (

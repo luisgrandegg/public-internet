@@ -164,6 +164,8 @@ test.describe('Payments webhook endpoint', () => {
       failOnStatusCode: false,
     })
     expect(res.status()).toBe(503)
+    const body = await res.json()
+    expect(body.error.code).toBe('PAYMENTS_NOT_CONFIGURED')
   })
 
   test('answers 503 even for a signed-looking payload when no provider is configured', async ({
@@ -178,5 +180,7 @@ test.describe('Payments webhook endpoint', () => {
       failOnStatusCode: false,
     })
     expect(res.status()).toBe(503)
+    const body = await res.json()
+    expect(body.error.code).toBe('PAYMENTS_NOT_CONFIGURED')
   })
 })

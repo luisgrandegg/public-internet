@@ -23,6 +23,38 @@ export type PlaceOrderResult =
     }
   | { ok: false; fieldErrors: Record<string, string>; globalError?: string }
 
+export type ResumePaymentResult =
+  | { ok: true; checkoutUrl: string }
+  | { ok: false; globalError: string }
+
+/**
+ * Thin wrapper around POST /api/orders/{id}/pay (ADR-006 §4 — the
+ * "Complete payment" path). Returns a live hosted-checkout URL for a PENDING
+ * online payment; the client redirects there. All logic lives in the route.
+ */
+export async function resumeOrderPaymentAction(orderId: string): Promise<ResumePaymentResult> {
+  try {
+    const res = await fetch(apiUrl(`/api/orders/${orderId}/pay`), {
+      method: 'POST',
+      headers: await forwardAuthHeaders(),
+      cache: 'no-store',
+    })
+
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}))
+      return {
+        ok: false,
+        globalError: json.error?.message ?? 'Could not resume the payment. Please try again.',
+      }
+    }
+
+    const { data } = await res.json()
+    return { ok: true, checkoutUrl: data.checkoutUrl }
+  } catch {
+    return { ok: false, globalError: 'Network error. Please try again.' }
+  }
+}
+
 export async function placeOrderAction(input: PlaceOrderInput): Promise<PlaceOrderResult> {
   try {
     const res = await fetch(apiUrl('/api/orders'), {

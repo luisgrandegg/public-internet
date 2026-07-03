@@ -92,16 +92,17 @@ Before adding a new route, add it to this table with its status.
 | `POST` | `/api/orders` | Yes (Customer) | Place an order |
 | `GET` | `/api/orders/:id` | Yes (owner) | Get order detail |
 | `POST` | `/api/orders/:id/review` | Yes (order owner) | Review a DELIVERED order's restaurant — one review per order, rating 1–5, 409 if already reviewed |
+| `POST` | `/api/orders/:id/pay` | Yes (order owner) | Resume a PENDING online payment — returns a live hosted-checkout URL (reuses an open session, regenerates an expired one); 409 `PAYMENT_ALREADY_SETTLING` when the checkout already completed and the webhook is confirming |
 | `GET` | `/api/courier/deliveries` | Yes (Courier) | List available and assigned deliveries |
 | `PATCH` | `/api/courier/deliveries/:id` | Yes (Courier) | Accept delivery or update delivery status |
 | `GET` | `/api/restaurant/orders` | Yes (Restaurant Owner) | List orders for owner's restaurant(s) |
-| `PATCH` | `/api/restaurant/orders/:id` | Yes (Restaurant Owner) | Update order status (ACCEPTED, PREPARING, READY_FOR_PICKUP) |
+| `PATCH` | `/api/restaurant/orders/:id` | Yes (Restaurant Owner) | Update order status (ACCEPTED, PREPARING, READY_FOR_PICKUP); 409 `ORDER_UNPAID` while the online payment has not SUCCEEDED (ADR-006 §4) |
 | `POST` | `/api/restaurant/restaurants` | Yes (Restaurant Owner) | Register a new restaurant |
 | `PATCH` | `/api/restaurant/restaurants/:id` | Yes (Restaurant Owner) | Update restaurant details |
 | `POST` | `/api/restaurant/restaurants/:id/menu` | Yes (Restaurant Owner) | Add a menu item |
 | `PATCH` | `/api/restaurant/menu/:id` | Yes (Restaurant Owner) | Update a menu item |
 | `DELETE` | `/api/restaurant/menu/:id` | Yes (Restaurant Owner) | Remove a menu item |
-| `POST` | `/api/webhooks/payments` | No session — authenticated by the active PaymentProvider | Generic payment webhook receiver (ADR-006 amendment): the provider's `parseWebhookEvent()` authenticates the request (400 on failure) and maps events to `payment.succeeded` → SUCCEEDED / `payment.canceled` → CANCELED. 503 when no provider is configured. |
+| `POST` | `/api/webhooks/payments` | No session — authenticated by the active PaymentProvider | Generic payment webhook receiver (ADR-006 amendment): the provider's `parseWebhookEvent()` authenticates the request (400 on failure) and maps events to `payment.succeeded` → SUCCEEDED / `payment.canceled` → CANCELED. 503 `PAYMENTS_NOT_CONFIGURED` when no provider is configured. |
 
 ---
 

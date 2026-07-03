@@ -150,14 +150,6 @@
   margin-bottom: var(--ds-space-2);
 }
 
-.paymentLink {
-  display: inline-block;
-  color: var(--ds-color-brand-primary);
-  font-size: var(--ds-font-size-sm);
-  font-weight: var(--ds-font-weight-medium);
-  text-decoration: underline;
-}
-
 .reviewForm {
   display: flex;
   flex-direction: column;

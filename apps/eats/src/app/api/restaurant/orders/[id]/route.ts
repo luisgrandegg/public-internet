@@ -6,10 +6,11 @@ import {
   notFound,
   validationError,
   internalError,
+  errorResponse,
 } from '@/lib/api/response'
 import { handlePrismaError } from '@/lib/api/prisma-errors'
 import { requireSession } from '@/lib/api/auth-guard'
-import { db } from '@/lib/db'
+import { updateOrderStatusForOwner, type OwnerOrderStatus } from '@/lib/services/orders'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -17,7 +18,11 @@ interface RouteContext {
 
 // Only these transitions are allowed from the restaurant dashboard.
 // IN_DELIVERY and DELIVERED are courier-driven (F-034).
-const OWNER_ALLOWED_STATUSES = new Set(['ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP'])
+const OWNER_ALLOWED_STATUSES = new Set<OwnerOrderStatus>([
+  'ACCEPTED',
+  'PREPARING',
+  'READY_FOR_PICKUP',
+])
 
 /**
  * @swagger
@@ -25,7 +30,12 @@ const OWNER_ALLOWED_STATUSES = new Set(['ACCEPTED', 'PREPARING', 'READY_FOR_PICK
  *   patch:
  *     operationId: restaurantOrders_update
  *     summary: Update an order status (owner workflow only)
- *     description: Restaurant owners can advance orders to ACCEPTED, PREPARING, or READY_FOR_PICKUP. IN_DELIVERY and DELIVERED are driven by the courier workflow.
+ *     description: >
+ *       Restaurant owners can advance orders to ACCEPTED, PREPARING, or
+ *       READY_FOR_PICKUP. IN_DELIVERY and DELIVERED are driven by the courier
+ *       workflow. An order whose online payment has not SUCCEEDED is inert
+ *       (ADR-006 §4) and cannot be advanced — the request is rejected with 409
+ *       ORDER_UNPAID.
  *     tags:
  *       - restaurant-owner
  *     security:
@@ -74,6 +84,12 @@ const OWNER_ALLOWED_STATUSES = new Set(['ACCEPTED', 'PREPARING', 'READY_FOR_PICK
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiError'
+ *       409:
+ *         description: The order's online payment has not completed (code ORDER_UNPAID) — the order is inert per ADR-006 §4
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiError'
  *       422:
  *         description: Invalid or disallowed status transition
  *         content:
@@ -88,28 +104,29 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
   const { id } = await params
   const body = (await req.json().catch(() => null)) as { status?: string } | null
   if (!body || !body.status) return validationError({ status: 'status is required' })
-  if (!OWNER_ALLOWED_STATUSES.has(body.status)) {
+  if (!OWNER_ALLOWED_STATUSES.has(body.status as OwnerOrderStatus)) {
     return validationError({
       status: `Status must be one of: ${[...OWNER_ALLOWED_STATUSES].join(', ')}`,
     })
   }
 
-  const order = await db.order.findUnique({
-    where: { id },
-    include: { restaurant: { select: { ownerId: true } } },
-  })
-  if (!order) return notFound('Order not found')
-  if (order.restaurant.ownerId !== session.user.id) {
-    return forbidden('Not your order')
-  }
-
   try {
-    const updated = await db.order.update({
-      where: { id },
-      data: { status: body.status as never },
-      include: { items: true, delivery: true, restaurant: true },
-    })
-    return ok(updated)
+    const result = await updateOrderStatusForOwner(
+      session.user.id,
+      id,
+      body.status as OwnerOrderStatus,
+    )
+    if (!result.ok) {
+      switch (result.error.code) {
+        case 'ORDER_NOT_FOUND':
+          return notFound(result.error.message)
+        case 'NOT_ORDER_OWNER':
+          return forbidden(result.error.message)
+        case 'ORDER_UNPAID':
+          return errorResponse(409, { code: 'ORDER_UNPAID', message: result.error.message })
+      }
+    }
+    return ok(result.order)
   } catch (error) {
     return handlePrismaError(error) ?? internalError()
   }

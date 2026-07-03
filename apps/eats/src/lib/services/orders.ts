@@ -197,13 +197,15 @@ export async function createOrderForCustomer(
       })
       checkoutUrl = session.checkoutUrl
     } catch {
-      // The payment provider is unreachable or rejected the session. Mark the
-      // payment FAILED (the order stays inert per ADR-006 §4) and surface a
-      // clear error to the customer.
-      await db.payment.update({
-        where: { id: payment.id },
-        data: { status: 'FAILED' },
-      })
+      // The payment provider is unreachable or rejected the session. Roll the
+      // order back entirely — a phantom order the customer can never pay for
+      // must not pollute their history. Deleting the order cascades items and
+      // payment (onDelete: Cascade); the delivery has no cascade and is
+      // deleted explicitly first, all in one transaction.
+      await db.$transaction([
+        db.delivery.delete({ where: { orderId: created.id } }),
+        db.order.delete({ where: { id: created.id } }),
+      ])
       return {
         ok: false,
         error: {
@@ -244,6 +246,190 @@ export async function listOrdersForCustomer(customerId: string) {
       payment: { select: { provider: true, status: true, providerCheckoutUrl: true } },
     },
   })
+}
+
+/** Statuses a restaurant owner may set. IN_DELIVERY and DELIVERED are courier-driven. */
+export type OwnerOrderStatus = 'ACCEPTED' | 'PREPARING' | 'READY_FOR_PICKUP'
+
+export type OwnerOrderUpdateError =
+  | { code: 'ORDER_NOT_FOUND'; message: string }
+  | { code: 'NOT_ORDER_OWNER'; message: string }
+  | { code: 'ORDER_UNPAID'; message: string }
+
+/**
+ * Advance an order's status from the restaurant dashboard.
+ *
+ * This is the chokepoint for the ADR-006 §4 invariant on writes: an order
+ * whose online payment has not SUCCEEDED is inert. Excluding unpaid orders
+ * from the owner's list (EXCLUDE_UNPAID_ONLINE_ORDERS) is not enough — the
+ * owner must also be unable to advance such an order by id.
+ */
+export async function updateOrderStatusForOwner(
+  ownerId: string,
+  orderId: string,
+  status: OwnerOrderStatus,
+): Promise<
+  | { ok: true; order: NonNullable<Awaited<ReturnType<typeof findOrderWithDetails>>> }
+  | { ok: false; error: OwnerOrderUpdateError }
+> {
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: {
+      restaurant: { select: { ownerId: true } },
+      payment: { select: { provider: true, status: true } },
+    },
+  })
+  if (!order) {
+    return { ok: false, error: { code: 'ORDER_NOT_FOUND', message: 'Order not found' } }
+  }
+  if (order.restaurant.ownerId !== ownerId) {
+    return { ok: false, error: { code: 'NOT_ORDER_OWNER', message: 'Not your order' } }
+  }
+  // ADR-006 §4: unpaid online orders are inert — no state transition until
+  // the provider-authenticated webhook marks the payment SUCCEEDED.
+  if (
+    order.payment &&
+    order.payment.provider !== PAYMENT_PROVIDER_OFFLINE &&
+    order.payment.status !== 'SUCCEEDED'
+  ) {
+    return {
+      ok: false,
+      error: {
+        code: 'ORDER_UNPAID',
+        message: 'The online payment for this order has not completed — it cannot be advanced',
+      },
+    }
+  }
+
+  const updated = await db.order.update({
+    where: { id: orderId },
+    data: { status },
+    include: {
+      items: true,
+      delivery: true,
+      payment: true,
+      restaurant: { select: { id: true, name: true, city: true, imageUrl: true } },
+    },
+  })
+  return { ok: true, order: updated }
+}
+
+export type PaymentResumeError =
+  | { code: 'ORDER_NOT_FOUND'; message: string }
+  | { code: 'NOT_ORDER_OWNER'; message: string }
+  | { code: 'PAYMENT_NOT_RESUMABLE'; message: string }
+  | { code: 'PAYMENT_ALREADY_SETTLING'; message: string }
+  | { code: 'PAYMENTS_NOT_CONFIGURED'; message: string }
+  | { code: 'PAYMENT_PROVIDER_ERROR'; message: string }
+
+/**
+ * Give the customer a live checkout URL for an order whose online payment is
+ * still PENDING (ADR-006 §4 — the "Complete payment" path).
+ *
+ * When the provider reports the stored session state (optional
+ * getCheckoutSession): an 'open' session is reused, a 'complete' one means the
+ * money is already settling (the webhook will confirm — never offer to pay
+ * twice), and an 'expired' one is replaced. When the provider cannot report
+ * liveness, or the stored session is gone, a fresh session is created with
+ * exactly the same line items and total as the original (never recomputed).
+ */
+export async function resumePaymentForOrder(
+  customerId: string,
+  orderId: string,
+): Promise<{ ok: true; checkoutUrl: string } | { ok: false; error: PaymentResumeError }> {
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: { items: true, payment: true },
+  })
+  if (!order) {
+    return { ok: false, error: { code: 'ORDER_NOT_FOUND', message: 'Order not found' } }
+  }
+  if (order.customerId !== customerId) {
+    return { ok: false, error: { code: 'NOT_ORDER_OWNER', message: 'Not your order' } }
+  }
+
+  const payment = order.payment
+  if (!payment || payment.provider === PAYMENT_PROVIDER_OFFLINE || payment.status !== 'PENDING') {
+    return {
+      ok: false,
+      error: {
+        code: 'PAYMENT_NOT_RESUMABLE',
+        message: 'This order has no pending online payment to complete',
+      },
+    }
+  }
+  if (!paymentProvider) {
+    return {
+      ok: false,
+      error: {
+        code: 'PAYMENTS_NOT_CONFIGURED',
+        message: 'No payment provider is configured on this node',
+      },
+    }
+  }
+
+  // Prefer the stored session when the provider can vouch it is still live —
+  // avoids handing the customer a dead link.
+  if (payment.providerSessionId && paymentProvider.getCheckoutSession) {
+    try {
+      const live = await paymentProvider.getCheckoutSession(payment.providerSessionId)
+      if (live.status === 'complete') {
+        return {
+          ok: false,
+          error: {
+            code: 'PAYMENT_ALREADY_SETTLING',
+            message: 'This payment has already been completed and is being confirmed',
+          },
+        }
+      }
+      if (live.status === 'open' && live.checkoutUrl) {
+        return { ok: true, checkoutUrl: live.checkoutUrl }
+      }
+      // 'expired' (or an open session without a URL) → regenerate below.
+    } catch {
+      // The stored session could not be retrieved (deleted upstream, provider
+      // switched) — fall through and create a fresh one.
+    }
+  }
+
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001'
+    // Same line items and the exact original amount (payment.amount) — the
+    // regenerated checkout is item-for-item what the customer confirmed.
+    const session = await paymentProvider.createCheckoutSession({
+      paymentId: payment.id,
+      referenceId: order.id,
+      amountCents: payment.amount,
+      currency: payment.currency,
+      lineItems: [
+        ...order.items.map((item) => ({
+          name: item.nameSnapshot ?? 'Menu item',
+          amountCents: item.unitPrice,
+          quantity: item.quantity,
+        })),
+        { name: INFRASTRUCTURE_FEE_LABEL, amountCents: order.infrastructureFee, quantity: 1 },
+      ],
+      successUrl: `${appUrl}/orders/${order.id}?checkout=success`,
+      cancelUrl: `${appUrl}/orders/${order.id}?checkout=canceled`,
+    })
+    await db.payment.update({
+      where: { id: payment.id },
+      data: {
+        provider: paymentProvider.id,
+        providerSessionId: session.sessionId,
+        providerCheckoutUrl: session.checkoutUrl,
+      },
+    })
+    return { ok: true, checkoutUrl: session.checkoutUrl }
+  } catch {
+    return {
+      ok: false,
+      error: {
+        code: 'PAYMENT_PROVIDER_ERROR',
+        message: 'Could not start the online payment. You have not been charged — please try again.',
+      },
+    }
+  }
 }
 
 export async function listOrdersForOwner(ownerId: string, status?: string) {

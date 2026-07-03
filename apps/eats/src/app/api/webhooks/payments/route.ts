@@ -58,7 +58,7 @@ import { paymentProvider, type PaymentWebhookEvent } from '@/lib/payments'
  *             schema:
  *               $ref: '#/components/schemas/ApiError'
  *       503:
- *         description: No payment provider is configured on this node (offline settlement mode)
+ *         description: No payment provider is configured on this node — offline settlement mode (code PAYMENTS_NOT_CONFIGURED)
  *         content:
  *           application/json:
  *             schema:
@@ -67,7 +67,7 @@ import { paymentProvider, type PaymentWebhookEvent } from '@/lib/payments'
 export async function POST(req: NextRequest) {
   if (!paymentProvider) {
     return errorResponse(503, {
-      code: 'SERVICE_UNAVAILABLE',
+      code: 'PAYMENTS_NOT_CONFIGURED',
       message: 'No payment provider is configured on this node',
     })
   }

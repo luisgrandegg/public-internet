@@ -70,6 +70,21 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   /**
+   * Report the live status of a previously created Checkout Session so the
+   * app never offers a dead link: Stripe's `open` sessions are still payable,
+   * `complete` means the money is settling (only the webhook confirms it),
+   * and `expired` sessions must be regenerated.
+   */
+  async getCheckoutSession(
+    sessionId: string,
+  ): Promise<{ status: 'open' | 'complete' | 'expired'; checkoutUrl: string | null }> {
+    const session = await this.getClient().checkout.sessions.retrieve(sessionId)
+    const status =
+      session.status === 'complete' ? 'complete' : session.status === 'expired' ? 'expired' : 'open'
+    return { status, checkoutUrl: session.url ?? null }
+  }
+
+  /**
    * Verify the `stripe-signature` header against STRIPE_WEBHOOK_SECRET on the
    * exact raw body Stripe sent (no re-serialisation), then translate the
    * Stripe event to the generic payment lifecycle:

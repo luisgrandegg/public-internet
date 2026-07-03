@@ -7,7 +7,10 @@ type ErrorCode =
   | 'CONFLICT'
   | 'VALIDATION_ERROR'
   | 'INTERNAL_ERROR'
-  | 'SERVICE_UNAVAILABLE'
+  | 'PAYMENTS_NOT_CONFIGURED'
+  | 'ORDER_UNPAID'
+  | 'PAYMENT_ALREADY_SETTLING'
+  | 'PAYMENT_NOT_RESUMABLE'
 
 interface ErrorBody {
   code: ErrorCode

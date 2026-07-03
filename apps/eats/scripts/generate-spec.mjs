@@ -113,8 +113,8 @@ const options = {
             country: { type: 'string' },
             lat: { type: 'number' },
             lng: { type: 'number' },
-            phone: { type: 'string' },
-            imageUrl: { type: 'string', format: 'uri' },
+            phone: { type: 'string', nullable: true, description: 'Send null or an empty string to clear the stored phone number' },
+            imageUrl: { type: 'string', format: 'uri', nullable: true, description: 'Send null or an empty string to clear the stored image URL' },
             isActive: { type: 'boolean' },
           },
         },
@@ -224,6 +224,17 @@ const options = {
             notes: { type: 'string', nullable: true },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CheckoutResume: {
+          type: 'object',
+          required: ['checkoutUrl'],
+          description: 'Live hosted-checkout URL for completing a PENDING online payment (POST /api/orders/{id}/pay). The amount behind the URL is exactly the original order total — never recomputed.',
+          properties: {
+            checkoutUrl: {
+              type: 'string',
+              description: 'Provider-hosted checkout URL to redirect the customer to',
+            },
           },
         },
         PlacedOrder: {

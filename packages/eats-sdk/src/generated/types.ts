@@ -55,8 +55,10 @@ export interface UpdateRestaurantInput {
   country?: string
   lat?: number
   lng?: number
-  phone?: string
-  imageUrl?: string
+  /** Send null or an empty string to clear the stored phone number */
+  phone?: string | null
+  /** Send null or an empty string to clear the stored image URL */
+  imageUrl?: string | null
   isActive?: boolean
 }
 
@@ -152,6 +154,12 @@ export interface Order {
   notes?: string | null
   createdAt: string
   updatedAt: string
+}
+
+/** Live hosted-checkout URL for completing a PENDING online payment (POST /api/orders/{id}/pay). The amount behind the URL is exactly the original order total — never recomputed. */
+export interface CheckoutResume {
+  /** Provider-hosted checkout URL to redirect the customer to */
+  checkoutUrl: string
 }
 
 /** Order as returned from placement. On a node with an online payment provider configured checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED. */

@@ -1,6 +1,7 @@
 // GENERATED — do not edit manually. Run: pnpm --filter @public-internet/eats-sdk generate
 import type { ApiClient } from '../client.js'
 import { CourierDeliveriesResource } from './courier-deliveries.resource.js'
+import { OrdersPayResource } from './orders-pay.resource.js'
 import { OrdersReviewResource } from './orders-review.resource.js'
 import { OrdersResource } from './orders.resource.js'
 import { RestaurantMenuResource } from './restaurant-menu.resource.js'
@@ -14,6 +15,7 @@ import { RestaurantsCategoriesResource } from './restaurants-categories.resource
 import { WebhooksPaymentsResource } from './webhooks-payments.resource.js'
 
 export class EatsSDK {
+  readonly ordersPay: OrdersPayResource
   readonly ordersReview: OrdersReviewResource
   readonly orders: OrdersResource
   readonly restaurantsMenu: RestaurantsMenuResource
@@ -32,6 +34,7 @@ export class EatsSDK {
   }
 
   constructor(client: ApiClient) {
+    this.ordersPay = new OrdersPayResource(client)
     this.ordersReview = new OrdersReviewResource(client)
     this.orders = new OrdersResource(client)
     this.restaurantsMenu = new RestaurantsMenuResource(client)

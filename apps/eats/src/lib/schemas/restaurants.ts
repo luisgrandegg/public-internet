@@ -29,6 +29,23 @@ export type CreateRestaurantInput = z.infer<typeof CreateRestaurantSchema>
 
 export const UpdateRestaurantSchema = CreateRestaurantSchema.partial().extend({
   isActive: z.boolean().optional(),
+  // Nullable optional fields: '' (and explicit null) clears the stored value —
+  // Prisma writes NULL. A key absent from the payload stays undefined, which
+  // Prisma ignores (the field is left unchanged).
+  phone: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => (val === '' ? null : val)),
+  imageUrl: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => (val === '' ? null : val))
+    .refine(
+      (val) => val == null || /^https?:\/\//.test(val),
+      'Image URL must start with http:// or https://',
+    ),
 })
 
 export type UpdateRestaurantInput = z.infer<typeof UpdateRestaurantSchema>

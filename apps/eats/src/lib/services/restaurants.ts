@@ -70,10 +70,11 @@ export async function listRestaurants(query: RestaurantsQuery) {
  * ordering, no promoted categories.
  */
 export async function listMenuItemCategories(): Promise<string[]> {
-  const rows = await db.menuItem.findMany({
+  // groupBy dedupes in the database — `findMany({ distinct })` would fetch
+  // every matching row and deduplicate in memory.
+  const rows = await db.menuItem.groupBy({
+    by: ['category'],
     where: { isAvailable: true, restaurant: { isActive: true } },
-    distinct: ['category'],
-    select: { category: true },
     orderBy: { category: 'asc' },
   })
 

@@ -1,6 +1,7 @@
 // GENERATED — do not edit manually.
 export * from './types.js'
 export { CourierDeliveriesResource } from './courier-deliveries.resource.js'
+export { OrdersPayResource } from './orders-pay.resource.js'
 export { OrdersReviewResource } from './orders-review.resource.js'
 export { OrdersResource } from './orders.resource.js'
 export { RestaurantMenuResource } from './restaurant-menu.resource.js'
