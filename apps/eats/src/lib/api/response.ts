@@ -7,6 +7,7 @@ type ErrorCode =
   | 'CONFLICT'
   | 'VALIDATION_ERROR'
   | 'INTERNAL_ERROR'
+  | 'SERVICE_UNAVAILABLE'
 
 interface ErrorBody {
   code: ErrorCode

@@ -362,7 +362,7 @@
           "FAILED",
           "CANCELED"
         ],
-        "description": "Lifecycle status of a payment (ADR-006). Only the signature-verified Stripe webhook moves an online payment to SUCCEEDED."
+        "description": "Lifecycle status of a payment (ADR-006). Only the provider-authenticated webhook (POST /api/webhooks/payments) moves an online payment to SUCCEEDED."
       },
       "Payment": {
         "type": "object",
@@ -386,11 +386,7 @@
           },
           "provider": {
             "type": "string",
-            "enum": [
-              "stripe",
-              "offline"
-            ],
-            "description": "Payment provider for this node"
+            "description": "PaymentProvider id that created this payment (e.g. \"stripe\"), or \"offline\" for direct settlement"
           },
           "status": {
             "$ref": "#/components/schemas/PaymentStatus"
@@ -403,17 +399,17 @@
             "type": "string",
             "description": "ISO currency code, default \"eur\""
           },
-          "stripeCheckoutSessionId": {
+          "providerSessionId": {
             "type": "string",
             "nullable": true,
-            "description": "Set only for provider \"stripe\""
+            "description": "Provider checkout session id — set only for online payments"
           },
-          "stripePaymentIntentId": {
+          "providerPaymentReference": {
             "type": "string",
             "nullable": true,
-            "description": "Set by the checkout.session.completed webhook"
+            "description": "Provider's durable payment reference, set by the payment.succeeded webhook event"
           },
-          "stripeCheckoutUrl": {
+          "providerCheckoutUrl": {
             "type": "string",
             "nullable": true,
             "description": "Hosted checkout URL for completing a PENDING online payment"
@@ -546,7 +542,7 @@
         }
       },
       "PlacedOrder": {
-        "description": "Order as returned from placement. On a Stripe-configured node checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED.",
+        "description": "Order as returned from placement. On a node with an online payment provider configured checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED.",
         "allOf": [
           {
             "$ref": "#/components/schemas/Order"
@@ -560,7 +556,7 @@
               "checkoutUrl": {
                 "type": "string",
                 "nullable": true,
-                "description": "Hosted Stripe Checkout URL to redirect the customer to, or null in offline-settlement mode"
+                "description": "Provider-hosted checkout URL to redirect the customer to, or null in offline-settlement mode"
               }
             }
           }
@@ -1205,7 +1201,7 @@
         },
         "responses": {
           "201": {
-            "description": "Order placed. On a Stripe-configured node the payment is PENDING and `checkoutUrl` points to the hosted Stripe Checkout page (the client must redirect there); on an offline node the payment is created as provider `offline` / SUCCEEDED and `checkoutUrl` is null.\n",
+            "description": "Order placed. On a node with an online payment provider configured the payment is PENDING and `checkoutUrl` points to the provider's hosted checkout page (the client must redirect there); on an offline node the payment is created as provider `offline` / SUCCEEDED and `checkoutUrl` is null.\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -2085,24 +2081,13 @@
         }
       }
     },
-    "/api/webhooks/stripe": {
+    "/api/webhooks/payments": {
       "post": {
-        "operationId": "webhooks_stripe",
-        "summary": "Stripe webhook receiver (signature-verified, no session auth)",
-        "description": "Webhook endpoint called by Stripe — not by SDK consumers. Requests are authenticated by verifying the `stripe-signature` header against STRIPE_WEBHOOK_SECRET; session cookies are ignored. Handles `checkout.session.completed` (payment → SUCCEEDED, stores the payment intent id) and `checkout.session.expired` (payment → CANCELED, which releases the abandoned checkout per ADR-006 §4). Other event types are acknowledged without action.\n",
+        "operationId": "webhooks_payments",
+        "summary": "Payment provider webhook receiver (provider-authenticated, no session auth)",
+        "description": "Webhook endpoint called by the node's configured payment provider — not by SDK consumers. Requests are authenticated by the active PaymentProvider implementation (e.g. Stripe signature verification on the raw body); session cookies are ignored. The provider translates its events to a generic lifecycle: `payment.succeeded` marks the payment SUCCEEDED and stores the provider's durable payment reference; `payment.canceled` marks a still-PENDING payment CANCELED, releasing the abandoned checkout per ADR-006 §4. Events that do not affect payment state are acknowledged without action.\n",
         "tags": [
           "webhooks"
-        ],
-        "parameters": [
-          {
-            "in": "header",
-            "name": "stripe-signature",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Stripe webhook signature for the raw request body"
-          }
         ],
         "requestBody": {
           "required": true,
@@ -2110,14 +2095,14 @@
             "text/plain": {
               "schema": {
                 "type": "string",
-                "description": "Raw Stripe event JSON — must not be re-serialised before verification"
+                "description": "Raw provider event payload — must not be re-serialised before verification"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Event verified and processed (or acknowledged as unhandled)",
+            "description": "Event authenticated and processed (or acknowledged as not payment-relevant)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2137,7 +2122,17 @@
             }
           },
           "400": {
-            "description": "Missing or invalid signature, or the node has no Stripe webhook configuration",
+            "description": "Webhook authentication failed (bad or missing signature)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No payment provider is configured on this node (offline settlement mode)",
             "content": {
               "application/json": {
                 "schema": {

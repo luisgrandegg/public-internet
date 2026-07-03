@@ -165,7 +165,7 @@ const options = {
         PaymentStatus: {
           type: 'string',
           enum: ['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED'],
-          description: 'Lifecycle status of a payment (ADR-006). Only the signature-verified Stripe webhook moves an online payment to SUCCEEDED.',
+          description: 'Lifecycle status of a payment (ADR-006). Only the provider-authenticated webhook (POST /api/webhooks/payments) moves an online payment to SUCCEEDED.',
         },
         Payment: {
           type: 'object',
@@ -174,13 +174,13 @@ const options = {
           properties: {
             id: { type: 'string' },
             orderId: { type: 'string' },
-            provider: { type: 'string', enum: ['stripe', 'offline'], description: 'Payment provider for this node' },
+            provider: { type: 'string', description: 'PaymentProvider id that created this payment (e.g. "stripe"), or "offline" for direct settlement' },
             status: { $ref: '#/components/schemas/PaymentStatus' },
             amount: { type: 'integer', description: 'Amount in cents — exactly the pre-confirmation totalCost. Never recomputed after creation.' },
             currency: { type: 'string', description: 'ISO currency code, default "eur"' },
-            stripeCheckoutSessionId: { type: 'string', nullable: true, description: 'Set only for provider "stripe"' },
-            stripePaymentIntentId: { type: 'string', nullable: true, description: 'Set by the checkout.session.completed webhook' },
-            stripeCheckoutUrl: { type: 'string', nullable: true, description: 'Hosted checkout URL for completing a PENDING online payment' },
+            providerSessionId: { type: 'string', nullable: true, description: 'Provider checkout session id — set only for online payments' },
+            providerPaymentReference: { type: 'string', nullable: true, description: "Provider's durable payment reference, set by the payment.succeeded webhook event" },
+            providerCheckoutUrl: { type: 'string', nullable: true, description: 'Hosted checkout URL for completing a PENDING online payment' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },
@@ -227,7 +227,7 @@ const options = {
           },
         },
         PlacedOrder: {
-          description: 'Order as returned from placement. On a Stripe-configured node checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED.',
+          description: 'Order as returned from placement. On a node with an online payment provider configured checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED.',
           allOf: [
             { $ref: '#/components/schemas/Order' },
             {
@@ -237,7 +237,7 @@ const options = {
                 checkoutUrl: {
                   type: 'string',
                   nullable: true,
-                  description: 'Hosted Stripe Checkout URL to redirect the customer to, or null in offline-settlement mode',
+                  description: "Provider-hosted checkout URL to redirect the customer to, or null in offline-settlement mode",
                 },
               },
             },

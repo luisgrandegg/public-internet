@@ -8,7 +8,8 @@ import { test, expect, type Page } from '@playwright/test'
  * provider 'offline' / status SUCCEEDED and the UI states plainly that the
  * total is paid on delivery. This spec drives the full offline happy path
  * end-to-end (owner onboarding → restaurant → menu → customer order) and
- * verifies the webhook endpoint rejects unverifiable payloads.
+ * verifies the generic payments webhook endpoint answers 503 when no
+ * PaymentProvider is configured (ADR-006 amendment).
  */
 
 const PASSWORD = 'password-123456'
@@ -152,18 +153,23 @@ test.describe('Checkout — offline settlement happy path', () => {
   })
 })
 
-test.describe('Stripe webhook endpoint', () => {
-  test('rejects a garbage body with 400', async ({ request }) => {
-    const res = await request.post('/api/webhooks/stripe', {
+test.describe('Payments webhook endpoint', () => {
+  // CI and local test runs configure no PaymentProvider, so the generic
+  // webhook endpoint must answer 503 for every request — nothing is ever
+  // processed on an offline-settlement node.
+  test('answers 503 for a garbage body when no provider is configured', async ({ request }) => {
+    const res = await request.post('/api/webhooks/payments', {
       headers: { 'content-type': 'text/plain' },
-      data: 'garbage-not-a-stripe-event',
+      data: 'garbage-not-a-provider-event',
       failOnStatusCode: false,
     })
-    expect(res.status()).toBe(400)
+    expect(res.status()).toBe(503)
   })
 
-  test('rejects a forged signature with 400', async ({ request }) => {
-    const res = await request.post('/api/webhooks/stripe', {
+  test('answers 503 even for a signed-looking payload when no provider is configured', async ({
+    request,
+  }) => {
+    const res = await request.post('/api/webhooks/payments', {
       headers: {
         'content-type': 'application/json',
         'stripe-signature': 't=1,v1=deadbeef',
@@ -171,6 +177,6 @@ test.describe('Stripe webhook endpoint', () => {
       data: JSON.stringify({ type: 'checkout.session.completed' }),
       failOnStatusCode: false,
     })
-    expect(res.status()).toBe(400)
+    expect(res.status()).toBe(503)
   })
 })

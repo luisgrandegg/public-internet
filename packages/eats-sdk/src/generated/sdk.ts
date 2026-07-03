@@ -11,7 +11,7 @@ import { RestaurantsMenuResource } from './restaurants-menu.resource.js'
 import { RestaurantsReviewsResource } from './restaurants-reviews.resource.js'
 import { RestaurantsResource } from './restaurants.resource.js'
 import { RestaurantsCategoriesResource } from './restaurants-categories.resource.js'
-import { WebhooksStripeResource } from './webhooks-stripe.resource.js'
+import { WebhooksPaymentsResource } from './webhooks-payments.resource.js'
 
 export class EatsSDK {
   readonly ordersReview: OrdersReviewResource
@@ -20,7 +20,7 @@ export class EatsSDK {
   readonly restaurantsReviews: RestaurantsReviewsResource
   readonly restaurants: RestaurantsResource
   readonly restaurantsCategories: RestaurantsCategoriesResource
-  readonly webhooksStripe: WebhooksStripeResource
+  readonly webhooksPayments: WebhooksPaymentsResource
   readonly courier: {
     deliveries: CourierDeliveriesResource
   }
@@ -38,7 +38,7 @@ export class EatsSDK {
     this.restaurantsReviews = new RestaurantsReviewsResource(client)
     this.restaurants = new RestaurantsResource(client)
     this.restaurantsCategories = new RestaurantsCategoriesResource(client)
-    this.webhooksStripe = new WebhooksStripeResource(client)
+    this.webhooksPayments = new WebhooksPaymentsResource(client)
     this.courier = {
       deliveries: new CourierDeliveriesResource(client),
     }

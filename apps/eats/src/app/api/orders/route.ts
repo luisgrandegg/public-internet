@@ -31,10 +31,11 @@ import { createOrderForCustomer } from '@/lib/services/orders'
  *     responses:
  *       201:
  *         description: >
- *           Order placed. On a Stripe-configured node the payment is PENDING and
- *           `checkoutUrl` points to the hosted Stripe Checkout page (the client
- *           must redirect there); on an offline node the payment is created as
- *           provider `offline` / SUCCEEDED and `checkoutUrl` is null.
+ *           Order placed. On a node with an online payment provider configured
+ *           the payment is PENDING and `checkoutUrl` points to the provider's
+ *           hosted checkout page (the client must redirect there); on an
+ *           offline node the payment is created as provider `offline` /
+ *           SUCCEEDED and `checkoutUrl` is null.
  *         content:
  *           application/json:
  *             schema:

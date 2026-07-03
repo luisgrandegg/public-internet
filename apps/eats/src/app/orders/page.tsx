@@ -40,7 +40,7 @@ export default async function OrdersPage() {
                         ·{' '}
                         <span className={styles.statusLabel}>
                           {paymentStateLabel(order.payment)}
-                          {order.payment.provider === 'stripe' &&
+                          {order.payment.provider !== 'offline' &&
                             order.payment.status === 'PENDING' &&
                             ' — open the order to complete payment'}
                         </span>

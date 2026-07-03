@@ -15,7 +15,7 @@ export type PlaceOrderResult =
       ok: true
       orderId: string
       /**
-       * Hosted Stripe Checkout URL when this node takes online payments —
+       * Provider-hosted checkout URL when this node takes online payments —
        * the client redirects here instead of the internal confirmation route.
        * Null on offline-settlement nodes (ADR-006).
        */

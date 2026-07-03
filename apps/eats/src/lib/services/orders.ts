@@ -5,32 +5,28 @@ import {
   DEFAULT_COURIER_BASE_PAY_CENTS,
   DEFAULT_COURIER_DISTANCE_PAY_CENTS,
 } from '@/lib/config'
-import {
-  isStripeConfigured,
-  createCheckoutSession,
-  PAYMENT_PROVIDER_STRIPE,
-  PAYMENT_PROVIDER_OFFLINE,
-} from '@/lib/payments'
+import { paymentProvider, PAYMENT_PROVIDER_OFFLINE } from '@/lib/payments'
 
 /**
  * Published label of the flat per-order charge — must match the label the
  * customer saw in the pre-confirmation breakdown, on the order detail page,
- * and on the Stripe-hosted checkout line item (ADR-006: what is charged
+ * and on the provider-hosted checkout line item (ADR-006: what is charged
  * online is exactly what the UI showed, item for item).
  */
 export const INFRASTRUCTURE_FEE_LABEL = 'Platform infrastructure fee'
 
 /**
- * Orders whose online (Stripe) payment has not SUCCEEDED are inert (ADR-006 §4):
+ * Orders whose online payment has not SUCCEEDED are inert (ADR-006 §4):
  * they never appear in restaurant incoming-order lists and never produce a
  * courier-visible delivery. Offline-settled orders and legacy orders without a
- * payment record are always active.
+ * payment record are always active. Provider-agnostic: any provider other
+ * than 'offline' is an online payment (ADR-006 amendment).
  */
 export const EXCLUDE_UNPAID_ONLINE_ORDERS = {
   NOT: {
     payment: {
       is: {
-        provider: PAYMENT_PROVIDER_STRIPE,
+        provider: { not: PAYMENT_PROVIDER_OFFLINE },
         status: { not: 'SUCCEEDED' as const },
       },
     },
@@ -51,8 +47,9 @@ export type OrderCreationError =
  *   3. Computes itemsCost + infrastructureFee + totalCost.
  *   4. Creates the Delivery row in UNASSIGNED with pay breakdown shown to couriers.
  *   5. Creates the Payment row (ADR-006): offline nodes settle directly and the
- *      payment is SUCCEEDED immediately; Stripe nodes create a PENDING payment
- *      and a hosted Checkout Session whose total is exactly order.totalCost.
+ *      payment is SUCCEEDED immediately; nodes with a configured PaymentProvider
+ *      create a PENDING payment and a hosted checkout session whose total is
+ *      exactly order.totalCost.
  *
  * When a checkout session is created, `checkoutUrl` is returned and the client
  * redirects there instead of the internal confirmation route.
@@ -130,8 +127,6 @@ export async function createOrderForCustomer(
   const infrastructureFee = INFRASTRUCTURE_FEE_CENTS
   const totalCost = itemsCost + infrastructureFee
 
-  const stripeMode = isStripeConfigured()
-
   const { order: created, payment } = await db.$transaction(async (tx) => {
     const order = await tx.order.create({
       data: {
@@ -162,10 +157,10 @@ export async function createOrderForCustomer(
     const payment = await tx.payment.create({
       data: {
         orderId: order.id,
-        provider: stripeMode ? PAYMENT_PROVIDER_STRIPE : PAYMENT_PROVIDER_OFFLINE,
+        provider: paymentProvider?.id ?? PAYMENT_PROVIDER_OFFLINE,
         // Offline settlement (pay on delivery) is a first-class mode for a
         // commission-free node — the record documents how the money flows.
-        status: stripeMode ? 'PENDING' : 'SUCCEEDED',
+        status: paymentProvider ? 'PENDING' : 'SUCCEEDED',
         amount: totalCost,
       },
     })
@@ -173,30 +168,34 @@ export async function createOrderForCustomer(
   })
 
   let checkoutUrl: string | null = null
-  if (stripeMode) {
+  if (paymentProvider) {
     try {
       // One line per order item (unitPrice snapshot) plus exactly one line for
       // the published flat infrastructure fee. The session total equals
       // order.totalCost — nothing else is ever added (constitution: no
       // extraction, no hidden fees).
-      const session = await createCheckoutSession({
-        orderId: created.id,
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001'
+      const session = await paymentProvider.createCheckoutSession({
         paymentId: payment.id,
+        referenceId: created.id,
+        amountCents: totalCost,
         currency: payment.currency,
         lineItems: [
           ...orderItemData.map((item) => ({
             name: item.nameSnapshot,
-            unitAmount: item.unitPrice,
+            amountCents: item.unitPrice,
             quantity: item.quantity,
           })),
-          { name: INFRASTRUCTURE_FEE_LABEL, unitAmount: infrastructureFee, quantity: 1 },
+          { name: INFRASTRUCTURE_FEE_LABEL, amountCents: infrastructureFee, quantity: 1 },
         ],
+        successUrl: `${appUrl}/orders/${created.id}?checkout=success`,
+        cancelUrl: `${appUrl}/orders/${created.id}?checkout=canceled`,
       })
       await db.payment.update({
         where: { id: payment.id },
-        data: { stripeCheckoutSessionId: session.sessionId, stripeCheckoutUrl: session.url },
+        data: { providerSessionId: session.sessionId, providerCheckoutUrl: session.checkoutUrl },
       })
-      checkoutUrl = session.url
+      checkoutUrl = session.checkoutUrl
     } catch {
       // The payment provider is unreachable or rejected the session. Mark the
       // payment FAILED (the order stays inert per ADR-006 §4) and surface a
@@ -242,7 +241,7 @@ export async function listOrdersForCustomer(customerId: string) {
     include: {
       restaurant: { select: { id: true, name: true, city: true, imageUrl: true } },
       delivery: { select: { status: true } },
-      payment: { select: { provider: true, status: true, stripeCheckoutUrl: true } },
+      payment: { select: { provider: true, status: true, providerCheckoutUrl: true } },
     },
   })
 }
@@ -253,7 +252,7 @@ export async function listOrdersForOwner(ownerId: string, status?: string) {
       restaurant: { ownerId },
       ...(status && { status: status as never }),
       // ADR-006 §4: unpaid online orders are inert — a restaurant never sees
-      // an order whose Stripe payment has not succeeded.
+      // an order whose online payment has not succeeded.
       ...EXCLUDE_UNPAID_ONLINE_ORDERS,
     },
     orderBy: { createdAt: 'desc' },

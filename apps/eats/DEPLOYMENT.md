@@ -160,6 +160,21 @@ pnpm --filter @public-internet/eats db:deploy   # if migrations changed
 
 ---
 
+## Plugging in your own payment gateway
+
+Online payments are optional (ADR-006): with no provider configured the node runs **offline settlement** — orders are recorded as settled directly (pay on delivery), a first-class mode for a commission-free node. Stripe support is built in: set `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` (see `.env.example`) and point a Stripe webhook at `POST /api/webhooks/payments`.
+
+The payment layer is a pluggable `PaymentProvider` interface (ADR-006 amendment), so a node is never locked to Stripe — a regional PSP or a co-op banking partner works the same way:
+
+1. **Implement the interface** in `src/lib/payments/<yourprovider>.ts` — implement `PaymentProvider` from `src/lib/payments/types.ts`: a stable `id` (stored in `Payment.provider`), `createCheckoutSession()` (returns the hosted checkout URL the customer is redirected to; the session total must be exactly the pre-confirmation total — nothing may ever be added), and `parseWebhookEvent()` (MUST authenticate the raw webhook request — e.g. verify its signature — and throw on failure, then map the PSP's events to `payment.succeeded` / `payment.canceled` / `ignored`). This file is the only place allowed to import your PSP's SDK.
+2. **Select it** in `src/lib/payments/index.ts` — set `paymentProvider` to your implementation when its configuration is present.
+3. **Point your PSP's webhooks** at `POST /api/webhooks/payments` — the route is provider-agnostic and delegates authentication and event translation to the active provider. It answers 503 when no provider is configured.
+4. **Define your own env vars** for the gateway's credentials and document them in `.env.example`. Never commit real keys.
+
+Nothing outside `src/lib/payments/` changes: services, routes, and UI depend only on the interface and the provider-neutral `Payment` columns (`providerSessionId`, `providerPaymentReference`, `providerCheckoutUrl`).
+
+---
+
 ## Operator notes (constitution alignment)
 
 Running an Eats node means upholding the principles in [CONSTITUTION.md](../../CONSTITUTION.md), and Eats touches **labour**, so the worker-rights principle is binding:

@@ -1,4 +1,5 @@
 import { db } from '@/lib/db'
+import { PAYMENT_PROVIDER_OFFLINE } from '@/lib/payments'
 import { EXCLUDE_UNPAID_ONLINE_ORDERS } from '@/lib/services/orders'
 
 export type DeliveryStatus = 'UNASSIGNED' | 'ASSIGNED' | 'PICKED_UP' | 'DELIVERED' | 'FAILED'
@@ -9,7 +10,7 @@ export type DeliveryStatus = 'UNASSIGNED' | 'ASSIGNED' | 'PICKED_UP' | 'DELIVERE
  *   - `status=ASSIGNED`   → the courier's own active deliveries
  *   - otherwise           → the courier's delivery history (all statuses except UNASSIGNED)
  *
- * ADR-006 §4: unpaid online orders are inert — a delivery whose order's Stripe
+ * ADR-006 §4: unpaid online orders are inert — a delivery whose order's online
  * payment has not SUCCEEDED is never offered to couriers as available.
  */
 export async function listDeliveriesForCourier(
@@ -83,7 +84,7 @@ export async function transitionDelivery(
     // ADR-006 §4: an order whose online payment has not succeeded is inert —
     // it is filtered out of the available list, and cannot be accepted directly.
     const payment = delivery.order.payment
-    if (payment && payment.provider === 'stripe' && payment.status !== 'SUCCEEDED') {
+    if (payment && payment.provider !== PAYMENT_PROVIDER_OFFLINE && payment.status !== 'SUCCEEDED') {
       return {
         ok: false,
         error: { code: 'INVALID_TRANSITION', message: 'Delivery is no longer available' },

@@ -101,25 +101,25 @@ export default async function OrderDetailPage({ params }: PageProps) {
               No online payment is needed, and nothing is ever added on top of it.
             </p>
           )}
-          {order.payment.provider === 'stripe' && order.payment.status === 'PENDING' && (
+          {order.payment.provider !== 'offline' && order.payment.status === 'PENDING' && (
             <>
               <p className={styles.paymentNote}>
                 Your order will be sent to the restaurant once the payment completes.
                 The amount is exactly the total shown above — nothing more.
               </p>
-              {order.payment.stripeCheckoutUrl && (
-                <a href={order.payment.stripeCheckoutUrl} className={styles.paymentLink}>
+              {order.payment.providerCheckoutUrl && (
+                <a href={order.payment.providerCheckoutUrl} className={styles.paymentLink}>
                   Complete payment
                 </a>
               )}
             </>
           )}
-          {order.payment.provider === 'stripe' && order.payment.status === 'SUCCEEDED' && (
+          {order.payment.provider !== 'offline' && order.payment.status === 'SUCCEEDED' && (
             <p className={styles.paymentNote}>
               Paid online via card. The amount charged was exactly the total shown above.
             </p>
           )}
-          {order.payment.provider === 'stripe' &&
+          {order.payment.provider !== 'offline' &&
             (order.payment.status === 'FAILED' || order.payment.status === 'CANCELED') && (
               <p className={styles.paymentNote}>
                 This payment did not complete and you have not been charged. The order was
