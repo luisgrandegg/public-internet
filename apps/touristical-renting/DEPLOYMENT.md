@@ -141,6 +141,47 @@ stay.yourcity.org {
 
 ---
 
+## Managed deployment: Vercel + Supabase
+
+The self-hosted path above keeps the node fully operator-owned. If you accept
+managed infrastructure, the repo is pre-configured for **Vercel** (hosting)
+plus **Supabase** (PostgreSQL): `apps/touristical-renting/vercel.json` runs
+migrations and builds in the right order on every deploy.
+
+### 1. Supabase
+
+1. Create a project (pick your region). In **Project Settings → Database**, copy two connection strings:
+   - **Transaction pooler** (port `6543`) → this becomes `DATABASE_URL` (what the app uses at runtime; serverless functions need the pooler).
+   - **Session / direct** (port `5432`) → this becomes `DIRECT_URL` (what Prisma migrations use; poolers cannot run DDL).
+2. Nothing else to configure — the app uses better-auth and Prisma directly; Supabase's own Auth/Storage/RLS are not used.
+
+### 2. Vercel
+
+1. **Add New Project → Import** this repository.
+2. Set **Root Directory** to `apps/touristical-renting` (keep "Include source files outside of the Root Directory" enabled — the app builds the shared design-system package).
+3. Vercel picks up `vercel.json`: install runs `pnpm install --frozen-lockfile`, and the build runs `design-system build → prisma migrate deploy → next build`. Migrations run against `DIRECT_URL` automatically on every deploy.
+4. Set the environment variables (Production, and Preview if you use it):
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | Supabase **transaction pooler** string (port 6543) |
+| `DIRECT_URL` | Supabase **session/direct** string (port 5432) |
+| `BETTER_AUTH_SECRET` | `openssl rand -base64 32` |
+| `NEXT_PUBLIC_APP_URL` | The production URL, e.g. `https://stay-yourcity.vercel.app` (update after the first deploy or when adding a custom domain) |
+| `STRIPE_SECRET_KEY` | *(optional)* enables online payments |
+| `STRIPE_WEBHOOK_SECRET` | *(required with the key)* from a Stripe webhook endpoint pointed at `https://<your-domain>/api/webhooks/payments` |
+
+5. Deploy. First deploy applies all migrations to the empty Supabase database.
+
+### Vercel/Supabase caveats
+
+- `NEXT_PUBLIC_APP_URL` must exactly match the domain users hit — better-auth uses it as the trusted origin and cookie base, and server actions self-fetch through it. After attaching a custom domain, update the variable and redeploy.
+- In Stripe mode, create the webhook endpoint in the Stripe dashboard (events: `checkout.session.completed`, `checkout.session.expired`) *after* you know the final domain, then set `STRIPE_WEBHOOK_SECRET`.
+- Supabase pauses free-tier projects after inactivity; the app will 500 until the DB resumes.
+- Constitution note: managed hosting trades some operator ownership for convenience. The node remains portable — `pg_dump` from Supabase restores into any PostgreSQL 16, and nothing in the app depends on Vercel- or Supabase-specific APIs.
+
+---
+
 ## Upgrades
 
 ```bash
@@ -151,6 +192,9 @@ NEXT_PUBLIC_APP_URL="https://stay.yourcity.org" \
 pnpm --filter @public-internet/touristical-renting db:deploy   # if migrations changed
 # restart the service
 ```
+
+(On Vercel, upgrades are just merges to the production branch — the build
+command runs migrations automatically.)
 
 Always run `db:deploy` after pulling changes that touch `prisma/`.
 
