@@ -77,18 +77,11 @@ export async function forgotPassword(
   }
 
   // Always return ok to prevent user enumeration — the email is sent asynchronously.
-  // better-auth spells the endpoint "forget-password".
+  // Call the better-auth server API directly (the /forget-password endpoint 404s
+  // in better-auth 1.6); a relative redirectTo passes trusted-origin validation.
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth/forget-password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...Object.fromEntries(await headers()),
-      },
-      body: JSON.stringify({
-        email,
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
-      }),
+    await auth.api.requestPasswordReset({
+      body: { email, redirectTo: '/auth/reset-password' },
     })
   } catch {
     // Intentionally swallow errors — do not reveal whether the email exists

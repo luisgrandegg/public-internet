@@ -14,11 +14,14 @@ export async function createReviewAction(
   body: string,
 ): Promise<ReviewResult> {
   try {
+    // Forward only the session cookie — spreading all incoming headers into a
+    // new request deadlocks the self-fetch (stale content-length/connection).
+    const cookie = (await headers()).get('cookie') ?? ''
     const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/bookings/${bookingId}/review`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(Object.fromEntries(await headers())),
+        cookie,
       },
       body: JSON.stringify({ targetId, targetRole, rating, body }),
     })

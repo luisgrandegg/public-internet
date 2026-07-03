@@ -12,11 +12,15 @@ export async function createBookingAction(
   checkOut: string,
 ): Promise<BookingActionResult> {
   try {
+    // Forward only the session cookie — spreading all incoming headers
+    // (content-length, connection, …) into a new request deadlocks the
+    // self-fetch, since they describe the original action POST body.
+    const cookie = (await headers()).get('cookie') ?? ''
     const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/bookings`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(Object.fromEntries(await headers())),
+        cookie,
       },
       body: JSON.stringify({ listingId, checkIn, checkOut }),
     })
