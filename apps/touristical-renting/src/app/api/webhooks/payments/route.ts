@@ -1,5 +1,4 @@
-import { NextRequest } from 'next/server'
-import { ok, errorResponse, internalError } from '@/lib/api/response'
+import { createPaymentWebhookHandler } from '@public-internet/payments'
 import { db } from '@/lib/db'
 import { paymentProvider } from '@/lib/payments'
 
@@ -56,59 +55,37 @@ import { paymentProvider } from '@/lib/payments'
  *             schema:
  *               $ref: '#/components/schemas/ApiError'
  */
-export async function POST(req: NextRequest) {
-  if (!paymentProvider) {
-    return errorResponse(503, {
-      code: 'PAYMENTS_NOT_CONFIGURED',
-      message: 'No payment provider is configured — this node runs offline settlement',
+// Webhook authentication, raw-body handling, and event translation live in
+// @public-internet/payments (ADR-007); this route owns only the lifecycle
+// effects. Both callbacks are single atomic writes whose state guard lives in
+// the WHERE clause itself — no read-then-write window. Replayed or
+// out-of-order events, and events for sessions this node doesn't know, match
+// zero rows and are acknowledged with 200 so the provider stops retrying.
+export const POST = createPaymentWebhookHandler({
+  provider: paymentProvider,
+  notConfiguredMessage: 'No payment provider is configured — this node runs offline settlement',
+  onSucceeded: async (event) => {
+    // Only a still-PENDING payment can succeed — idempotent under retries.
+    await db.payment.updateMany({
+      where: { providerSessionId: event.sessionId, status: 'PENDING' },
+      data: {
+        status: 'SUCCEEDED',
+        providerPaymentReference: event.paymentReference,
+      },
     })
-  }
-
-  // Webhook authentication needs the exact raw body — never parse first.
-  const rawBody = await req.text()
-
-  let event
-  try {
-    event = await paymentProvider.parseWebhookEvent(rawBody, req.headers)
-  } catch {
-    return errorResponse(400, {
-      code: 'VALIDATION_ERROR',
-      message: 'Webhook authentication failed',
+  },
+  onCanceled: async (event) => {
+    // A canceled/expired checkout session will never be paid — delete the
+    // booking so its dates are released for other guests (ADR-006 §4).
+    // Deleting the booking cascade-deletes its Payment row, so flipping the
+    // payment to CANCELED first would be redundant. The PENDING guard is
+    // part of the delete's WHERE (not a prior read), so a retried cancel
+    // racing a concurrent payment.succeeded can never delete a settled
+    // booking — it simply matches zero rows.
+    await db.booking.deleteMany({
+      where: {
+        payment: { providerSessionId: event.sessionId, status: 'PENDING' },
+      },
     })
-  }
-
-  // Both branches below are single atomic writes whose state guard lives in
-  // the WHERE clause itself — no read-then-write window. Replayed or
-  // out-of-order events, and events for sessions this node doesn't know,
-  // match zero rows and are acknowledged with 200 so the provider stops
-  // retrying.
-  try {
-    if (event.type === 'payment.succeeded') {
-      // Only a still-PENDING payment can succeed — idempotent under retries.
-      await db.payment.updateMany({
-        where: { providerSessionId: event.sessionId, status: 'PENDING' },
-        data: {
-          status: 'SUCCEEDED',
-          providerPaymentReference: event.paymentReference,
-        },
-      })
-    } else if (event.type === 'payment.canceled') {
-      // A canceled/expired checkout session will never be paid — delete the
-      // booking so its dates are released for other guests (ADR-006 §4).
-      // Deleting the booking cascade-deletes its Payment row, so flipping the
-      // payment to CANCELED first would be redundant. The PENDING guard is
-      // part of the delete's WHERE (not a prior read), so a retried cancel
-      // racing a concurrent payment.succeeded can never delete a settled
-      // booking — it simply matches zero rows.
-      await db.booking.deleteMany({
-        where: {
-          payment: { providerSessionId: event.sessionId, status: 'PENDING' },
-        },
-      })
-    }
-
-    return ok({ received: true })
-  } catch {
-    return internalError()
-  }
-}
+  },
+})

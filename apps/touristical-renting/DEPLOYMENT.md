@@ -202,14 +202,14 @@ Always run `db:deploy` after pulling changes that touch `prisma/`.
 
 ## Plugging in your own payment gateway
 
-Online payments go through a pluggable `PaymentProvider` interface (ADR-006, amended) — Stripe is the built-in implementation, not a hard dependency. A node can run with Stripe, with a regional PSP you integrate yourself, or with **no provider at all**: when none is configured, the node runs in offline settlement mode (bookings are confirmed with a "pay at the property" payment record and no online payment is taken). Offline mode is a legitimate operating mode, not a degraded one.
+Online payments go through a pluggable `PaymentProvider` interface (ADR-006, amended) — Stripe is the built-in implementation, not a hard dependency. The interface, the Stripe implementation, and provider selection live in the shared `@public-internet/payments` workspace package (ADR-007). A node can run with Stripe, with a regional PSP you integrate yourself, or with **no provider at all**: when none is configured, the node runs in offline settlement mode (bookings are confirmed with a "pay at the property" payment record and no online payment is taken). Offline mode is a legitimate operating mode, not a degraded one.
 
-To integrate another gateway:
+To integrate another gateway, implement the package's interface and select it in this app:
 
 1. **Implement the interface** in `src/lib/payments/<yourprovider>.ts`:
 
    ```ts
-   import type { PaymentProvider, CheckoutSessionRequest, CheckoutSession, PaymentWebhookEvent } from './types'
+   import type { PaymentProvider, CheckoutSessionRequest, CheckoutSession, PaymentWebhookEvent } from '@public-internet/payments'
 
    export class YourProviderPaymentProvider implements PaymentProvider {
      readonly id = 'yourprovider' // stored in Payment.provider
@@ -232,14 +232,12 @@ To integrate another gateway:
    ```ts
    export const paymentProvider: PaymentProvider | null = process.env.YOURPROVIDER_API_KEY
      ? new YourProviderPaymentProvider()
-     : process.env.STRIPE_SECRET_KEY
-       ? new StripePaymentProvider()
-       : null // offline settlement mode
+     : selectPaymentProvider() // built-in selection: Stripe when STRIPE_SECRET_KEY is set, else null (offline settlement mode)
    ```
 
 3. **Point your PSP's webhook** at `POST https://<your-node>/api/webhooks/payments`. This single route serves every provider: it hands the raw body and headers to your `parseWebhookEvent()`, marks the payment SUCCEEDED or CANCELED, and returns 400 on authentication failure (503 when no provider is configured).
 
-4. **Define your own env vars** (API key, webhook secret, …) — read them inside your provider file only, and document them in `.env.example`. No module outside `src/lib/payments/` may import a PSP SDK.
+4. **Define your own env vars** (API key, webhook secret, …) — read them inside your provider file only, and document them in `.env.example`. Apart from custom provider implementations selected here, only `@public-internet/payments` may import a PSP SDK — services, routes, and UI depend only on the interface.
 
 Constraints that apply to every provider: the charged amount is exactly the displayed total (no fees, no surcharges — CONSTITUTION.md), and payment confirmation comes only from the authenticated webhook, never from the success redirect.
 

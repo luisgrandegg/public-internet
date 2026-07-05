@@ -7,12 +7,12 @@ import type {
 } from './types'
 
 /**
- * Stripe implementation of the PaymentProvider interface (ADR-006).
+ * Stripe implementation of the PaymentProvider interface (ADR-006, amended).
  *
- * The entire Stripe surface of the app lives in this module — no file outside
- * src/lib/payments/ may import 'stripe'. Uses the hosted Checkout Session
- * flow: no card data ever touches the app, and the redirect back is never
- * trusted as proof of payment — only the signature-verified
+ * The entire Stripe surface lives in this package — no module outside
+ * @public-internet/payments may import 'stripe' (ADR-007). Uses the hosted
+ * Checkout Session flow: no card data ever touches the app, and the redirect
+ * back is never trusted as proof of payment — only the signature-verified
  * `checkout.session.completed` webhook settles a payment.
  */
 export class StripePaymentProvider implements PaymentProvider {
@@ -21,9 +21,9 @@ export class StripePaymentProvider implements PaymentProvider {
   private client: Stripe | null = null
 
   /**
-   * Lazily construct the Stripe client. Throws if the node is not configured
-   * for Stripe — src/lib/payments/index.ts only selects this provider when
-   * STRIPE_SECRET_KEY is set.
+   * Lazy Stripe client — constructed on first use so that offline nodes
+   * (no STRIPE_SECRET_KEY) never touch the Stripe SDK at runtime.
+   * Throws if called while Stripe is not configured.
    */
   private getClient(): Stripe {
     const secretKey = process.env.STRIPE_SECRET_KEY
@@ -37,10 +37,9 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   /**
-   * Create a hosted Stripe Checkout Session. One line item per order item
-   * (unitPrice snapshot) plus exactly one line for the published flat
-   * infrastructure fee — the lines sum to request.amountCents, the exact
-   * pre-confirmation total. The payment path never adds anything on top.
+   * Creates a hosted Stripe Checkout Session. The line items sum to exactly
+   * request.amountCents, the displayed pre-confirmation total — no fees, no
+   * surcharges (ADR-006).
    */
   async createCheckoutSession(request: CheckoutSessionRequest): Promise<CheckoutSession> {
     const stripe = this.getClient()
@@ -70,7 +69,7 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   /**
-   * Report the live status of a previously created Checkout Session so the
+   * Reports the live status of a previously created Checkout Session so the
    * app never offers a dead link: Stripe's `open` sessions are still payable,
    * `complete` means the money is settling (only the webhook confirms it),
    * and `expired` sessions must be regenerated.
@@ -79,14 +78,16 @@ export class StripePaymentProvider implements PaymentProvider {
     sessionId: string,
   ): Promise<{ status: 'open' | 'complete' | 'expired'; checkoutUrl: string | null }> {
     const session = await this.getClient().checkout.sessions.retrieve(sessionId)
+    // Stripe reports 'open' | 'complete' | 'expired' | null — anything that is
+    // not resumable or already settling is treated as expired (regenerate).
     const status =
-      session.status === 'complete' ? 'complete' : session.status === 'expired' ? 'expired' : 'open'
+      session.status === 'open' || session.status === 'complete' ? session.status : 'expired'
     return { status, checkoutUrl: session.url ?? null }
   }
 
   /**
-   * Verify the `stripe-signature` header against STRIPE_WEBHOOK_SECRET on the
-   * exact raw body Stripe sent (no re-serialisation), then translate the
+   * Verifies the `stripe-signature` header against STRIPE_WEBHOOK_SECRET on
+   * the exact raw body Stripe sent (no re-serialisation), then translates the
    * Stripe event to the generic payment lifecycle:
    *
    *   checkout.session.completed → payment.succeeded (payment_intent id as
@@ -108,6 +109,7 @@ export class StripePaymentProvider implements PaymentProvider {
       throw new Error('STRIPE_WEBHOOK_SECRET is not configured — cannot verify webhook signature')
     }
 
+    // Signature verification requires the exact raw body — never parse first.
     const event = this.getClient().webhooks.constructEvent(rawBody, signature, webhookSecret)
 
     switch (event.type) {

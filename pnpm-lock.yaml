@@ -32,6 +32,9 @@ importers:
       '@public-internet/eats-sdk':
         specifier: workspace:^
         version: link:../../packages/eats-sdk
+      '@public-internet/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
       better-auth:
         specifier: ^1.6.2
         version: 1.6.2(@opentelemetry/api@1.9.1)(@prisma/client@7.7.0(prisma@7.7.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3))(typescript@5.9.3))(mysql2@3.15.3)(next@15.5.15(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(pg@8.20.0)(prisma@7.7.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(vitest@3.2.4(@types/node@22.19.17)(jiti@2.6.1)(jsdom@26.1.0))
@@ -50,9 +53,6 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.5(react@19.2.5)
-      stripe:
-        specifier: ^22.3.0
-        version: 22.3.0(@types/node@22.19.17)
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -102,6 +102,9 @@ importers:
       '@public-internet/design-system':
         specifier: workspace:*
         version: link:../../packages/design-system
+      '@public-internet/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
       '@public-internet/touristical-renting-sdk':
         specifier: workspace:^
         version: link:../../packages/touristical-renting-sdk
@@ -129,9 +132,6 @@ importers:
       react-leaflet:
         specifier: ^4.2.1
         version: 4.2.1(leaflet@1.9.4)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
-      stripe:
-        specifier: ^22.3.0
-        version: 22.3.0(@types/node@22.19.17)
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -278,6 +278,19 @@ importers:
         version: 3.2.4(@types/node@22.19.17)(jiti@2.6.1)(jsdom@26.1.0)
 
   packages/eats-sdk:
+    devDependencies:
+      tsup:
+        specifier: ^8.3.5
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.9)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/payments:
+    dependencies:
+      stripe:
+        specifier: ^22.3.0
+        version: 22.3.0(@types/node@22.19.17)
     devDependencies:
       tsup:
         specifier: ^8.3.5

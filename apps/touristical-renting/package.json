@@ -25,6 +25,7 @@
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "@public-internet/design-system": "workspace:*",
+    "@public-internet/payments": "workspace:*",
     "@public-internet/touristical-renting-sdk": "workspace:^",
     "better-auth": "^1.6.2",
     "leaflet": "^1.9.4",
@@ -34,7 +35,6 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^4.2.1",
-    "stripe": "^22.3.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

@@ -1,7 +1,6 @@
-import { NextRequest } from 'next/server'
-import { ok, errorResponse, internalError } from '@/lib/api/response'
+import { createPaymentWebhookHandler } from '@public-internet/payments'
 import { db } from '@/lib/db'
-import { paymentProvider, type PaymentWebhookEvent } from '@/lib/payments'
+import { paymentProvider } from '@/lib/payments'
 
 /**
  * The configured payment provider delivers events to this endpoint (ADR-006
@@ -13,6 +12,10 @@ import { paymentProvider, type PaymentWebhookEvent } from '@/lib/payments'
  *
  * The success redirect back to the app is never trusted as proof of payment;
  * only an authenticated `payment.succeeded` event marks a payment SUCCEEDED.
+ *
+ * Authentication, raw-body handling, and event translation live in
+ * @public-internet/payments (ADR-007); this route owns only the lifecycle
+ * effects on this node's database.
  *
  * @swagger
  * /api/webhooks/payments:
@@ -64,59 +67,27 @@ import { paymentProvider, type PaymentWebhookEvent } from '@/lib/payments'
  *             schema:
  *               $ref: '#/components/schemas/ApiError'
  */
-export async function POST(req: NextRequest) {
-  if (!paymentProvider) {
-    return errorResponse(503, {
-      code: 'PAYMENTS_NOT_CONFIGURED',
-      message: 'No payment provider is configured on this node',
+export const POST = createPaymentWebhookHandler({
+  provider: paymentProvider,
+  notConfiguredMessage: 'No payment provider is configured on this node',
+  onSucceeded: async (event) => {
+    // Match by the stored provider session id. updateMany keeps this
+    // idempotent — replayed events find the row already SUCCEEDED.
+    await db.payment.updateMany({
+      where: { providerSessionId: event.sessionId },
+      data: {
+        status: 'SUCCEEDED',
+        providerPaymentReference: event.paymentReference,
+      },
     })
-  }
-
-  // Raw body text — webhook authentication requires the exact bytes sent.
-  const rawBody = await req.text()
-
-  let event: PaymentWebhookEvent
-  try {
-    event = await paymentProvider.parseWebhookEvent(rawBody, req.headers)
-  } catch {
-    return errorResponse(400, {
-      code: 'VALIDATION_ERROR',
-      message: 'Webhook authentication failed',
+  },
+  onCanceled: async (event) => {
+    // Marking the payment CANCELED keeps the order permanently inert
+    // (ADR-006 §4). Only a PENDING payment can be canceled — never one
+    // that already succeeded (out-of-order delivery).
+    await db.payment.updateMany({
+      where: { providerSessionId: event.sessionId, status: 'PENDING' },
+      data: { status: 'CANCELED' },
     })
-  }
-
-  try {
-    switch (event.type) {
-      case 'payment.succeeded': {
-        // Match by the stored provider session id. updateMany keeps this
-        // idempotent — replayed events find the row already SUCCEEDED.
-        await db.payment.updateMany({
-          where: { providerSessionId: event.sessionId },
-          data: {
-            status: 'SUCCEEDED',
-            providerPaymentReference: event.paymentReference,
-          },
-        })
-        break
-      }
-      case 'payment.canceled': {
-        // Marking the payment CANCELED keeps the order permanently inert
-        // (ADR-006 §4). Only a PENDING payment can be canceled — never one
-        // that already succeeded (out-of-order delivery).
-        await db.payment.updateMany({
-          where: { providerSessionId: event.sessionId, status: 'PENDING' },
-          data: { status: 'CANCELED' },
-        })
-        break
-      }
-      case 'ignored':
-        // Events that don't affect payment state are acknowledged so the
-        // provider stops retrying.
-        break
-    }
-    return ok({ received: true })
-  } catch (error) {
-    console.error('[webhooks/payments] failed to process event', error)
-    return internalError()
-  }
-}
+  },
+})
