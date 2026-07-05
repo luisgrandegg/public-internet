@@ -60,6 +60,8 @@ cp apps/touristical-renting/.env.example apps/touristical-renting/.env
 | `NODE_ENV` | ✅ | Set to `production` |
 | `STRIPE_SECRET_KEY` | optional | Enables online payments via the built-in Stripe provider. Unset → offline settlement mode (see [Plugging in your own payment gateway](#plugging-in-your-own-payment-gateway)) |
 | `STRIPE_WEBHOOK_SECRET` | optional | Signing secret for `POST /api/webhooks/payments` — required when `STRIPE_SECRET_KEY` is set |
+| `GOOGLE_CLIENT_ID` | optional | Enables "Sign in with Google" (see [Sign in with Google (optional)](#sign-in-with-google-optional)). Unset → email + password only |
+| `GOOGLE_CLIENT_SECRET` | optional | Required together with `GOOGLE_CLIENT_ID` |
 
 > ⚠️ **`NEXT_PUBLIC_APP_URL` is inlined at _build_ time.** Next.js bakes any `NEXT_PUBLIC_*` variable into the client bundle during `pnpm build`. Set it to the final public URL **before** you build — changing it afterwards requires a rebuild, not just a restart.
 
@@ -141,6 +143,25 @@ stay.yourcity.org {
 
 ---
 
+## Sign in with Google (optional)
+
+Auth is configured via the shared `@public-internet/node-auth` package (ADR-007). Email + password is always enabled; Google is a **per-node** extra strategy — the node is fully functional without it, and account data stays in this node's own database (the standard better-auth `Account` table).
+
+1. In the node operator's own **Google Cloud Console**, create an OAuth client: **APIs & Services → Credentials → Create credentials → OAuth client ID**, application type **Web application**.
+2. Add the authorized redirect URIs:
+   - `https://<your-domain>/api/auth/callback/google`
+   - `http://localhost:3000/api/auth/callback/google` (local dev)
+3. Set both env vars on the node and redeploy (restart, or redeploy on Vercel):
+
+   ```bash
+   GOOGLE_CLIENT_ID="<oauth client id>.apps.googleusercontent.com"
+   GOOGLE_CLIENT_SECRET="<oauth client secret>"
+   ```
+
+The sign-in and sign-up pages show a "Continue with Google" button only when both variables are set. Removing them turns the button off again — existing Google-linked accounts keep working via password reset if they also set a password.
+
+---
+
 ## Managed deployment: Vercel + Supabase
 
 The self-hosted path above keeps the node fully operator-owned. If you accept
@@ -170,6 +191,8 @@ migrations and builds in the right order on every deploy.
 | `NEXT_PUBLIC_APP_URL` | The production URL, e.g. `https://stay-yourcity.vercel.app` (update after the first deploy or when adding a custom domain) |
 | `STRIPE_SECRET_KEY` | *(optional)* enables online payments |
 | `STRIPE_WEBHOOK_SECRET` | *(required with the key)* from a Stripe webhook endpoint pointed at `https://<your-domain>/api/webhooks/payments` |
+| `GOOGLE_CLIENT_ID` | *(optional)* enables "Sign in with Google" — see [Sign in with Google (optional)](#sign-in-with-google-optional) |
+| `GOOGLE_CLIENT_SECRET` | *(optional, required with the client id)* |
 
 5. Deploy. First deploy applies all migrations to the empty Supabase database.
 

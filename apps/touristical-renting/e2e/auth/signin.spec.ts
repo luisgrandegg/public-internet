@@ -35,6 +35,12 @@ test.describe('Sign in page', () => {
     await expect(passwordInput).toHaveAttribute('type', 'password')
   })
 
+  test('does not offer Google sign-in when the node has no Google credentials', async ({ page }) => {
+    // GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are unset in CI — the optional
+    // per-node Google strategy (ADR-007) must leave no trace in the UI.
+    await expect(page.getByRole('button', { name: 'Continue with Google' })).toHaveCount(0)
+  })
+
   test('submitting with invalid credentials shows an error', async ({ page }) => {
     await page.getByLabel('Email address', { exact: true }).fill('notauser@example.com')
     await page.getByLabel('Password', { exact: true }).fill('wrongpassword')

@@ -106,6 +106,12 @@ Before adding a new route, add it to this table with its status.
 
 ---
 
+## Auth (ADR-007)
+
+Auth is configured via the shared `@public-internet/node-auth` package — apps import better-auth only through it. `src/lib/auth.ts` is a single `createNodeAuth({ db, emailProvider, additionalFields })` call (this app adds `isRestaurantOwner` and `isCourier`) plus the `Session`/`User` type re-exports; `src/lib/auth-client.ts` wraps `createNodeAuthClient()`. The better-auth Prisma model blocks (User/Session/Account/Verification) stay in this app's schema. "Sign in with Google" is optional per node: enabled only when `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` are set (gated in the UI via `isGoogleAuthEnabled()`); a node without them runs email + password only — never required (ADR-004's no-OAuth-dependency holds).
+
+---
+
 ## Import rules
 
 Always import components from the design system. Never create one-off styled wrappers.

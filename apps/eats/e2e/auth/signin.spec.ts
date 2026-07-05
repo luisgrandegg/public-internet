@@ -15,6 +15,13 @@ test.describe('Sign in', () => {
     await expect(page.getByRole('link', { name: /create an account/i })).toBeVisible()
   })
 
+  test('does not offer Google sign-in when the node has no Google credentials', async ({ page }) => {
+    // GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are unset in CI — the optional
+    // per-node Google strategy (ADR-007) must leave no trace in the UI.
+    await page.goto('/auth/signin')
+    await expect(page.getByRole('button', { name: 'Continue with Google' })).toHaveCount(0)
+  })
+
   test('has no urgency copy', async ({ page }) => {
     await page.goto('/auth/signin')
     const body = await page.textContent('body')

@@ -1,9 +1,7 @@
 'use client'
 
-import { createAuthClient } from 'better-auth/client'
+import { createNodeAuthClient } from '@public-internet/node-auth/client'
 
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL!,
-})
+export const authClient = createNodeAuthClient()
 
 export const { signIn, signUp, signOut, useSession } = authClient

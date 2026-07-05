@@ -61,6 +61,8 @@ cp apps/eats/.env.example apps/eats/.env
 | `EATS_COURIER_BASE_PAY_CENTS` | ⬜ | Courier base pay per delivery, in cents. Default `400` |
 | `EATS_COURIER_DISTANCE_PAY_CENTS` | ⬜ | Courier distance pay per delivery, in cents. Default `200` |
 | `NODE_ENV` | ✅ | Set to `production` |
+| `GOOGLE_CLIENT_ID` | ⬜ | Enables "Sign in with Google" (see [Sign in with Google (optional)](#sign-in-with-google-optional)). Unset → email + password only |
+| `GOOGLE_CLIENT_SECRET` | ⬜ | Required together with `GOOGLE_CLIENT_ID` |
 
 > ⚠️ **`NEXT_PUBLIC_APP_URL` is inlined at _build_ time.** Set it to the final public URL **before** you build — changing it later requires a rebuild, not just a restart.
 
@@ -147,6 +149,25 @@ eats.yourcity.org {
 
 ---
 
+## Sign in with Google (optional)
+
+Auth is configured via the shared `@public-internet/node-auth` package (ADR-007). Email + password is always enabled; Google is a **per-node** extra strategy — the node is fully functional without it, and account data stays in this node's own database (the standard better-auth `Account` table).
+
+1. In the node operator's own **Google Cloud Console**, create an OAuth client: **APIs & Services → Credentials → Create credentials → OAuth client ID**, application type **Web application**.
+2. Add the authorized redirect URIs:
+   - `https://<your-domain>/api/auth/callback/google`
+   - `http://localhost:3001/api/auth/callback/google` (local dev)
+3. Set both env vars on the node and redeploy (restart, or redeploy on Vercel):
+
+   ```bash
+   GOOGLE_CLIENT_ID="<oauth client id>.apps.googleusercontent.com"
+   GOOGLE_CLIENT_SECRET="<oauth client secret>"
+   ```
+
+The sign-in and sign-up pages show a "Continue with Google" button only when both variables are set. Removing them turns the button off again — existing Google-linked accounts keep working via password reset if they also set a password.
+
+---
+
 ## Managed deployment: Vercel + Supabase
 
 The self-hosted path above keeps the node fully operator-owned. If you accept
@@ -179,6 +200,8 @@ builds in the right order on every deploy.
 | `EATS_COURIER_DISTANCE_PAY_CENTS` | e.g. `200` |
 | `STRIPE_SECRET_KEY` | *(optional)* enables online payments |
 | `STRIPE_WEBHOOK_SECRET` | *(required with the key)* from a Stripe webhook endpoint pointed at `https://<your-domain>/api/webhooks/payments` |
+| `GOOGLE_CLIENT_ID` | *(optional)* enables "Sign in with Google" — see [Sign in with Google (optional)](#sign-in-with-google-optional) |
+| `GOOGLE_CLIENT_SECRET` | *(optional, required with the client id)* |
 
 5. Deploy. First deploy applies all migrations to the empty Supabase database.
 

@@ -129,6 +129,10 @@ This app uses Next.js Route Handlers as its REST API. See `apps/CLAUDE.md § Ful
 | `DELETE` | `/api/listings/:id/favorite` | Yes | Remove a listing from favorites (idempotent) |
 | `GET` | `/api/favorites` | Yes | List the signed-in user's favorited listings |
 
+### Auth (ADR-007)
+
+Auth is configured via the shared `@public-internet/node-auth` package — apps import better-auth only through it. `src/lib/auth.ts` is a single `createNodeAuth({ db, emailProvider, additionalFields })` call (this app adds `isHost`) plus the `Session`/`User` type re-exports; `src/lib/auth-client.ts` wraps `createNodeAuthClient()`. The better-auth Prisma model blocks (User/Session/Account/Verification) stay in this app's schema. "Sign in with Google" is optional per node: enabled only when `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` are set (gated in the UI via `isGoogleAuthEnabled()`); a node without them runs email + password only — never required (ADR-004's no-OAuth-dependency holds).
+
 ### Prisma schema (initial entities)
 
 ```prisma
@@ -208,6 +212,11 @@ NEXT_PUBLIC_API_BASE="http://localhost:3000"
 # ("pay at the property") and no online payment is taken.
 STRIPE_SECRET_KEY="<node operator's own Stripe secret key>"
 STRIPE_WEBHOOK_SECRET="<signing secret for POST /api/webhooks/payments>"
+
+# Optional — "Sign in with Google" (ADR-007). This node's own Google Cloud
+# OAuth credentials; unset → email + password only.
+GOOGLE_CLIENT_ID="<oauth client id>"
+GOOGLE_CLIENT_SECRET="<oauth client secret>"
 ```
 
 ### Payments (ADR-006, amended; ADR-007)

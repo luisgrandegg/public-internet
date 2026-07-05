@@ -44,6 +44,9 @@ structured environment that guarantees production-quality output.
 │   │   │   ├── tokens/       # Design tokens (CSS vars + TS object)
 │   │   │   └── index.ts      # Barrel export
 │   │   └── package.json
+│   ├── node-auth/            # Shared auth factory — better-auth recipe + optional per-node Google (ADR-007)
+│   ├── payments/             # Shared PaymentProvider interface + Stripe impl + webhook factory (ADR-006/007)
+│   ├── eats-sdk/             # Auto-generated typed SDK for the eats API
 │   └── touristical-renting-sdk/  # Auto-generated typed SDK for the touristical-renting API
 │       ├── src/
 │       │   ├── client.ts         # ApiClient interface + FetchApiClient
