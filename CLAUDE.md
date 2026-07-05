@@ -86,6 +86,7 @@ Before making a choice that touches styling strategy, experiment isolation, or c
 | [ADR-004](./decisions/ADR-004-full-stack-rest-api.md) | Full-stack features with REST API — no placeholder implementations |
 | [ADR-005](./decisions/ADR-005-voice-input-via-elevenlabs.md) | Voice input for the designer toolchain via ElevenLabs Conversational AI |
 | [ADR-006](./decisions/ADR-006-stripe-payments.md) | Online payments via Stripe Checkout, with an explicit offline mode |
+| [ADR-007](./decisions/ADR-007-shared-node-infrastructure-packages.md) | Shared node-auth and payments packages; pluggable per-node auth strategies |
 
 If you are about to make a decision that contradicts an existing ADR, stop and flag it explicitly rather than silently overriding it. If the decision genuinely needs to change, write a new ADR that supersedes the old one.
 
