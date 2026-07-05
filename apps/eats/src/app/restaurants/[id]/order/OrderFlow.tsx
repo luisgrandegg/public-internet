@@ -86,6 +86,12 @@ export function OrderFlow({ restaurantId, restaurantName, infrastructureFee, ite
         setGlobalError(result.globalError ?? 'Could not place order.')
         return
       }
+      if (result.checkoutUrl) {
+        // Online-payment node (ADR-006): hand off to the provider's hosted
+        // checkout page. The amount charged there is exactly the total shown above.
+        window.location.assign(result.checkoutUrl)
+        return
+      }
       router.push(`/orders/${result.orderId}`)
     })
   }

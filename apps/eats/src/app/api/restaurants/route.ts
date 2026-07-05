@@ -20,6 +20,18 @@ import { listRestaurants } from '@/lib/services/restaurants'
  *           type: string
  *         description: Exact-match filter by city (case-insensitive)
  *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *           maxLength: 200
+ *         description: Keyword search — case-insensitive substring match against restaurant name or description
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           maxLength: 120
+ *         description: Only restaurants with at least one available menu item in this category (case-insensitive)
+ *       - in: query
  *         name: page
  *         schema:
  *           type: integer

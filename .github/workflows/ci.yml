@@ -128,9 +128,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: touristical
-          POSTGRES_PASSWORD: touristical
-          POSTGRES_DB: touristical_renting
+          POSTGRES_USER: stay
+          POSTGRES_PASSWORD: stay
+          POSTGRES_DB: stay
         ports:
           - 5432:5432
         options: >-
@@ -139,7 +139,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgresql://touristical:touristical@localhost:5432/touristical_renting
+      DATABASE_URL: postgresql://stay:stay@localhost:5432/stay
       BETTER_AUTH_SECRET: ci-test-secret-at-least-32-characters-long
       NEXT_PUBLIC_APP_URL: http://localhost:3000
     steps:
@@ -164,18 +164,18 @@ jobs:
       - run: pnpm build
 
       - name: Push database schema
-        run: pnpm --filter @public-internet/touristical-renting exec prisma db push --url "$DATABASE_URL"
+        run: pnpm --filter @public-internet/stay exec prisma db push --url "$DATABASE_URL"
 
       - name: Install Playwright browsers
-        run: pnpm --filter @public-internet/touristical-renting exec playwright install --with-deps chromium
+        run: pnpm --filter @public-internet/stay exec playwright install --with-deps chromium
 
       - name: Run E2E tests
-        run: pnpm --filter @public-internet/touristical-renting test:e2e
+        run: pnpm --filter @public-internet/stay test:e2e
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
-          path: apps/touristical-renting/playwright-report/
+          path: apps/stay/playwright-report/
           retention-days: 7

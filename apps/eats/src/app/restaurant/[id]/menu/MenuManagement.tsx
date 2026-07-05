@@ -1,12 +1,13 @@
 'use client'
 
-import { useActionState, useTransition } from 'react'
+import { useActionState, useEffect, useState, useTransition } from 'react'
 import { Input, Button, Textarea, Stack, Badge } from '@public-internet/design-system'
 import { MenuItemCard } from '@/components/MenuItemCard'
 import {
   createMenuItemAction,
   deleteMenuItemAction,
   toggleMenuItemAvailability,
+  updateMenuItemAction,
   type MenuActionResult,
 } from '@/lib/actions/menu'
 import { formatEuros } from '@/lib/format'
@@ -32,6 +33,7 @@ export function MenuManagement({ restaurantId, items }: Props) {
     MenuActionResult | null,
     FormData
   >(boundCreate, null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   return (
     <div className={styles.layout}>
@@ -103,10 +105,22 @@ export function MenuManagement({ restaurantId, items }: Props) {
                     <MenuItemControls
                       restaurantId={restaurantId}
                       itemId={item.id}
+                      itemName={item.name}
                       isAvailable={item.isAvailable}
+                      isEditing={editingId === item.id}
+                      onToggleEdit={() =>
+                        setEditingId((current) => (current === item.id ? null : item.id))
+                      }
                     />
                   }
                 />
+                {editingId === item.id && (
+                  <EditMenuItemForm
+                    restaurantId={restaurantId}
+                    item={item}
+                    onDone={() => setEditingId(null)}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -119,11 +133,17 @@ export function MenuManagement({ restaurantId, items }: Props) {
 function MenuItemControls({
   restaurantId,
   itemId,
+  itemName,
   isAvailable,
+  isEditing,
+  onToggleEdit,
 }: {
   restaurantId: string
   itemId: string
+  itemName: string
   isAvailable: boolean
+  isEditing: boolean
+  onToggleEdit: () => void
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -134,6 +154,16 @@ function MenuItemControls({
       ) : (
         <Badge variant="warning">Hidden</Badge>
       )}
+      <Button
+        variant="secondary"
+        type="button"
+        disabled={isPending}
+        aria-expanded={isEditing}
+        aria-label={isEditing ? `Close editor for ${itemName}` : `Edit ${itemName}`}
+        onClick={onToggleEdit}
+      >
+        {isEditing ? 'Close editor' : 'Edit'}
+      </Button>
       <Button
         variant="secondary"
         type="button"
@@ -158,6 +188,81 @@ function MenuItemControls({
         Remove
       </Button>
     </div>
+  )
+}
+
+function EditMenuItemForm({
+  restaurantId,
+  item,
+  onDone,
+}: {
+  restaurantId: string
+  item: MenuItem
+  onDone: () => void
+}) {
+  const boundUpdate = updateMenuItemAction.bind(null, restaurantId, item.id)
+  const [state, formAction, isPending] = useActionState<MenuActionResult | null, FormData>(
+    boundUpdate,
+    null,
+  )
+
+  useEffect(() => {
+    if (state?.ok) onDone()
+  }, [state, onDone])
+
+  const fieldError = (key: string) =>
+    state && !state.ok ? state.fieldErrors[key] : undefined
+
+  return (
+    <form action={formAction} className={styles.editForm} aria-label={`Edit ${item.name}`}>
+      {state && !state.ok && state.globalError && (
+        <div role="alert" className={styles.globalError}>
+          {state.globalError}
+        </div>
+      )}
+      <Stack gap={4}>
+        <Input
+          name="name"
+          label="Name"
+          defaultValue={item.name}
+          required
+          error={fieldError('name')}
+        />
+        <Textarea
+          name="description"
+          label="Description"
+          defaultValue={item.description}
+          required
+          rows={3}
+          error={fieldError('description')}
+        />
+        <Input
+          name="price"
+          label="Price (€)"
+          type="number"
+          step="0.01"
+          min="0.01"
+          defaultValue={(item.price / 100).toFixed(2)}
+          required
+          error={fieldError('price')}
+        />
+        <Input
+          name="category"
+          label="Category (e.g. Starters, Mains, Desserts)"
+          defaultValue={item.category}
+          required
+          error={fieldError('category')}
+        />
+      </Stack>
+      <div className={styles.controls}>
+        <Button type="submit" variant="primary" disabled={isPending}>
+          {isPending ? 'Saving…' : 'Save changes'}
+        </Button>
+        <Button type="button" variant="secondary" disabled={isPending} onClick={onDone}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   )
 }
 

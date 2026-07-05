@@ -27,6 +27,7 @@ model User {
   restaurants       Restaurant[]
   orders            Order[]
   deliveries        Delivery[]
+  reviews           Review[]
 }
 
 model Session {
@@ -85,6 +86,7 @@ model Restaurant {
   ownerId     String
   menuItems   MenuItem[]
   orders      Order[]
+  reviews     Review[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
@@ -114,6 +116,8 @@ model Order {
   restaurantId    String
   items           OrderItem[]
   delivery        Delivery?
+  review          Review?
+  payment         Payment?
   // All costs stored in cents. Shown in full to customer before confirmation.
   itemsCost       Int
   // Flat infrastructure fee — transparent and published. Not a commission.
@@ -175,4 +179,57 @@ enum DeliveryStatus {
   PICKED_UP
   DELIVERED
   FAILED
+}
+
+// One Payment per Order (ADR-006). Created in the same transaction as the order.
+// provider 'offline' documents direct settlement (pay on delivery) — a first-class
+// mode for commission-free nodes, not a stub. Any other provider value is the id
+// of the PaymentProvider implementation (src/lib/payments/) that created a hosted
+// checkout session; only the provider-authenticated webhook moves it to SUCCEEDED.
+model Payment {
+  id      String @id @default(cuid())
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId String @unique
+  // PaymentProvider.id ('stripe', a custom gateway id) or 'offline' — string
+  // (not enum) so new providers need no migration (ADR-006 amendment).
+  provider String
+  status   PaymentStatus @default(PENDING)
+  // Cents — exactly the pre-confirmation totalCost. Never recomputed after creation.
+  amount   Int
+  currency String @default("eur")
+  // Provider-neutral columns — set only for online payments (ADR-006 amendment).
+  providerSessionId        String?
+  // Durable payment reference set by the payment.succeeded webhook event
+  // (the payment_intent id for Stripe).
+  providerPaymentReference String?
+  // Hosted checkout URL so a customer can complete a PENDING payment later.
+  providerCheckoutUrl      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+model Review {
+  id           String     @id @default(cuid())
+  // One review per order — the review is tied to a verified, delivered order.
+  order        Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId      String     @unique
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId     String
+  // 1–5 — validated at the API layer (zod). Honest feedback only:
+  // reviews are never incentivised and can never be paid away by a restaurant.
+  rating       Int
+  // Optional free-text feedback. Empty string when the customer leaves none.
+  body         String     @default("")
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId, createdAt])
 }

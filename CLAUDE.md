@@ -33,7 +33,7 @@ structured environment that guarantees production-quality output.
 ```
 /
 ├── apps/
-│   ├── touristical-renting/  # Stay platform — commission-free tourist rental
+│   ├── stay/                 # Stay platform — commission-free tourist rental
 │   ├── eats/                 # Eats platform — commission-free food delivery
 │   └── voice-bridge/         # Dev tool — voice-first PR-change capture (see ADR-005)
 ├── packages/
@@ -44,7 +44,10 @@ structured environment that guarantees production-quality output.
 │   │   │   ├── tokens/       # Design tokens (CSS vars + TS object)
 │   │   │   └── index.ts      # Barrel export
 │   │   └── package.json
-│   └── touristical-renting-sdk/  # Auto-generated typed SDK for the touristical-renting API
+│   ├── node-auth/            # Shared auth factory — better-auth recipe + optional per-node Google (ADR-007)
+│   ├── payments/             # Shared PaymentProvider interface + Stripe impl + webhook factory (ADR-006/007)
+│   ├── eats-sdk/             # Auto-generated typed SDK for the eats API
+│   └── stay-sdk/             # Auto-generated typed SDK for the stay API
 │       ├── src/
 │       │   ├── client.ts         # ApiClient interface + FetchApiClient
 │       │   ├── index.ts          # Barrel export
@@ -68,7 +71,7 @@ Each subdirectory has its own `CLAUDE.md` with context scoped to that area:
 
 - `packages/design-system/CLAUDE.md` — tokens, components, conventions, Storybook
 - `apps/CLAUDE.md` — app registry, import rules, composition patterns, gap flagging, OpenAPI + SDK rules
-- `apps/touristical-renting/CLAUDE.md` — domain vocabulary, routes, constitution alignment for the Stay platform
+- `apps/stay/CLAUDE.md` — domain vocabulary, routes, constitution alignment for the Stay platform
 - `apps/voice-bridge/CLAUDE.md` — voice toolchain rules, ElevenLabs provider boundary, spec format
 
 ---
@@ -85,6 +88,8 @@ Before making a choice that touches styling strategy, experiment isolation, or c
 | [ADR-003](./decisions/ADR-003-claude-md-context-files.md) | CLAUDE.md context files over MCP server or system prompt |
 | [ADR-004](./decisions/ADR-004-full-stack-rest-api.md) | Full-stack features with REST API — no placeholder implementations |
 | [ADR-005](./decisions/ADR-005-voice-input-via-elevenlabs.md) | Voice input for the designer toolchain via ElevenLabs Conversational AI |
+| [ADR-006](./decisions/ADR-006-stripe-payments.md) | Online payments via Stripe Checkout, with an explicit offline mode |
+| [ADR-007](./decisions/ADR-007-shared-node-infrastructure-packages.md) | Shared node-auth and payments packages; pluggable per-node auth strategies |
 
 If you are about to make a decision that contradicts an existing ADR, stop and flag it explicitly rather than silently overriding it. If the decision genuinely needs to change, write a new ADR that supersedes the old one.
 

@@ -65,8 +65,8 @@ export default function HomePage() {
           fee covers actual operating costs and is published for everyone to see.
         </p>
         <div className={styles.ctaRow}>
-          <a href="/restaurant/register" className={styles.ctaPrimary}>
-            Register your restaurant
+          <a href="/restaurant/onboarding" className={styles.ctaPrimary}>
+            Add your restaurant
           </a>
         </div>
       </section>

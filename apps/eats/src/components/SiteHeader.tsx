@@ -33,7 +33,7 @@ export async function SiteHeader() {
           </Link>
           {!user && (
             <>
-              <Link href="/restaurant/register" className={styles.navLink}>
+              <Link href="/restaurant/onboarding" className={styles.navLink}>
                 List your restaurant
               </Link>
               <Link href="/courier/register" className={styles.navLink}>
@@ -57,7 +57,7 @@ export async function SiteHeader() {
                 </Link>
               )}
               {!isRestaurantOwner && (
-                <Link href="/restaurant/register" className={styles.navLink}>
+                <Link href="/restaurant/onboarding" className={styles.navLink}>
                   List your restaurant
                 </Link>
               )}

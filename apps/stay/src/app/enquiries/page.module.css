@@ -1,0 +1,100 @@
+.root {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.heading {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.enquiriesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.enquiryCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-neutral-200, #e5e7eb);
+  border-radius: 0.75rem;
+}
+
+.enquiryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.listingLink {
+  font-weight: 600;
+  color: inherit;
+  text-decoration: underline;
+}
+
+.enquiryStatus {
+  font-size: 0.8125rem;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 9999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.statusReplied {
+  background-color: var(--color-success-50, #f0fdf4);
+  color: var(--color-success-700, #15803d);
+}
+
+.statusAwaiting {
+  background-color: var(--color-neutral-100, #f3f4f6);
+  color: var(--color-neutral-600, #4b5563);
+}
+
+.message,
+.reply {
+  border-left: 3px solid var(--color-neutral-200, #e5e7eb);
+  padding-left: 0.75rem;
+}
+
+.reply {
+  border-left-color: var(--color-success-700, #15803d);
+}
+
+.messageMeta {
+  font-size: 0.8125rem;
+  color: var(--color-neutral-500, #6b7280);
+  margin-bottom: 0.25rem;
+}
+
+.messageBody {
+  margin: 0;
+  white-space: pre-wrap;
+  color: var(--color-neutral-800, #1f2937);
+}
+
+.noReply {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-neutral-500, #6b7280);
+}
+
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-neutral-500, #6b7280);
+}
+
+.emptyLink {
+  color: var(--color-primary-600, #4f46e5);
+  text-decoration: underline;
+}

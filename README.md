@@ -14,11 +14,11 @@ A generation of platforms was built to connect people who need something with pe
 
 ### Platforms in scope
 
-| Platform | Status | Description |
-|---|---|---|
-| **Stay** | Planned | Commission-free accommodation — AirBnB without the extraction |
-| **Eats** | Planned | Food delivery with worker rights — DoorDash without misclassification |
-| **Agenda** | Planned | Civic participation platform — transparent municipal decisions for everyone |
+| Platform | Status | Description | Quickstart |
+|---|---|---|---|
+| **Stay** | Built | Commission-free accommodation — AirBnB without the extraction | [apps/stay/QUICKSTART.md](./apps/stay/QUICKSTART.md) |
+| **Eats** | Built | Food delivery with worker rights — DoorDash without misclassification | [apps/eats/QUICKSTART.md](./apps/eats/QUICKSTART.md) |
+| **Agenda** | Planned | Civic participation platform — transparent municipal decisions for everyone | — |
 
 ---
 
@@ -27,10 +27,13 @@ A generation of platforms was built to connect people who need something with pe
 | Layer | Technology |
 |---|---|
 | UI framework | React 19 + TypeScript (strict) |
-| Reference app | Next.js 15 (`apps/web`) |
+| Apps | Next.js 15 (App Router + REST Route Handlers) |
+| Database | PostgreSQL 16 + Prisma |
+| Auth | `@public-internet/node-auth` (better-auth; optional per-node Google sign-in) |
+| Payments | `@public-internet/payments` (pluggable provider; Stripe built in, offline mode default) |
 | Component library | `@public-internet/design-system` (CSS Modules + design tokens) |
 | Component preview | Storybook 8 |
-| Testing | Vitest + Testing Library + jest-axe |
+| Testing | Vitest + Testing Library + jest-axe; Playwright e2e per app |
 | Monorepo | pnpm workspaces + Turborepo |
 | CI | GitHub Actions |
 
@@ -57,21 +60,24 @@ winget install Volta.Volta
 
 ## Getting started
 
+Each app has a 5-minute quickstart covering database, env, migrations, and dev server:
+
+- **Stay** — [apps/stay/QUICKSTART.md](./apps/stay/QUICKSTART.md) (http://localhost:3000)
+- **Eats** — [apps/eats/QUICKSTART.md](./apps/eats/QUICKSTART.md) (http://localhost:3001)
+- **voice-bridge** (dev tool) — [apps/voice-bridge/QUICKSTART.md](./apps/voice-bridge/QUICKSTART.md) (http://localhost:3100)
+
+The short version:
+
 ```bash
-# 1. Clone
-git clone https://github.com/luisgrandegg/public-internet.git
-cd public-internet
-
-# 2. Install dependencies
+git clone https://github.com/luisgrandegg/public-internet.git && cd public-internet
 pnpm install
+docker compose -f apps/stay/docker-compose.yml up -d
+cp apps/stay/.env.example apps/stay/.env
+pnpm --filter @public-internet/stay db:deploy
+pnpm --filter @public-internet/design-system build
+pnpm --filter @public-internet/stay dev
 
-# 3. Build all packages
-pnpm build
-
-# 4. Start the touristical-renting app
-pnpm --filter @public-internet/touristical-renting dev
-
-# 5. Start Storybook (design system preview)
+# Storybook (design system preview)
 pnpm --filter @public-internet/design-system storybook
 ```
 
@@ -82,17 +88,15 @@ pnpm --filter @public-internet/design-system storybook
 ```
 /
 ├── apps/
-│   ├── touristical-renting/  # Stay platform — commission-free tourist rental (Next.js)
+│   ├── stay/                 # Stay platform — commission-free tourist rental (Next.js)
 │   ├── eats/                 # Eats platform — commission-free food delivery (Next.js)
 │   └── voice-bridge/         # Dev tool — voice-first PR-change capture (Next.js)
 ├── packages/
-│   └── design-system/        # Component library + design tokens
-│       ├── src/
-│       │   ├── components/   # Production components
-│       │   ├── experiments/  # A/B variants (never imported by apps)
-│       │   ├── tokens/       # Design tokens (CSS vars + TS object)
-│       │   └── index.ts      # Barrel export
-│       └── package.json
+│   ├── design-system/        # Component library + design tokens
+│   ├── node-auth/            # Shared auth factory (better-auth recipe + optional Google) — ADR-007
+│   ├── payments/             # Pluggable PaymentProvider + Stripe + webhook factory — ADR-006/007
+│   ├── eats-sdk/             # Typed SDK generated from the eats OpenAPI spec
+│   └── stay-sdk/             # Typed SDK generated from the Stay OpenAPI spec
 ├── .claude/
 │   └── commands/             # AI-assisted workflow commands
 ├── backlog/
@@ -192,7 +196,7 @@ Each app is designed to run as an independent local node — a municipality or c
 
 | App | Guide |
 |---|---|
-| **Stay** (`touristical-renting`) | [apps/touristical-renting/DEPLOYMENT.md](./apps/touristical-renting/DEPLOYMENT.md) |
+| **Stay** (`stay`) | [apps/stay/DEPLOYMENT.md](./apps/stay/DEPLOYMENT.md) |
 | **Eats** (`eats`) | [apps/eats/DEPLOYMENT.md](./apps/eats/DEPLOYMENT.md) |
 | **voice-bridge** (internal tool) | [apps/voice-bridge/DEPLOYMENT.md](./apps/voice-bridge/DEPLOYMENT.md) |
 
@@ -209,6 +213,8 @@ Significant decisions are documented in [`decisions/`](./decisions/):
 | [ADR-003](./decisions/ADR-003-claude-md-context-files.md) | CLAUDE.md context files over MCP server or system prompt |
 | [ADR-004](./decisions/ADR-004-full-stack-rest-api.md) | Full-stack features with REST API — no placeholder implementations |
 | [ADR-005](./decisions/ADR-005-voice-input-via-elevenlabs.md) | Voice input for the designer toolchain via ElevenLabs Conversational AI |
+| [ADR-006](./decisions/ADR-006-stripe-payments.md) | Online payments via Stripe Checkout, with an explicit offline mode |
+| [ADR-007](./decisions/ADR-007-shared-node-infrastructure-packages.md) | Shared node-auth and payments packages; pluggable per-node auth strategies |
 
 ---
 

@@ -10,6 +10,10 @@ export default async function RegisterRestaurantPage() {
     redirect('/auth/signin')
   }
 
+  // Non-owners first read the commission-free model and opt in explicitly.
+  const user = session.user as { isRestaurantOwner?: boolean }
+  if (!user.isRestaurantOwner) redirect('/restaurant/onboarding')
+
   return (
     <div className={styles.container}>
       <div className={styles.intro}>

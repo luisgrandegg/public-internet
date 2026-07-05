@@ -4,6 +4,7 @@ import {
   unauthorized,
   validationError,
   internalError,
+  errorResponse,
 } from '@/lib/api/response'
 import { handlePrismaError } from '@/lib/api/prisma-errors'
 import { requireSession } from '@/lib/api/auth-guard'
@@ -29,14 +30,19 @@ import { createOrderForCustomer } from '@/lib/services/orders'
  *             $ref: '#/components/schemas/CreateOrderInput'
  *     responses:
  *       201:
- *         description: Order placed
+ *         description: >
+ *           Order placed. On a node with an online payment provider configured
+ *           the payment is PENDING and `checkoutUrl` points to the provider's
+ *           hosted checkout page (the client must redirect there); on an
+ *           offline node the payment is created as provider `offline` /
+ *           SUCCEEDED and `checkoutUrl` is null.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
  *                 data:
- *                   $ref: '#/components/schemas/Order'
+ *                   $ref: '#/components/schemas/PlacedOrder'
  *       401:
  *         description: Not authenticated
  *         content:
@@ -45,6 +51,12 @@ import { createOrderForCustomer } from '@/lib/services/orders'
  *               $ref: '#/components/schemas/ApiError'
  *       422:
  *         description: Validation failed or menu item conflict
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiError'
+ *       502:
+ *         description: The payment provider could not create a checkout session
  *         content:
  *           application/json:
  *             schema:
@@ -63,9 +75,12 @@ export async function POST(req: NextRequest) {
   try {
     const result = await createOrderForCustomer(session.user.id, parsed.data)
     if (!result.ok) {
+      if (result.error.code === 'PAYMENT_PROVIDER_ERROR') {
+        return errorResponse(502, { code: 'INTERNAL_ERROR', message: result.error.message })
+      }
       return validationError({ _: result.error.message })
     }
-    return created(result.order)
+    return created({ ...result.order, checkoutUrl: result.checkoutUrl })
   } catch (error) {
     return handlePrismaError(error) ?? internalError()
   }

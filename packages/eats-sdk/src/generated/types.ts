@@ -26,6 +26,10 @@ export interface Restaurant {
   imageUrl?: string | null
   isActive: boolean
   ownerId: string
+  /** Average review rating (1–5) rounded to one decimal, or null when the restaurant has no reviews */
+  avgRating?: number | null
+  /** Number of verified-order reviews for this restaurant */
+  reviewCount?: number
   createdAt: string
   updatedAt: string
 }
@@ -51,8 +55,10 @@ export interface UpdateRestaurantInput {
   country?: string
   lat?: number
   lng?: number
-  phone?: string
-  imageUrl?: string
+  /** Send null or an empty string to clear the stored phone number */
+  phone?: string | null
+  /** Send null or an empty string to clear the stored image URL */
+  imageUrl?: string | null
   isActive?: boolean
 }
 
@@ -92,10 +98,36 @@ export interface OrderItemInput {
   quantity: number
 }
 
+/** Lifecycle status of a payment (ADR-006). Only the provider-authenticated webhook (POST /api/webhooks/payments) moves an online payment to SUCCEEDED. */
+export type PaymentStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'CANCELED'
+
+/** One payment per order (ADR-006). provider "offline" documents direct settlement (pay on delivery) — a first-class commission-free mode, not a stub. */
+export interface Payment {
+  id: string
+  orderId: string
+  /** PaymentProvider id that created this payment (e.g. "stripe"), or "offline" for direct settlement */
+  provider: string
+  status: PaymentStatus
+  /** Amount in cents — exactly the pre-confirmation totalCost. Never recomputed after creation. */
+  amount: number
+  /** ISO currency code, default "eur" */
+  currency: string
+  /** Provider checkout session id — set only for online payments */
+  providerSessionId?: string | null
+  /** Provider's durable payment reference, set by the payment.succeeded webhook event */
+  providerPaymentReference?: string | null
+  /** Hosted checkout URL for completing a PENDING online payment */
+  providerCheckoutUrl?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface OrderItem {
   id: string
   orderId: string
   menuItemId: string
+  /** Menu item name snapshotted at order time */
+  nameSnapshot?: string | null
   quantity: number
   /** Unit price in cents, snapshotted at order time */
   unitPrice: number
@@ -108,6 +140,10 @@ export interface Order {
   restaurantId: string
   restaurant?: RestaurantSummary
   items: Array<OrderItem>
+  /** Delivery record for the order, when one exists */
+  delivery?: Delivery | null
+  /** Payment record for the order (ADR-006). Null only on orders created before payments existed. */
+  payment?: Payment | null
   /** Sum of all item costs in cents */
   itemsCost: number
   /** Flat infrastructure fee in cents — transparent and published. Not a commission. */
@@ -118,6 +154,18 @@ export interface Order {
   notes?: string | null
   createdAt: string
   updatedAt: string
+}
+
+/** Live hosted-checkout URL for completing a PENDING online payment (POST /api/orders/{id}/pay). The amount behind the URL is exactly the original order total — never recomputed. */
+export interface CheckoutResume {
+  /** Provider-hosted checkout URL to redirect the customer to */
+  checkoutUrl: string
+}
+
+/** Order as returned from placement. On a node with an online payment provider configured checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED. */
+export type PlacedOrder = Order & {
+  /** Provider-hosted checkout URL to redirect the customer to, or null in offline-settlement mode */
+  checkoutUrl: string | null
 }
 
 export interface CreateOrderInput {
@@ -140,6 +188,42 @@ export interface Delivery {
   deliveredAt?: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface MenuCategories {
+  /** Distinct categories of available menu items across active restaurants, sorted alphabetically */
+  categories: Array<string>
+}
+
+export interface Review {
+  id: string
+  /** The delivered order this review belongs to — one review per order */
+  orderId: string
+  restaurantId: string
+  authorId: string
+  /** The reviewing customer */
+  author?: {
+    name: string
+  }
+  /** Star rating from 1 to 5 */
+  rating: number
+  /** Optional free-text feedback — empty string when the customer left none */
+  body: string
+  createdAt: string
+}
+
+export interface CreateReviewInput {
+  /** Star rating from 1 to 5 */
+  rating: number
+  /** Optional free-text feedback */
+  body?: string
+}
+
+export interface PaginatedReviews {
+  reviews: Array<Review>
+  total: number
+  page: number
+  limit: number
 }
 
 export interface PaginatedRestaurants {

@@ -1,0 +1,49 @@
+/**
+ * Pluggable payment provider interface (ADR-006 amendment, ADR-007).
+ *
+ * The payment layer is a provider interface, not a PSP module. Apps' services,
+ * routes, and UI depend only on these types and their generic Payment record;
+ * PSP SDKs are imported exclusively by implementations inside
+ * @public-internet/payments.
+ *
+ * Constitution: the amount charged online is exactly the total shown to the
+ * customer before confirmation. Nothing else is ever added inside the payment
+ * path.
+ */
+
+export type CheckoutLineItem = { name: string; amountCents: number; quantity: number }
+
+export type CheckoutSessionRequest = {
+  paymentId: string
+  referenceId: string // the bookingId/orderId this payment settles
+  amountCents: number // exact pre-confirmation total — never recomputed
+  currency: string
+  lineItems: CheckoutLineItem[]
+  successUrl: string
+  cancelUrl: string
+}
+
+export type CheckoutSession = { sessionId: string; checkoutUrl: string }
+
+export type PaymentWebhookEvent =
+  | { type: 'payment.succeeded'; sessionId: string; paymentReference: string | null }
+  | { type: 'payment.canceled'; sessionId: string }
+  | { type: 'ignored' }
+
+export interface PaymentProvider {
+  /** Stored in Payment.provider for every payment this provider creates. */
+  readonly id: string
+  /** Create a hosted checkout session the customer is redirected to. */
+  createCheckoutSession(request: CheckoutSessionRequest): Promise<CheckoutSession>
+  /**
+   * Authenticate and translate an incoming webhook request.
+   * MUST throw on failed authentication (bad/missing signature).
+   * Returns { type: 'ignored' } for events that don't affect payment state.
+   */
+  parseWebhookEvent(rawBody: string, headers: Headers): Promise<PaymentWebhookEvent>
+  /**
+   * Optional: report the live status of a previously created checkout session.
+   * Used to avoid offering dead links and to regenerate expired sessions.
+   */
+  getCheckoutSession?(sessionId: string): Promise<{ status: 'open' | 'complete' | 'expired'; checkoutUrl: string | null }>
+}

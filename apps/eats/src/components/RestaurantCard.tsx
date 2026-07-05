@@ -9,6 +9,13 @@ export interface RestaurantCardProps {
   city: string
   imageUrl?: string | null
   /**
+   * Average review rating (1–5, one decimal) — null/undefined when unrated.
+   * Ratings are informational only; they never affect listing order.
+   */
+  avgRating?: number | null
+  /** Number of verified-order reviews. */
+  reviewCount?: number
+  /**
    * Href to the restaurant detail page.
    * Defaults to `/restaurants/[id]` but can be overridden for the dashboard.
    */
@@ -25,6 +32,8 @@ export function RestaurantCard({
   description,
   city,
   imageUrl,
+  avgRating,
+  reviewCount = 0,
   href,
 }: RestaurantCardProps) {
   const targetHref = href ?? `/restaurants/${id}`
@@ -56,6 +65,19 @@ export function RestaurantCard({
           <Text variant="caption" className={styles.city}>
             {city}
           </Text>
+          {avgRating != null && reviewCount > 0 ? (
+            <Text variant="caption" className={styles.rating}>
+              <span aria-hidden="true">{avgRating.toFixed(1)} ★</span>
+              <span className={styles.srOnly}>
+                Rated {avgRating.toFixed(1)} out of 5
+              </span>{' '}
+              ({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})
+            </Text>
+          ) : (
+            <Text variant="caption" className={styles.rating}>
+              No reviews yet
+            </Text>
+          )}
           <Text variant="body" className={styles.description}>
             {excerpt}
           </Text>

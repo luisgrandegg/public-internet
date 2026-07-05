@@ -38,7 +38,7 @@
       "Bash(node:*)",
       "Bash(chmod:*)",
       "Bash(npx prisma:*)",
-      "Bash(DATABASE_URL=\"postgresql://touristical:touristical@localhost:5432/touristical_renting\" npx prisma generate)",
+      "Bash(DATABASE_URL=\"postgresql://stay:stay@localhost:5432/stay\" npx prisma generate)",
       "Bash(pnpm turbo:*)"
     ]
   }

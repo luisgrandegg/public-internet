@@ -1,4 +1,4 @@
-# F-007 — Listing search page with map (touristical-renting)
+# F-007 — Listing search page with map (stay)
 
 ## Summary
 
@@ -73,7 +73,7 @@ Planned — not yet implemented.
 ## Completed
 
 **Completed:** 2026-04-12
-**PR:** feature/touristical-renting-bootstrap (pending)
+**PR:** feature/stay-bootstrap (pending)
 **Commit:** (see branch HEAD)
 **Audit:** pnpm type-check and lint pass
 **Notes:** Full listings search page with Leaflet map using OpenStreetMap tiles. Server Component page filters by location, propertyType, minPrice, maxPrice from searchParams. ListingsClientShell owns hoveredListingId state. Map is SSR-disabled via dynamic import with accessible loading placeholder. Leaflet icon webpack fix applied. GAP comment on native select in FiltersSidebar.

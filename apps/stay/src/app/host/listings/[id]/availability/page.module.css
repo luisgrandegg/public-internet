@@ -1,0 +1,31 @@
+.root {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--ds-space-8) var(--ds-space-6);
+}
+
+.backLink {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-brand-primary);
+  text-decoration: underline;
+}
+
+.heading {
+  font-size: var(--ds-font-size-2xl);
+  font-weight: var(--ds-font-weight-semibold);
+  color: var(--ds-color-neutral-900);
+  margin-top: var(--ds-space-4);
+  margin-bottom: var(--ds-space-2);
+}
+
+.subheading {
+  font-size: var(--ds-font-size-md);
+  color: var(--ds-color-neutral-700);
+  margin-bottom: var(--ds-space-2);
+}
+
+.description {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-neutral-700);
+  margin-bottom: var(--ds-space-8);
+}

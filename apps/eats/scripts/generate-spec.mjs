@@ -74,6 +74,15 @@ const options = {
             imageUrl: { type: 'string', nullable: true },
             isActive: { type: 'boolean' },
             ownerId: { type: 'string' },
+            avgRating: {
+              type: 'number',
+              nullable: true,
+              description: 'Average review rating (1–5) rounded to one decimal, or null when the restaurant has no reviews',
+            },
+            reviewCount: {
+              type: 'integer',
+              description: 'Number of verified-order reviews for this restaurant',
+            },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },
@@ -104,8 +113,8 @@ const options = {
             country: { type: 'string' },
             lat: { type: 'number' },
             lng: { type: 'number' },
-            phone: { type: 'string' },
-            imageUrl: { type: 'string', format: 'uri' },
+            phone: { type: 'string', nullable: true, description: 'Send null or an empty string to clear the stored phone number' },
+            imageUrl: { type: 'string', format: 'uri', nullable: true, description: 'Send null or an empty string to clear the stored image URL' },
             isActive: { type: 'boolean' },
           },
         },
@@ -153,6 +162,29 @@ const options = {
             quantity: { type: 'integer', minimum: 1 },
           },
         },
+        PaymentStatus: {
+          type: 'string',
+          enum: ['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED'],
+          description: 'Lifecycle status of a payment (ADR-006). Only the provider-authenticated webhook (POST /api/webhooks/payments) moves an online payment to SUCCEEDED.',
+        },
+        Payment: {
+          type: 'object',
+          required: ['id', 'orderId', 'provider', 'status', 'amount', 'currency', 'createdAt', 'updatedAt'],
+          description: 'One payment per order (ADR-006). provider "offline" documents direct settlement (pay on delivery) — a first-class commission-free mode, not a stub.',
+          properties: {
+            id: { type: 'string' },
+            orderId: { type: 'string' },
+            provider: { type: 'string', description: 'PaymentProvider id that created this payment (e.g. "stripe"), or "offline" for direct settlement' },
+            status: { $ref: '#/components/schemas/PaymentStatus' },
+            amount: { type: 'integer', description: 'Amount in cents — exactly the pre-confirmation totalCost. Never recomputed after creation.' },
+            currency: { type: 'string', description: 'ISO currency code, default "eur"' },
+            providerSessionId: { type: 'string', nullable: true, description: 'Provider checkout session id — set only for online payments' },
+            providerPaymentReference: { type: 'string', nullable: true, description: "Provider's durable payment reference, set by the payment.succeeded webhook event" },
+            providerCheckoutUrl: { type: 'string', nullable: true, description: 'Hosted checkout URL for completing a PENDING online payment' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
         OrderItem: {
           type: 'object',
           required: ['id', 'orderId', 'menuItemId', 'quantity', 'unitPrice'],
@@ -160,6 +192,7 @@ const options = {
             id: { type: 'string' },
             orderId: { type: 'string' },
             menuItemId: { type: 'string' },
+            nameSnapshot: { type: 'string', nullable: true, description: 'Menu item name snapshotted at order time' },
             quantity: { type: 'integer' },
             unitPrice: { type: 'integer', description: 'Unit price in cents, snapshotted at order time' },
           },
@@ -174,6 +207,16 @@ const options = {
             restaurantId: { type: 'string' },
             restaurant: { $ref: '#/components/schemas/RestaurantSummary' },
             items: { type: 'array', items: { $ref: '#/components/schemas/OrderItem' } },
+            delivery: {
+              allOf: [{ $ref: '#/components/schemas/Delivery' }],
+              nullable: true,
+              description: 'Delivery record for the order, when one exists',
+            },
+            payment: {
+              allOf: [{ $ref: '#/components/schemas/Payment' }],
+              nullable: true,
+              description: 'Payment record for the order (ADR-006). Null only on orders created before payments existed.',
+            },
             itemsCost: { type: 'integer', description: 'Sum of all item costs in cents' },
             infrastructureFee: { type: 'integer', description: 'Flat infrastructure fee in cents — transparent and published. Not a commission.' },
             totalCost: { type: 'integer', description: 'Total cost in cents = itemsCost + infrastructureFee. Complete price — no hidden fees.' },
@@ -182,6 +225,34 @@ const options = {
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },
+        },
+        CheckoutResume: {
+          type: 'object',
+          required: ['checkoutUrl'],
+          description: 'Live hosted-checkout URL for completing a PENDING online payment (POST /api/orders/{id}/pay). The amount behind the URL is exactly the original order total — never recomputed.',
+          properties: {
+            checkoutUrl: {
+              type: 'string',
+              description: 'Provider-hosted checkout URL to redirect the customer to',
+            },
+          },
+        },
+        PlacedOrder: {
+          description: 'Order as returned from placement. On a node with an online payment provider configured checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED.',
+          allOf: [
+            { $ref: '#/components/schemas/Order' },
+            {
+              type: 'object',
+              required: ['checkoutUrl'],
+              properties: {
+                checkoutUrl: {
+                  type: 'string',
+                  nullable: true,
+                  description: "Provider-hosted checkout URL to redirect the customer to, or null in offline-settlement mode",
+                },
+              },
+            },
+          ],
         },
         CreateOrderInput: {
           type: 'object',
@@ -207,6 +278,54 @@ const options = {
             deliveredAt: { type: 'string', format: 'date-time', nullable: true },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        MenuCategories: {
+          type: 'object',
+          required: ['categories'],
+          properties: {
+            categories: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Distinct categories of available menu items across active restaurants, sorted alphabetically',
+            },
+          },
+        },
+        Review: {
+          type: 'object',
+          required: ['id', 'orderId', 'restaurantId', 'authorId', 'rating', 'body', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            orderId: { type: 'string', description: 'The delivered order this review belongs to — one review per order' },
+            restaurantId: { type: 'string' },
+            authorId: { type: 'string' },
+            author: {
+              type: 'object',
+              required: ['name'],
+              properties: { name: { type: 'string' } },
+              description: 'The reviewing customer',
+            },
+            rating: { type: 'integer', minimum: 1, maximum: 5, description: 'Star rating from 1 to 5' },
+            body: { type: 'string', description: 'Optional free-text feedback — empty string when the customer left none' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CreateReviewInput: {
+          type: 'object',
+          required: ['rating'],
+          properties: {
+            rating: { type: 'integer', minimum: 1, maximum: 5, description: 'Star rating from 1 to 5' },
+            body: { type: 'string', maxLength: 2000, description: 'Optional free-text feedback' },
+          },
+        },
+        PaginatedReviews: {
+          type: 'object',
+          required: ['reviews', 'total', 'page', 'limit'],
+          properties: {
+            reviews: { type: 'array', items: { $ref: '#/components/schemas/Review' } },
+            total: { type: 'integer' },
+            page: { type: 'integer' },
+            limit: { type: 'integer' },
           },
         },
         PaginatedRestaurants: {
@@ -244,8 +363,10 @@ const options = {
       { name: 'restaurants', description: 'Restaurant discovery' },
       { name: 'menu', description: 'Menu item browsing' },
       { name: 'orders', description: 'Order placement and tracking' },
+      { name: 'reviews', description: 'Verified-order restaurant reviews and ratings' },
       { name: 'courier', description: 'Courier delivery operations' },
       { name: 'restaurant-owner', description: 'Restaurant owner management operations' },
+      { name: 'webhooks', description: 'Provider webhook receivers — called by external services, not SDK consumers' },
     ],
   },
   // Using glob pattern — swagger-jsdoc resolves from cwd (app root).

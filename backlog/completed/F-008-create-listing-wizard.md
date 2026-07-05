@@ -1,4 +1,4 @@
-# F-008 — Create listing wizard (touristical-renting)
+# F-008 — Create listing wizard (stay)
 
 ## Summary
 
@@ -51,7 +51,7 @@ Planned — not yet implemented.
 ## Completed
 
 **Completed:** 2026-04-12
-**PR:** feature/touristical-renting-bootstrap (pending)
+**PR:** feature/stay-bootstrap (pending)
 **Commit:** (see branch HEAD)
 **Audit:** pnpm type-check and lint pass
 **Notes:** Full 6-step wizard at /host/listings/new. CreateListingWizard Client Component manages currentStep and draft state. WizardProgress uses accessible ol with aria-current="step" and ✓ for completed steps. PropertyTypeStep uses visually-hidden radio inputs with styled card labels. PricingStep label explicitly states total price. ReviewStep shows read-only draft summary before server action submit. All DS gaps flagged with GAP comments.

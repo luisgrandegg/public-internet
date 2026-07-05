@@ -77,21 +77,54 @@ export async function forgotPassword(
   }
 
   // Always return ok to prevent user enumeration — the email is sent asynchronously.
-  // better-auth spells the endpoint "forget-password".
+  // Call the better-auth server API directly (the /forget-password endpoint 404s
+  // in better-auth 1.6); a relative redirectTo passes trusted-origin validation.
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth/forget-password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...Object.fromEntries(await headers()),
-      },
-      body: JSON.stringify({
-        email,
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
-      }),
+    await auth.api.requestPasswordReset({
+      body: { email, redirectTo: '/auth/reset-password' },
     })
   } catch {
     // Intentionally swallow errors — do not reveal whether the email exists
   }
   return { ok: true }
+}
+
+export async function resetPassword(
+  _prev: AuthResult | null,
+  formData: FormData,
+): Promise<AuthResult> {
+  const token = String(formData.get('token') ?? '')
+  const newPassword = String(formData.get('newPassword') ?? '')
+  const confirmPassword = String(formData.get('confirmPassword') ?? '')
+
+  const fieldErrors: Record<string, string> = {}
+  if (!newPassword || newPassword.length < 8) {
+    fieldErrors.newPassword = 'Password must be at least 8 characters'
+  }
+  if (newPassword !== confirmPassword) {
+    fieldErrors.confirmPassword = 'Passwords do not match'
+  }
+  if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors }
+
+  if (!token) {
+    return {
+      ok: false,
+      fieldErrors: {},
+      globalError: 'This reset link is invalid or has expired. Please request a new one.',
+    }
+  }
+
+  try {
+    await auth.api.resetPassword({
+      body: { newPassword, token },
+      headers: await headers(),
+    })
+    return { ok: true }
+  } catch {
+    return {
+      ok: false,
+      fieldErrors: {},
+      globalError: 'This reset link is invalid or has expired. Please request a new one.',
+    }
+  }
 }

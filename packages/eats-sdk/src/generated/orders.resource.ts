@@ -1,6 +1,6 @@
 // GENERATED — do not edit manually. Run: pnpm --filter @public-internet/eats-sdk generate
 import type { ApiClient } from '../client.js'
-import type { Order, CreateOrderInput } from './types.js'
+import type { Order, PlacedOrder, CreateOrderInput } from './types.js'
 
 export class OrdersResource {
   constructor(private readonly client: ApiClient) {}
@@ -17,7 +17,7 @@ export class OrdersResource {
    * Place an order
    * Requires authentication.
    */
-  create(body: CreateOrderInput): Promise<Order> {
+  create(body: CreateOrderInput): Promise<PlacedOrder> {
     return this.client.post('/api/orders', body)
   }
 

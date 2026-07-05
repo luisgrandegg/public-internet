@@ -1,0 +1,52 @@
+{
+  "name": "@public-internet/stay",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
+    "generate:spec": "node scripts/generate-spec.mjs",
+    "generate:sdk": "pnpm --filter @public-internet/stay-sdk generate",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.7.0",
+    "@prisma/client": "^7.7.0",
+    "@public-internet/design-system": "workspace:*",
+    "@public-internet/node-auth": "workspace:*",
+    "@public-internet/payments": "workspace:*",
+    "@public-internet/stay-sdk": "workspace:^",
+    "leaflet": "^1.9.4",
+    "next": "^15.1.7",
+    "pg": "^8.20.0",
+    "prisma": "^7.7.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-leaflet": "^4.2.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/leaflet": "^1.9.14",
+    "@types/node": "^22.10.5",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.1.7",
+    "swagger-jsdoc": "^6.2.8",
+    "typescript": "^5.7.2"
+  }
+}

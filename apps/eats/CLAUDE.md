@@ -55,19 +55,22 @@ The app uses the Next.js App Router under `src/app/`. Plan routes here before ad
 | Route | Page | Status |
 |---|---|---|
 | `/` | Home — value proposition, search entry point, restaurant/courier CTA | Scaffolded |
-| `/restaurants` | Restaurant browse — list by city/category | Planned |
-| `/restaurants/[id]` | Restaurant detail — menu, hours, location | Planned |
-| `/restaurants/[id]/order` | Order flow — build cart, see complete cost before confirming | Planned |
-| `/orders` | Customer order history | Planned |
-| `/orders/[id]` | Order detail — status, items, delivery tracking | Planned |
+| `/restaurants` | Restaurant browse — keyword search, city + category filter | Built |
+| `/restaurants/[id]` | Restaurant detail — menu, hours, location, rating, recent reviews | Built |
+| `/restaurants/[id]/order` | Order flow — build cart, see complete cost before confirming | Built |
+| `/orders` | Customer order history | Built |
+| `/orders/[id]` | Order detail — live status timeline (polling), items, delivery tracking, review form once DELIVERED | Built |
 | `/courier` | Courier dashboard — available deliveries, history, pay breakdown | Planned |
 | `/courier/register` | Courier registration | Planned |
 | `/restaurant` | Restaurant owner dashboard — orders, menu management | Planned |
+| `/restaurant/onboarding` | Restaurant owner onboarding — commission-free model explanation + explicit opt-in | Built |
 | `/restaurant/register` | Restaurant registration | Planned |
 | `/restaurant/[id]/menu` | Menu item management | Planned |
+| `/restaurant/[id]/settings` | Restaurant settings — edit details, toggle active | Built |
 | `/profile` | User profile and settings | Planned |
 | `/auth/signin` | Sign in | Planned |
 | `/auth/signup` | Sign up | Planned |
+| `/auth/reset-password` | Set a new password from an emailed reset link | Built |
 
 Before adding a new route, add it to this table with its status.
 
@@ -81,20 +84,31 @@ Before adding a new route, add it to this table with its status.
 | `POST` | `/api/auth/sign-in` | No | Authenticate; sets session cookie |
 | `POST` | `/api/auth/sign-out` | Yes | Destroy session |
 | `POST` | `/api/auth/forgot-password` | No | Send reset email (always 204 to prevent enumeration) |
-| `GET` | `/api/restaurants` | No | List restaurants; supports `?city`, `?page` |
-| `GET` | `/api/restaurants/:id` | No | Get restaurant detail |
+| `GET` | `/api/restaurants` | No | List restaurants; supports `?city`, `?q` (name/description keyword), `?category` (available menu item category), `?page` |
+| `GET` | `/api/restaurants/categories` | No | List distinct categories of available menu items (feeds the category filter) |
+| `GET` | `/api/restaurants/:id` | No | Get restaurant detail (includes `avgRating` + `reviewCount`) |
 | `GET` | `/api/restaurants/:id/menu` | No | List menu items for a restaurant |
+| `GET` | `/api/restaurants/:id/reviews` | No | List reviews for a restaurant (paginated, recent first, with author name) |
 | `POST` | `/api/orders` | Yes (Customer) | Place an order |
 | `GET` | `/api/orders/:id` | Yes (owner) | Get order detail |
+| `POST` | `/api/orders/:id/review` | Yes (order owner) | Review a DELIVERED order's restaurant — one review per order, rating 1–5, 409 if already reviewed |
+| `POST` | `/api/orders/:id/pay` | Yes (order owner) | Resume a PENDING online payment — returns a live hosted-checkout URL (reuses an open session, regenerates an expired one); 409 `PAYMENT_ALREADY_SETTLING` when the checkout already completed and the webhook is confirming |
 | `GET` | `/api/courier/deliveries` | Yes (Courier) | List available and assigned deliveries |
 | `PATCH` | `/api/courier/deliveries/:id` | Yes (Courier) | Accept delivery or update delivery status |
 | `GET` | `/api/restaurant/orders` | Yes (Restaurant Owner) | List orders for owner's restaurant(s) |
-| `PATCH` | `/api/restaurant/orders/:id` | Yes (Restaurant Owner) | Update order status (ACCEPTED, PREPARING, READY_FOR_PICKUP) |
+| `PATCH` | `/api/restaurant/orders/:id` | Yes (Restaurant Owner) | Update order status (ACCEPTED, PREPARING, READY_FOR_PICKUP); 409 `ORDER_UNPAID` while the online payment has not SUCCEEDED (ADR-006 §4) |
 | `POST` | `/api/restaurant/restaurants` | Yes (Restaurant Owner) | Register a new restaurant |
 | `PATCH` | `/api/restaurant/restaurants/:id` | Yes (Restaurant Owner) | Update restaurant details |
 | `POST` | `/api/restaurant/restaurants/:id/menu` | Yes (Restaurant Owner) | Add a menu item |
 | `PATCH` | `/api/restaurant/menu/:id` | Yes (Restaurant Owner) | Update a menu item |
 | `DELETE` | `/api/restaurant/menu/:id` | Yes (Restaurant Owner) | Remove a menu item |
+| `POST` | `/api/webhooks/payments` | No session — authenticated by the active PaymentProvider | Generic payment webhook receiver (ADR-006 amendment): the provider's `parseWebhookEvent()` authenticates the request (400 on failure) and maps events to `payment.succeeded` → SUCCEEDED / `payment.canceled` → CANCELED. 503 `PAYMENTS_NOT_CONFIGURED` when no provider is configured. |
+
+---
+
+## Auth (ADR-007)
+
+Auth is configured via the shared `@public-internet/node-auth` package — apps import better-auth only through it. `src/lib/auth.ts` is a single `createNodeAuth({ db, emailProvider, additionalFields })` call (this app adds `isRestaurantOwner` and `isCourier`) plus the `Session`/`User` type re-exports; `src/lib/auth-client.ts` wraps `createNodeAuthClient()`. The better-auth Prisma model blocks (User/Session/Account/Verification) stay in this app's schema. "Sign in with Google" is optional per node: enabled only when `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` are set (gated in the UI via `isGoogleAuthEnabled()`); a node without them runs email + password only — never required (ADR-004's no-OAuth-dependency holds).
 
 ---
 
@@ -129,6 +143,9 @@ If a UI requirement cannot be met with existing design system components, **flag
 - `OrderItem.unitPrice` is snapshotted at order creation time — it must not be recalculated from the current `MenuItem.price` after the order is placed.
 - Courier pay breakdown (`basePay` + `distancePay`) must be visible to the courier **before** they accept a delivery.
 - No surge pricing under any circumstances. `infrastructureFee` is a fixed value, not dynamically adjusted by demand.
+- **Payments (ADR-006 + amendment; ADR-007):** the payment layer is a pluggable `PaymentProvider` interface, not a Stripe module — mirroring the `EmailProvider` pattern in `src/lib/email/`. The interface, the `StripePaymentProvider` implementation, env-driven selection (`selectPaymentProvider()`), and the webhook route factory (`createPaymentWebhookHandler()`) live in the shared `@public-internet/payments` package (ADR-007); this app's `src/lib/payments/index.ts` is a thin module that re-exports the package types and sets `paymentProvider = selectPaymentProvider()`. The app keeps its `Payment` schema block and the webhook lifecycle callbacks. Every Order has a 1:1 `Payment` record created in the same transaction — `provider` (the active `PaymentProvider.id`, e.g. `'stripe'`, or `'offline'`), `status` (`PENDING`/`SUCCEEDED`/`FAILED`/`CANCELED`), `amount` (cents, exactly the pre-confirmation `totalCost`, never recomputed), `currency` (default `eur`), plus the provider-neutral `providerSessionId`/`providerPaymentReference`/`providerCheckoutUrl` columns for online payments. Mode is configuration: `STRIPE_SECRET_KEY` set → `paymentProvider` is the Stripe implementation and confirmation redirects to its hosted checkout (`checkoutUrl` in the `POST /api/orders` response); no provider configured → `paymentProvider` is `null` and the node runs offline settlement (pay on delivery), payment created SUCCEEDED. Webhooks arrive at the generic `POST /api/webhooks/payments` (built with the package's `createPaymentWebhookHandler()`), authenticated and translated by the active provider's `parseWebhookEvent()`, with the DB effects owned by this app's callbacks. Only `@public-internet/payments` may import a PSP SDK.
+- **Unpaid online orders are inert (ADR-006 §4):** an order whose online (non-`offline`) payment is not `SUCCEEDED` is excluded from restaurant incoming-order lists and courier available deliveries (see `EXCLUDE_UNPAID_ONLINE_ORDERS` in `src/lib/services/orders.ts`). The customer always sees their own order with its payment state and a "Complete payment" path while PENDING.
+- Reviews are honest feedback from verified customers: only the customer whose order was `DELIVERED` can review it, once per order. Never incentivise reviews (no discounts or prompts tied to leaving one), and never give restaurants a way to hide, remove, or pay away reviews. Ratings are informational only — restaurant list ordering stays neutral (alphabetical), never sorted by rating or paid placement by default.
 
 ---
 

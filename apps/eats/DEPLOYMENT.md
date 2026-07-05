@@ -61,6 +61,8 @@ cp apps/eats/.env.example apps/eats/.env
 | `EATS_COURIER_BASE_PAY_CENTS` | ⬜ | Courier base pay per delivery, in cents. Default `400` |
 | `EATS_COURIER_DISTANCE_PAY_CENTS` | ⬜ | Courier distance pay per delivery, in cents. Default `200` |
 | `NODE_ENV` | ✅ | Set to `production` |
+| `GOOGLE_CLIENT_ID` | ⬜ | Enables "Sign in with Google" (see [Sign in with Google (optional)](#sign-in-with-google-optional)). Unset → email + password only |
+| `GOOGLE_CLIENT_SECRET` | ⬜ | Required together with `GOOGLE_CLIENT_ID` |
 
 > ⚠️ **`NEXT_PUBLIC_APP_URL` is inlined at _build_ time.** Set it to the final public URL **before** you build — changing it later requires a rebuild, not just a restart.
 
@@ -147,6 +149,71 @@ eats.yourcity.org {
 
 ---
 
+## Sign in with Google (optional)
+
+Auth is configured via the shared `@public-internet/node-auth` package (ADR-007). Email + password is always enabled; Google is a **per-node** extra strategy — the node is fully functional without it, and account data stays in this node's own database (the standard better-auth `Account` table).
+
+1. In the node operator's own **Google Cloud Console**, create an OAuth client: **APIs & Services → Credentials → Create credentials → OAuth client ID**, application type **Web application**.
+2. Add the authorized redirect URIs:
+   - `https://<your-domain>/api/auth/callback/google`
+   - `http://localhost:3001/api/auth/callback/google` (local dev)
+3. Set both env vars on the node and redeploy (restart, or redeploy on Vercel):
+
+   ```bash
+   GOOGLE_CLIENT_ID="<oauth client id>.apps.googleusercontent.com"
+   GOOGLE_CLIENT_SECRET="<oauth client secret>"
+   ```
+
+The sign-in and sign-up pages show a "Continue with Google" button only when both variables are set. Removing them turns the button off again — existing Google-linked accounts keep working via password reset if they also set a password.
+
+---
+
+## Managed deployment: Vercel + Supabase
+
+The self-hosted path above keeps the node fully operator-owned. If you accept
+managed infrastructure, the repo is pre-configured for **Vercel** (hosting)
+plus **Supabase** (PostgreSQL): `apps/eats/vercel.json` runs migrations and
+builds in the right order on every deploy.
+
+### 1. Supabase
+
+1. Create a project (pick your region). In **Project Settings → Database**, copy two connection strings:
+   - **Transaction pooler** (port `6543`) → this becomes `DATABASE_URL` (what the app uses at runtime; serverless functions need the pooler).
+   - **Session / direct** (port `5432`) → this becomes `DIRECT_URL` (what Prisma migrations use; poolers cannot run DDL).
+2. Nothing else to configure — the app uses better-auth and Prisma directly; Supabase's own Auth/Storage/RLS are not used.
+
+### 2. Vercel
+
+1. **Add New Project → Import** this repository.
+2. Set **Root Directory** to `apps/eats` (keep "Include source files outside of the Root Directory" enabled — the app builds the shared design-system package).
+3. Vercel picks up `vercel.json`: install runs `pnpm install --frozen-lockfile`, and the build runs `design-system build → prisma migrate deploy → next build`. Migrations run against `DIRECT_URL` automatically on every deploy.
+4. Set the environment variables (Production, and Preview if you use it):
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | Supabase **transaction pooler** string (port 6543) |
+| `DIRECT_URL` | Supabase **session/direct** string (port 5432) |
+| `BETTER_AUTH_SECRET` | `openssl rand -base64 32` |
+| `NEXT_PUBLIC_APP_URL` | The production URL, e.g. `https://eats-yourcity.vercel.app` (update after the first deploy or when adding a custom domain) |
+| `EATS_INFRASTRUCTURE_FEE_CENTS` | Your node's published flat fee, e.g. `99` |
+| `EATS_COURIER_BASE_PAY_CENTS` | e.g. `400` |
+| `EATS_COURIER_DISTANCE_PAY_CENTS` | e.g. `200` |
+| `STRIPE_SECRET_KEY` | *(optional)* enables online payments |
+| `STRIPE_WEBHOOK_SECRET` | *(required with the key)* from a Stripe webhook endpoint pointed at `https://<your-domain>/api/webhooks/payments` |
+| `GOOGLE_CLIENT_ID` | *(optional)* enables "Sign in with Google" — see [Sign in with Google (optional)](#sign-in-with-google-optional) |
+| `GOOGLE_CLIENT_SECRET` | *(optional, required with the client id)* |
+
+5. Deploy. First deploy applies all migrations to the empty Supabase database.
+
+### Vercel/Supabase caveats
+
+- `NEXT_PUBLIC_APP_URL` must exactly match the domain users hit — better-auth uses it as the trusted origin and cookie base, and server actions self-fetch through it. After attaching a custom domain, update the variable and redeploy.
+- In Stripe mode, create the webhook endpoint in the Stripe dashboard (events: `checkout.session.completed`, `checkout.session.expired`) *after* you know the final domain, then set `STRIPE_WEBHOOK_SECRET`.
+- Supabase pauses free-tier projects after inactivity; the app will 500 until the DB resumes.
+- Constitution note: managed hosting trades some operator ownership for convenience. The node remains portable — `pg_dump` from Supabase restores into any PostgreSQL 16, and nothing in the app depends on Vercel- or Supabase-specific APIs.
+
+---
+
 ## Upgrades
 
 ```bash
@@ -157,6 +224,21 @@ NEXT_PUBLIC_APP_URL="https://eats.yourcity.org" \
 pnpm --filter @public-internet/eats db:deploy   # if migrations changed
 # restart the service
 ```
+
+---
+
+## Plugging in your own payment gateway
+
+Online payments are optional (ADR-006): with no provider configured the node runs **offline settlement** — orders are recorded as settled directly (pay on delivery), a first-class mode for a commission-free node. Stripe support is built in: set `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` (see `.env.example`) and point a Stripe webhook at `POST /api/webhooks/payments`.
+
+The payment layer is a pluggable `PaymentProvider` interface (ADR-006 amendment) that lives — together with the Stripe implementation and provider selection — in the shared `@public-internet/payments` workspace package (ADR-007), so a node is never locked to Stripe — a regional PSP or a co-op banking partner works the same way:
+
+1. **Implement the interface** in `src/lib/payments/<yourprovider>.ts` — implement `PaymentProvider` from `@public-internet/payments`: a stable `id` (stored in `Payment.provider`), `createCheckoutSession()` (returns the hosted checkout URL the customer is redirected to; the session total must be exactly the pre-confirmation total — nothing may ever be added), and `parseWebhookEvent()` (MUST authenticate the raw webhook request — e.g. verify its signature — and throw on failure, then map the PSP's events to `payment.succeeded` / `payment.canceled` / `ignored`). This file is the only app code allowed to import your PSP's SDK.
+2. **Select it** in `src/lib/payments/index.ts` — set `paymentProvider` to your implementation when its configuration is present, falling back to the package's `selectPaymentProvider()`.
+3. **Point your PSP's webhooks** at `POST /api/webhooks/payments` — the route is provider-agnostic and delegates authentication and event translation to the active provider. It answers 503 when no provider is configured.
+4. **Define your own env vars** for the gateway's credentials and document them in `.env.example`. Never commit real keys.
+
+Nothing outside `src/lib/payments/` changes: services, routes, and UI depend only on the interface and the provider-neutral `Payment` columns (`providerSessionId`, `providerPaymentReference`, `providerCheckoutUrl`). Apart from custom provider implementations selected here, only `@public-internet/payments` may import a PSP SDK.
 
 ---
 

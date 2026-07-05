@@ -132,6 +132,15 @@
           "ownerId": {
             "type": "string"
           },
+          "avgRating": {
+            "type": "number",
+            "nullable": true,
+            "description": "Average review rating (1–5) rounded to one decimal, or null when the restaurant has no reviews"
+          },
+          "reviewCount": {
+            "type": "integer",
+            "description": "Number of verified-order reviews for this restaurant"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -218,11 +227,15 @@
             "type": "number"
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "description": "Send null or an empty string to clear the stored phone number"
           },
           "imageUrl": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "nullable": true,
+            "description": "Send null or an empty string to clear the stored image URL"
           },
           "isActive": {
             "type": "boolean"
@@ -345,6 +358,76 @@
           }
         }
       },
+      "PaymentStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "SUCCEEDED",
+          "FAILED",
+          "CANCELED"
+        ],
+        "description": "Lifecycle status of a payment (ADR-006). Only the provider-authenticated webhook (POST /api/webhooks/payments) moves an online payment to SUCCEEDED."
+      },
+      "Payment": {
+        "type": "object",
+        "required": [
+          "id",
+          "orderId",
+          "provider",
+          "status",
+          "amount",
+          "currency",
+          "createdAt",
+          "updatedAt"
+        ],
+        "description": "One payment per order (ADR-006). provider \"offline\" documents direct settlement (pay on delivery) — a first-class commission-free mode, not a stub.",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "description": "PaymentProvider id that created this payment (e.g. \"stripe\"), or \"offline\" for direct settlement"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "amount": {
+            "type": "integer",
+            "description": "Amount in cents — exactly the pre-confirmation totalCost. Never recomputed after creation."
+          },
+          "currency": {
+            "type": "string",
+            "description": "ISO currency code, default \"eur\""
+          },
+          "providerSessionId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Provider checkout session id — set only for online payments"
+          },
+          "providerPaymentReference": {
+            "type": "string",
+            "nullable": true,
+            "description": "Provider's durable payment reference, set by the payment.succeeded webhook event"
+          },
+          "providerCheckoutUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Hosted checkout URL for completing a PENDING online payment"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "OrderItem": {
         "type": "object",
         "required": [
@@ -363,6 +446,11 @@
           },
           "menuItemId": {
             "type": "string"
+          },
+          "nameSnapshot": {
+            "type": "string",
+            "nullable": true,
+            "description": "Menu item name snapshotted at order time"
           },
           "quantity": {
             "type": "integer"
@@ -410,6 +498,24 @@
               "$ref": "#/components/schemas/OrderItem"
             }
           },
+          "delivery": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Delivery"
+              }
+            ],
+            "nullable": true,
+            "description": "Delivery record for the order, when one exists"
+          },
+          "payment": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Payment"
+              }
+            ],
+            "nullable": true,
+            "description": "Payment record for the order (ADR-006). Null only on orders created before payments existed."
+          },
           "itemsCost": {
             "type": "integer",
             "description": "Sum of all item costs in cents"
@@ -438,6 +544,40 @@
             "format": "date-time"
           }
         }
+      },
+      "CheckoutResume": {
+        "type": "object",
+        "required": [
+          "checkoutUrl"
+        ],
+        "description": "Live hosted-checkout URL for completing a PENDING online payment (POST /api/orders/{id}/pay). The amount behind the URL is exactly the original order total — never recomputed.",
+        "properties": {
+          "checkoutUrl": {
+            "type": "string",
+            "description": "Provider-hosted checkout URL to redirect the customer to"
+          }
+        }
+      },
+      "PlacedOrder": {
+        "description": "Order as returned from placement. On a node with an online payment provider configured checkoutUrl points to the hosted checkout page; on an offline node it is null and the payment is already SUCCEEDED.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Order"
+          },
+          {
+            "type": "object",
+            "required": [
+              "checkoutUrl"
+            ],
+            "properties": {
+              "checkoutUrl": {
+                "type": "string",
+                "nullable": true,
+                "description": "Provider-hosted checkout URL to redirect the customer to, or null in offline-settlement mode"
+              }
+            }
+          }
+        ]
       },
       "CreateOrderInput": {
         "type": "object",
@@ -518,6 +658,119 @@
           }
         }
       },
+      "MenuCategories": {
+        "type": "object",
+        "required": [
+          "categories"
+        ],
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Distinct categories of available menu items across active restaurants, sorted alphabetically"
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "required": [
+          "id",
+          "orderId",
+          "restaurantId",
+          "authorId",
+          "rating",
+          "body",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string",
+            "description": "The delivered order this review belongs to — one review per order"
+          },
+          "restaurantId": {
+            "type": "string"
+          },
+          "authorId": {
+            "type": "string"
+          },
+          "author": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "description": "The reviewing customer"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Star rating from 1 to 5"
+          },
+          "body": {
+            "type": "string",
+            "description": "Optional free-text feedback — empty string when the customer left none"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateReviewInput": {
+        "type": "object",
+        "required": [
+          "rating"
+        ],
+        "properties": {
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Star rating from 1 to 5"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Optional free-text feedback"
+          }
+        }
+      },
+      "PaginatedReviews": {
+        "type": "object",
+        "required": [
+          "reviews",
+          "total",
+          "page",
+          "limit"
+        ],
+        "properties": {
+          "reviews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Review"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
       "PaginatedRestaurants": {
         "type": "object",
         "required": [
@@ -591,12 +844,20 @@
       "description": "Order placement and tracking"
     },
     {
+      "name": "reviews",
+      "description": "Verified-order restaurant reviews and ratings"
+    },
+    {
       "name": "courier",
       "description": "Courier delivery operations"
     },
     {
       "name": "restaurant-owner",
       "description": "Restaurant owner management operations"
+    },
+    {
+      "name": "webhooks",
+      "description": "Provider webhook receivers — called by external services, not SDK consumers"
     }
   ],
   "paths": {
@@ -760,6 +1021,210 @@
         }
       }
     },
+    "/api/orders/{id}/pay": {
+      "post": {
+        "operationId": "orders_pay",
+        "summary": "Resume the online payment for an order (order owner only)",
+        "description": "Returns a live hosted-checkout URL for an order whose online payment is still PENDING (ADR-006 §4 — the \"Complete payment\" path). When the provider reports the stored checkout session as still open, its URL is reused; an expired or missing session is replaced with a fresh one carrying exactly the original line items and total (never recomputed). A session the provider reports as complete is rejected with 409 PAYMENT_ALREADY_SETTLING — the webhook will confirm the payment, and the customer is never offered a way to pay twice. Orders settled offline, or whose payment is not PENDING, are rejected with 409 PAYMENT_NOT_RESUMABLE.\n",
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live hosted-checkout URL for completing the payment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CheckoutResume"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the customer who placed this order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No pending online payment to resume (code PAYMENT_NOT_RESUMABLE), or the checkout already completed and is being confirmed by webhook (code PAYMENT_ALREADY_SETTLING)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The payment provider could not create a checkout session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No payment provider is configured on this node (code PAYMENTS_NOT_CONFIGURED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/review": {
+      "post": {
+        "operationId": "orders_review_create",
+        "summary": "Review a delivered order's restaurant (order owner only, once per order)",
+        "description": "Only the customer who placed the order can review it, only after it was DELIVERED, and only once. Reviews are honest feedback — never incentivised, never removable by the restaurant.",
+        "tags": [
+          "reviews"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Review"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the order owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Order already reviewed, or not yet delivered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error (rating must be an integer 1–5)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/orders/{id}": {
       "get": {
         "operationId": "orders_get",
@@ -855,14 +1320,14 @@
         },
         "responses": {
           "201": {
-            "description": "Order placed",
+            "description": "Order placed. On a node with an online payment provider configured the payment is PENDING and `checkoutUrl` points to the provider's hosted checkout page (the client must redirect there); on an offline node the payment is created as provider `offline` / SUCCEEDED and `checkoutUrl` is null.\n",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/Order"
+                      "$ref": "#/components/schemas/PlacedOrder"
                     }
                   }
                 }
@@ -881,6 +1346,16 @@
           },
           "422": {
             "description": "Validation failed or menu item conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The payment provider could not create a checkout session",
             "content": {
               "application/json": {
                 "schema": {
@@ -1044,7 +1519,7 @@
       "patch": {
         "operationId": "restaurantOrders_update",
         "summary": "Update an order status (owner workflow only)",
-        "description": "Restaurant owners can advance orders to ACCEPTED, PREPARING, or READY_FOR_PICKUP. IN_DELIVERY and DELIVERED are driven by the courier workflow.",
+        "description": "Restaurant owners can advance orders to ACCEPTED, PREPARING, or READY_FOR_PICKUP. IN_DELIVERY and DELIVERED are driven by the courier workflow. An order whose online payment has not SUCCEEDED is inert (ADR-006 §4) and cannot be advanced — the request is rejected with 409 ORDER_UNPAID.\n",
         "tags": [
           "restaurant-owner"
         ],
@@ -1119,6 +1594,16 @@
           },
           "404": {
             "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The order's online payment has not completed (code ORDER_UNPAID) — the order is inert per ADR-006 §4",
             "content": {
               "application/json": {
                 "schema": {
@@ -1294,6 +1779,97 @@
         }
       }
     },
+    "/api/restaurant/restaurants/{id}": {
+      "patch": {
+        "operationId": "restaurantRestaurants_update",
+        "summary": "Update restaurant details",
+        "tags": [
+          "restaurant-owner"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRestaurantInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Restaurant updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Restaurant"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner of this restaurant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Restaurant not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/restaurant/restaurants": {
       "post": {
         "operationId": "restaurantRestaurants_create",
@@ -1404,6 +1980,82 @@
         }
       }
     },
+    "/api/restaurants/{id}/reviews": {
+      "get": {
+        "operationId": "restaurants_reviews_list",
+        "summary": "List reviews for a restaurant (public, recent first)",
+        "description": "Paginated, recent-first list of verified-order reviews with the author's name. Reviews cannot be hidden or reordered by the restaurant.",
+        "tags": [
+          "reviews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of reviews, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PaginatedReviews"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Restaurant not found or inactive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid pagination parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/restaurants/{id}": {
       "get": {
         "operationId": "restaurants_get",
@@ -1450,6 +2102,33 @@
         }
       }
     },
+    "/api/restaurants/categories": {
+      "get": {
+        "operationId": "restaurants_categories_list",
+        "summary": "List distinct menu categories with available items",
+        "description": "Distinct categories of available menu items across active restaurants, sorted alphabetically. Feeds the category filter on the restaurant browse page. Neutral ordering — no promoted categories.",
+        "tags": [
+          "restaurants"
+        ],
+        "responses": {
+          "200": {
+            "description": "Alphabetical list of distinct menu categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MenuCategories"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/restaurants": {
       "get": {
         "operationId": "restaurants_list",
@@ -1465,6 +2144,24 @@
               "type": "string"
             },
             "description": "Exact-match filter by city (case-insensitive)"
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Keyword search — case-insensitive substring match against restaurant name or description"
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "description": "Only restaurants with at least one available menu item in this category (case-insensitive)"
           },
           {
             "in": "query",
@@ -1502,6 +2199,69 @@
           },
           "422": {
             "description": "Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks/payments": {
+      "post": {
+        "operationId": "webhooks_payments",
+        "summary": "Payment provider webhook receiver (provider-authenticated, no session auth)",
+        "description": "Webhook endpoint called by the node's configured payment provider — not by SDK consumers. Requests are authenticated by the active PaymentProvider implementation (e.g. Stripe signature verification on the raw body); session cookies are ignored. The provider translates its events to a generic lifecycle: `payment.succeeded` marks the payment SUCCEEDED and stores the provider's durable payment reference; `payment.canceled` marks a still-PENDING payment CANCELED, releasing the abandoned checkout per ADR-006 §4. Events that do not affect payment state are acknowledged without action.\n",
+        "tags": [
+          "webhooks"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "description": "Raw provider event payload — must not be re-serialised before verification"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Event authenticated and processed (or acknowledged as not payment-relevant)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "received": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Webhook authentication failed (bad or missing signature)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No payment provider is configured on this node — offline settlement mode (code PAYMENTS_NOT_CONFIGURED)",
             "content": {
               "application/json": {
                 "schema": {

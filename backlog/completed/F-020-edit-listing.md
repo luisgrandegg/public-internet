@@ -1,4 +1,4 @@
-# F-020 — Edit listing (touristical-renting)
+# F-020 — Edit listing (stay)
 
 ## Summary
 
