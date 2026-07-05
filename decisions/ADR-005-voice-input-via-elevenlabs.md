@@ -21,7 +21,7 @@ Add **`apps/voice-bridge`** — a Next.js companion app that captures voice inpu
 1. **Developer-tool scope only.** `voice-bridge` is part of the *toolchain* used to build Public Internet platforms. It is not part of any user-facing platform (Stay, Eats, Agenda) and is not subject to the federation or public-entity-governance constraints that bind those platforms.
 2. **Spec-file handoff.** A voice session writes a single file under `.voice-changes/<pr>-<timestamp>.md` containing the structured intent. Claude Code reads it via `/voice-changes`. Posting to a PR comment is a documented future option; spec files are sufficient for the demo and keep the loop offline-after-capture.
 3. **Provider lock-in is contained.** ElevenLabs integration lives behind a single client module (`src/lib/voice/elevenlabs-client.ts`). Swapping to a self-hosted Whisper + local TTS stack is a documented escape hatch (see *Consequences* below).
-4. **No platform data.** `voice-bridge` does not read or write the `touristical-renting` Postgres database. Its only persisted artefact is the spec file under `.voice-changes/`, which is gitignored by default.
+4. **No platform data.** `voice-bridge` does not read or write the `stay` Postgres database. Its only persisted artefact is the spec file under `.voice-changes/`, which is gitignored by default.
 
 ## Constitution alignment
 

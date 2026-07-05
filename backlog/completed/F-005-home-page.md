@@ -1,4 +1,4 @@
-# F-005 — Home page (touristical-renting)
+# F-005 — Home page (stay)
 
 ## Summary
 
@@ -22,7 +22,7 @@ The entry point of the platform. Gives guests a clear starting point to search f
 
 - Uses only existing design system components: `Button`, `Input`, `Text`, `Card`, `Stack`, `Icon`
 - `ListingCard` component is also used here (shared with `/listings`)
-- Lives at `apps/touristical-renting/src/app/page.tsx`
+- Lives at `apps/stay/src/app/page.tsx`
 
 ## Status
 
@@ -33,7 +33,7 @@ Planned — not yet implemented.
 ## Completed
 
 **Completed:** 2026-04-12
-**PR:** feature/touristical-renting-bootstrap (pending)
+**PR:** feature/stay-bootstrap (pending)
 **Commit:** (see branch HEAD)
 **Audit:** pnpm type-check and lint pass
 **Notes:** Server Component home page with GET search form, 4 featured ListingCards from mock data, and 3-step How it works section using Card. No urgency copy. All image alt text provided by ListingCard component.

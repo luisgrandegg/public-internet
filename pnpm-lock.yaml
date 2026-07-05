@@ -85,7 +85,7 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
-  apps/touristical-renting:
+  apps/stay:
     dependencies:
       '@prisma/adapter-pg':
         specifier: ^7.7.0
@@ -102,9 +102,9 @@ importers:
       '@public-internet/payments':
         specifier: workspace:*
         version: link:../../packages/payments
-      '@public-internet/touristical-renting-sdk':
+      '@public-internet/stay-sdk':
         specifier: workspace:^
-        version: link:../../packages/touristical-renting-sdk
+        version: link:../../packages/stay-sdk
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -333,7 +333,7 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
-  packages/touristical-renting-sdk:
+  packages/stay-sdk:
     devDependencies:
       tsup:
         specifier: ^8.3.5

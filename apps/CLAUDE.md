@@ -6,7 +6,7 @@
 
 | App | Path | Description |
 |---|---|---|
-| `touristical-renting` | `apps/touristical-renting/` | Commission-free tourist rental platform (the Stay platform from CONSTITUTION.md) |
+| `stay` | `apps/stay/` | Commission-free tourist rental platform (the Stay platform from CONSTITUTION.md) |
 | `eats` | `apps/eats/` | Commission-free food delivery platform (the Eats platform from CONSTITUTION.md) |
 | `voice-bridge` | `apps/voice-bridge/` | Developer tool — voice-first PR-change capture. Not a Public Internet platform. See [ADR-005](../decisions/ADR-005-voice-input-via-elevenlabs.md). |
 
@@ -250,10 +250,10 @@ Each app has a corresponding SDK package at `packages/<app-name>-sdk/`. The SDK:
 
 ```typescript
 // Usage
-import { TouristicalRentingSDK, FetchApiClient } from '@public-internet/touristical-renting-sdk'
+import { StaySDK, FetchApiClient } from '@public-internet/stay-sdk'
 
 const client = new FetchApiClient('http://localhost:3000')
-const sdk = new TouristicalRentingSDK(client)
+const sdk = new StaySDK(client)
 
 const { listings } = await sdk.listings.list({ location: 'Barcelona' })
 const listing = await sdk.listings.get(id)
@@ -281,7 +281,7 @@ pnpm --filter <app>-sdk generate
 ### When to add a new app
 
 When adding a new app to the monorepo:
-1. Create `packages/<app-name>-sdk/` following the `touristical-renting-sdk` structure
+1. Create `packages/<app-name>-sdk/` following the `stay-sdk` structure
 2. Wire up `generate:spec` in the app's `package.json` and `generate` in the SDK's `package.json`
 3. Annotate every Route Handler on the first commit that introduces it — never leave annotations as TODO
 

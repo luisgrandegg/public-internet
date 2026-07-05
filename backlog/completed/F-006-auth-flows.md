@@ -1,4 +1,4 @@
-# F-006 — Authentication flows (touristical-renting)
+# F-006 — Authentication flows (stay)
 
 ## Summary
 
@@ -52,7 +52,7 @@ Planned — not yet implemented.
 ## Completed
 
 **Completed:** 2026-04-12
-**PR:** feature/touristical-renting-bootstrap (pending)
+**PR:** feature/stay-bootstrap (pending)
 **Commit:** (see branch HEAD)
 **Audit:** pnpm type-check and lint pass
 **Notes:** Three auth pages implemented using useActionState with Server Actions. Shared auth layout uses Card variant="elevated" at 400px max width. Host toggle checkbox is unchecked by default. Forgot password renders success state inline. GAP comment added for native checkbox pending DS Checkbox component.

@@ -10,7 +10,7 @@ Explore a project in this monorepo — its architecture, running state, and UI �
 /discover <project> [free-text query]
 ```
 
-- `<project>` — required. Name of the app or package to explore (e.g. `touristical-renting`, `design-system`).
+- `<project>` — required. Name of the app or package to explore (e.g. `stay`, `design-system`).
 - `[free-text query]` — optional. What to look for. If omitted, explore freely based on all available context.
 
 ---
@@ -27,7 +27,7 @@ If `$ARGUMENTS` is entirely empty, announce to the user:
 
 ```
 > **Input needed:** Which project do you want to explore?
-> Known projects: touristical-renting, design-system, web
+> Known projects: stay, design-system, web
 > Re-run with: /discover <project> [optional: what to look for]
 ```
 
@@ -41,10 +41,10 @@ Check whether the project exists. The known root paths are:
 
 | Handle | Path |
 |---|---|
-| `touristical-renting` | `apps/touristical-renting/` |
+| `stay` | `apps/stay/` |
 | `web` | `apps/web/` |
 | `design-system` | `packages/design-system/` |
-| `touristical-renting-sdk` | `packages/touristical-renting-sdk/` |
+| `stay-sdk` | `packages/stay-sdk/` |
 
 Use Glob to verify the directory exists (`<path>/package.json`).
 
@@ -52,7 +52,7 @@ If it does **not** exist, announce:
 
 ```
 > **Project not found:** "<PROJECT>" is not a recognised project in this monorepo.
-> Known projects: touristical-renting, design-system, web, touristical-renting-sdk
+> Known projects: stay, design-system, web, stay-sdk
 ```
 
 Then stop.

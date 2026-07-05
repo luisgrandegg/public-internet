@@ -14,7 +14,7 @@ export const AGENT_TOOLS = {
     description:
       'Read the contents of a file from the monorepo. Use this to ground a change in the actual code rather than guessing. Path is relative to the monorepo root.',
     input: {
-      path: 'string — relative path from monorepo root, e.g. apps/touristical-renting/src/app/page.tsx',
+      path: 'string — relative path from monorepo root, e.g. apps/stay/src/app/page.tsx',
     },
   },
   list_changed_files: {

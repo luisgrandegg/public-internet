@@ -26,7 +26,7 @@ Three auth pages for the eats app. better-auth already handles the API (`/api/au
 
 ## Notes
 
-- Follow the same pattern as `apps/touristical-renting/src/app/auth/`
+- Follow the same pattern as `apps/stay/src/app/auth/`
 - Use only design system components: `Input`, `Button`, `Card`, `Stack`, `Text`
 - Auth layout can share a wrapper component at `src/app/auth/layout.tsx`
 - No social login — email + password only at this stage

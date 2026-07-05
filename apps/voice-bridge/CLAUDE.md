@@ -9,11 +9,11 @@
 
 `voice-bridge` lets a designer or PM dictate PR changes by voice. A session is scoped to a PR (`/pr/123`). The browser captures audio, an ElevenLabs Conversational AI agent handles STT, the agent turn, and TTS, and at the end of a session the agent calls `submit_spec` — which writes a structured change spec to `.voice-changes/` for Claude Code's `/voice-changes` slash command to apply.
 
-This app is **not** subject to the federation, public-entity-governance, or worker-rights constraints in `CONSTITUTION.md` (those bind the platforms in `apps/touristical-renting`, `apps/eats`, etc.). It **is** subject to the no-dark-patterns and accessibility principles, and to the import + composition rules in `apps/CLAUDE.md`.
+This app is **not** subject to the federation, public-entity-governance, or worker-rights constraints in `CONSTITUTION.md` (those bind the platforms in `apps/stay`, `apps/eats`, etc.). It **is** subject to the no-dark-patterns and accessibility principles, and to the import + composition rules in `apps/CLAUDE.md`.
 
 ---
 
-## Why a separate app, not part of `touristical-renting`
+## Why a separate app, not part of `stay`
 
 The voice surface is cross-cutting tooling — it might one day drive PR changes against the design system, the Eats app, or any future app in the monorepo. Keeping it isolated as `apps/voice-bridge` means it has no Prisma schema, no domain model, and no coupling to any platform's data.
 
@@ -60,7 +60,7 @@ One-sentence agent summary of what was discussed.
 
 ## Proposed changes
 
-### 1. `apps/touristical-renting/src/components/Hero.tsx`
+### 1. `apps/stay/src/components/Hero.tsx`
 Drop the urgency banner and place the date picker under the headline.
 
 **Rationale:** removes urgency copy per Constitution principle 5.
@@ -114,4 +114,4 @@ If voice-bridge graduates from "demo tool" to "team-wide infra," promote the uni
 - **No platform domain models.** No Prisma, no Listing/Booking/Order entities. If the demo wants to read those, it does so through the existing app SDKs, not by adding tables here.
 - **No user accounts.** The session is scoped by PR number in the URL — that is enough for a developer tool. Auth is a separate ADR if it becomes necessary.
 - **No persistence beyond spec files.** Transcripts may contain incidental sensitive content; persisting them in a database is out of scope.
-- **No UI dependencies on `@public-internet/touristical-renting-sdk` or `@public-internet/eats-sdk`.** This app is not platform-coupled; importing one of those SDKs would break that property.
+- **No UI dependencies on `@public-internet/stay-sdk` or `@public-internet/eats-sdk`.** This app is not platform-coupled; importing one of those SDKs would break that property.

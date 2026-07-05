@@ -33,7 +33,7 @@ structured environment that guarantees production-quality output.
 ```
 /
 ├── apps/
-│   ├── touristical-renting/  # Stay platform — commission-free tourist rental
+│   ├── stay/                 # Stay platform — commission-free tourist rental
 │   ├── eats/                 # Eats platform — commission-free food delivery
 │   └── voice-bridge/         # Dev tool — voice-first PR-change capture (see ADR-005)
 ├── packages/
@@ -47,7 +47,7 @@ structured environment that guarantees production-quality output.
 │   ├── node-auth/            # Shared auth factory — better-auth recipe + optional per-node Google (ADR-007)
 │   ├── payments/             # Shared PaymentProvider interface + Stripe impl + webhook factory (ADR-006/007)
 │   ├── eats-sdk/             # Auto-generated typed SDK for the eats API
-│   └── touristical-renting-sdk/  # Auto-generated typed SDK for the touristical-renting API
+│   └── stay-sdk/             # Auto-generated typed SDK for the stay API
 │       ├── src/
 │       │   ├── client.ts         # ApiClient interface + FetchApiClient
 │       │   ├── index.ts          # Barrel export
@@ -71,7 +71,7 @@ Each subdirectory has its own `CLAUDE.md` with context scoped to that area:
 
 - `packages/design-system/CLAUDE.md` — tokens, components, conventions, Storybook
 - `apps/CLAUDE.md` — app registry, import rules, composition patterns, gap flagging, OpenAPI + SDK rules
-- `apps/touristical-renting/CLAUDE.md` — domain vocabulary, routes, constitution alignment for the Stay platform
+- `apps/stay/CLAUDE.md` — domain vocabulary, routes, constitution alignment for the Stay platform
 - `apps/voice-bridge/CLAUDE.md` — voice toolchain rules, ElevenLabs provider boundary, spec format
 
 ---

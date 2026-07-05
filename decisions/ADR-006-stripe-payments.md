@@ -5,7 +5,7 @@
 
 ## Context
 
-Both platforms create money-bearing records (Bookings on the Stay platform, Orders on Eats) without capturing any payment. The "Confirm and pay" button on Eats and the booking confirmation on touristical-renting write a database row and stop — money settlement happens entirely off-platform, invisibly, with no record of whether it happened at all.
+Both platforms create money-bearing records (Bookings on the Stay platform, Orders on Eats) without capturing any payment. The "Confirm and pay" button on Eats and the booking confirmation on stay write a database row and stop — money settlement happens entirely off-platform, invisibly, with no record of whether it happened at all.
 
 For the platforms to be a real functional replacement for AirBnB and UberEats, an operator must be able to take card payments. At the same time:
 

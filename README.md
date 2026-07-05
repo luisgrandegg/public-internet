@@ -16,7 +16,7 @@ A generation of platforms was built to connect people who need something with pe
 
 | Platform | Status | Description | Quickstart |
 |---|---|---|---|
-| **Stay** | Built | Commission-free accommodation — AirBnB without the extraction | [apps/touristical-renting/QUICKSTART.md](./apps/touristical-renting/QUICKSTART.md) |
+| **Stay** | Built | Commission-free accommodation — AirBnB without the extraction | [apps/stay/QUICKSTART.md](./apps/stay/QUICKSTART.md) |
 | **Eats** | Built | Food delivery with worker rights — DoorDash without misclassification | [apps/eats/QUICKSTART.md](./apps/eats/QUICKSTART.md) |
 | **Agenda** | Planned | Civic participation platform — transparent municipal decisions for everyone | — |
 
@@ -62,7 +62,7 @@ winget install Volta.Volta
 
 Each app has a 5-minute quickstart covering database, env, migrations, and dev server:
 
-- **Stay** — [apps/touristical-renting/QUICKSTART.md](./apps/touristical-renting/QUICKSTART.md) (http://localhost:3000)
+- **Stay** — [apps/stay/QUICKSTART.md](./apps/stay/QUICKSTART.md) (http://localhost:3000)
 - **Eats** — [apps/eats/QUICKSTART.md](./apps/eats/QUICKSTART.md) (http://localhost:3001)
 - **voice-bridge** (dev tool) — [apps/voice-bridge/QUICKSTART.md](./apps/voice-bridge/QUICKSTART.md) (http://localhost:3100)
 
@@ -71,11 +71,11 @@ The short version:
 ```bash
 git clone https://github.com/luisgrandegg/public-internet.git && cd public-internet
 pnpm install
-docker compose -f apps/touristical-renting/docker-compose.yml up -d
-cp apps/touristical-renting/.env.example apps/touristical-renting/.env
-pnpm --filter @public-internet/touristical-renting db:deploy
+docker compose -f apps/stay/docker-compose.yml up -d
+cp apps/stay/.env.example apps/stay/.env
+pnpm --filter @public-internet/stay db:deploy
 pnpm --filter @public-internet/design-system build
-pnpm --filter @public-internet/touristical-renting dev
+pnpm --filter @public-internet/stay dev
 
 # Storybook (design system preview)
 pnpm --filter @public-internet/design-system storybook
@@ -88,7 +88,7 @@ pnpm --filter @public-internet/design-system storybook
 ```
 /
 ├── apps/
-│   ├── touristical-renting/  # Stay platform — commission-free tourist rental (Next.js)
+│   ├── stay/                 # Stay platform — commission-free tourist rental (Next.js)
 │   ├── eats/                 # Eats platform — commission-free food delivery (Next.js)
 │   └── voice-bridge/         # Dev tool — voice-first PR-change capture (Next.js)
 ├── packages/
@@ -96,7 +96,7 @@ pnpm --filter @public-internet/design-system storybook
 │   ├── node-auth/            # Shared auth factory (better-auth recipe + optional Google) — ADR-007
 │   ├── payments/             # Pluggable PaymentProvider + Stripe + webhook factory — ADR-006/007
 │   ├── eats-sdk/             # Typed SDK generated from the eats OpenAPI spec
-│   └── touristical-renting-sdk/  # Typed SDK generated from the Stay OpenAPI spec
+│   └── stay-sdk/             # Typed SDK generated from the Stay OpenAPI spec
 ├── .claude/
 │   └── commands/             # AI-assisted workflow commands
 ├── backlog/
@@ -196,7 +196,7 @@ Each app is designed to run as an independent local node — a municipality or c
 
 | App | Guide |
 |---|---|
-| **Stay** (`touristical-renting`) | [apps/touristical-renting/DEPLOYMENT.md](./apps/touristical-renting/DEPLOYMENT.md) |
+| **Stay** (`stay`) | [apps/stay/DEPLOYMENT.md](./apps/stay/DEPLOYMENT.md) |
 | **Eats** (`eats`) | [apps/eats/DEPLOYMENT.md](./apps/eats/DEPLOYMENT.md) |
 | **voice-bridge** (internal tool) | [apps/voice-bridge/DEPLOYMENT.md](./apps/voice-bridge/DEPLOYMENT.md) |
 
