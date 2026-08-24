@@ -68,9 +68,9 @@ Each app has a 5-minute quickstart covering database, env, migrations, and dev s
 
 ### Deploy a node to the internet
 
-Want a live node rather than a local one? Each app has a Vercel deploy button that forks
-the repo, provisions a Postgres database, and runs the migrations for you — you supply a
-session secret and the node's URL:
+Want a live node rather than a local one? Each app has a Vercel deploy button that copies
+the repo into your account, provisions a Postgres database, and runs the migrations for
+you — you supply a session secret and the node's URL:
 
 [![Deploy Stay with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fluisgrandegg%2Fpublic-internet&root-directory=apps%2Fstay&project-name=stay-node&repository-name=stay-node&env=BETTER_AUTH_SECRET%2CNEXT_PUBLIC_APP_URL&envDescription=BETTER_AUTH_SECRET+signs+session+cookies+%2832%2B+random+chars%29.+NEXT_PUBLIC_APP_URL+is+this+node+public+URL+and+is+baked+in+at+build+time.&envLink=https%3A%2F%2Fgithub.com%2Fluisgrandegg%2Fpublic-internet%2Fblob%2Fmain%2Fapps%2Fstay%2FVERCEL.md%232-fill-in-the-two-required-variables&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D) &nbsp; **Stay** — [full guide](./apps/stay/VERCEL.md)
 

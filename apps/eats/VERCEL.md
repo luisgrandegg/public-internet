@@ -21,7 +21,7 @@ Vercel's deploy button has no mechanism to supply them for you:
 | `BETTER_AUTH_SECRET` | The deploy button prompts for environment variables but never generates them, and secrets must never ship as defaults. Generating one at build time would also rotate it on every deploy and sign every user out. **You paste a random string once.** |
 | `NEXT_PUBLIC_APP_URL` | Next.js inlines `NEXT_PUBLIC_*` into the client bundle at **build** time, but the node's domain does not exist until the project is created. Chicken-and-egg. **You type the expected URL, then confirm it after the first build.** |
 
-Everything else — forking the repo, the monorepo root directory, the Postgres database,
+Everything else — copying the repo, the monorepo root directory, the Postgres database,
 the connection strings, the schema migrations, the build order, the published fee and
 courier pay defaults — is handled for you. So: **one click, two fields, and one thing to
 check afterwards.**
@@ -30,7 +30,7 @@ check afterwards.**
 
 ## What the button actually does
 
-1. Forks `luisgrandegg/public-internet` into your GitHub account.
+1. Copies `luisgrandegg/public-internet` into your GitHub account as a new repository.
 2. Creates a Vercel project with **Root Directory** `apps/eats`.
 3. Provisions a **Neon Postgres** database through the Vercel Marketplace and injects
    `DATABASE_URL` (pooled, used by the app) and `DATABASE_URL_UNPOOLED` (direct, used by
@@ -45,6 +45,18 @@ check afterwards.**
 
    The first deploy therefore creates every table (User, Restaurant, MenuItem, Order,
    Delivery, Review …) in the empty database.
+
+> ⚠️ **Step 1 is a copy, not a GitHub fork.** Vercel's deploy button clones the files
+> into a brand-new repository with no upstream link back to this one, so GitHub's "Sync
+> fork" button will not appear. Pulling in later upstream changes takes one extra remote —
+> see [Upgrades](#upgrades).
+
+Your node gets its own repository on purpose. Vercel redeploys on every push to the
+production branch, so a node wired directly to this repository would ship whatever
+upstream pushed, whenever upstream pushed it — making this repo a central authority over
+every node, which is exactly what [CONSTITUTION.md](../../CONSTITUTION.md) rules out. Your
+own copy is also where node-specific changes live: a custom payment provider, your
+branding, your configuration. You decide when to take an upgrade.
 
 You need a GitHub account and a Vercel account. Neon's free tier is enough to try a node;
 nothing here requires a paid plan.
@@ -228,7 +240,7 @@ The full Supabase walkthrough is in
 | Sign-in appears to do nothing, or loops back to the sign-in page | `NEXT_PUBLIC_APP_URL` does not match the domain you are visiting. Fix it and **redeploy** — see [step 4](#4-confirm-the-domain-matches-next_public_app_url). |
 | Build fails on `prisma migrate deploy` with a connection error | No direct connection available. Set `DIRECT_URL` to a non-pooled string. |
 | Build fails resolving `@public-internet/design-system` | **Settings → General → Root Directory**: `apps/eats`, with *"Include source files outside of the Root Directory"* enabled. The app builds a shared workspace package. |
-| Build fails on `pnpm install --frozen-lockfile` | Your fork's `pnpm-lock.yaml` is out of sync with `package.json`. Run `pnpm install` locally and commit the lockfile. |
+| Build fails on `pnpm install --frozen-lockfile` | Your copy's `pnpm-lock.yaml` is out of sync with `package.json`. Run `pnpm install` locally and commit the lockfile. |
 | Runtime 500s on every page | `DATABASE_URL` is missing or the database is unreachable. A paused free-tier database also does this — open it in the provider's dashboard to resume. |
 | `BETTER_AUTH_SECRET` errors at startup | Shorter than 32 characters, or not set for the environment being deployed. |
 | Checkout total looks wrong | Check `EATS_INFRASTRUCTURE_FEE_CENTS` — it is an **integer in cents** (`99`, not `0.99`). |
@@ -238,8 +250,24 @@ The full Supabase walkthrough is in
 
 ## Upgrades
 
-Merge upstream changes into your fork's production branch. Vercel rebuilds and the build
-command applies any new migrations automatically. No manual migration step.
+Because the button cloned rather than forked, your repository has no upstream remote yet.
+Add it once, then upgrading is a merge and a push:
+
+```bash
+git remote add upstream https://github.com/luisgrandegg/public-internet.git
+git fetch upstream
+git merge upstream/main          # review what you are taking before you push
+git push origin main             # Vercel rebuilds and redeploys
+```
+
+Vercel applies any new migrations automatically — the build command runs
+`prisma migrate deploy` on every deploy, so there is no manual migration step.
+
+**Want a real fork instead?** Fork this repository on GitHub first, then in Vercel use
+**Add New Project → Import** and set the Root Directory to `apps/eats`. You give up the
+one-click flow — you provision the database and set the environment variables yourself, as
+in [Bring your own Postgres](#bring-your-own-postgres) — but you keep GitHub's fork
+tooling, including the "Sync fork" button and upstream comparison.
 
 ---
 
