@@ -164,6 +164,10 @@ The sign-in and sign-up pages show a "Continue with Google" button only when bot
 
 ## Managed deployment: Vercel + Supabase
 
+> 🚀 **Just want it live fast?** [VERCEL.md](./VERCEL.md) is a click-by-click Vercel
+> quickstart with a deploy button that forks the repo, provisions Postgres, and runs the
+> migrations for you. The section below is the manual Vercel + Supabase route.
+
 The self-hosted path above keeps the node fully operator-owned. If you accept
 managed infrastructure, the repo is pre-configured for **Vercel** (hosting)
 plus **Supabase** (PostgreSQL): `apps/stay/vercel.json` runs

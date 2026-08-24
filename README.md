@@ -14,11 +14,11 @@ A generation of platforms was built to connect people who need something with pe
 
 ### Platforms in scope
 
-| Platform | Status | Description | Quickstart |
-|---|---|---|---|
-| **Stay** | Built | Commission-free accommodation — AirBnB without the extraction | [apps/stay/QUICKSTART.md](./apps/stay/QUICKSTART.md) |
-| **Eats** | Built | Food delivery with worker rights — DoorDash without misclassification | [apps/eats/QUICKSTART.md](./apps/eats/QUICKSTART.md) |
-| **Agenda** | Planned | Civic participation platform — transparent municipal decisions for everyone | — |
+| Platform | Status | Description | Run locally | Deploy |
+|---|---|---|---|---|
+| **Stay** | Built | Commission-free accommodation — AirBnB without the extraction | [QUICKSTART.md](./apps/stay/QUICKSTART.md) | [Vercel](./apps/stay/VERCEL.md) · [self-hosted](./apps/stay/DEPLOYMENT.md) |
+| **Eats** | Built | Food delivery with worker rights — DoorDash without misclassification | [QUICKSTART.md](./apps/eats/QUICKSTART.md) | [Vercel](./apps/eats/VERCEL.md) · [self-hosted](./apps/eats/DEPLOYMENT.md) |
+| **Agenda** | Planned | Civic participation platform — transparent municipal decisions for everyone | — | — |
 
 ---
 
@@ -65,6 +65,21 @@ Each app has a 5-minute quickstart covering database, env, migrations, and dev s
 - **Stay** — [apps/stay/QUICKSTART.md](./apps/stay/QUICKSTART.md) (http://localhost:3000)
 - **Eats** — [apps/eats/QUICKSTART.md](./apps/eats/QUICKSTART.md) (http://localhost:3001)
 - **voice-bridge** (dev tool) — [apps/voice-bridge/QUICKSTART.md](./apps/voice-bridge/QUICKSTART.md) (http://localhost:3100)
+
+### Deploy a node to the internet
+
+Want a live node rather than a local one? Each app has a Vercel deploy button that forks
+the repo, provisions a Postgres database, and runs the migrations for you — you supply a
+session secret and the node's URL:
+
+[![Deploy Stay with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fluisgrandegg%2Fpublic-internet&root-directory=apps%2Fstay&project-name=stay-node&repository-name=stay-node&env=BETTER_AUTH_SECRET%2CNEXT_PUBLIC_APP_URL&envDescription=BETTER_AUTH_SECRET+signs+session+cookies+%2832%2B+random+chars%29.+NEXT_PUBLIC_APP_URL+is+this+node+public+URL+and+is+baked+in+at+build+time.&envLink=https%3A%2F%2Fgithub.com%2Fluisgrandegg%2Fpublic-internet%2Fblob%2Fmain%2Fapps%2Fstay%2FVERCEL.md%232-fill-in-the-two-required-variables&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D) &nbsp; **Stay** — [full guide](./apps/stay/VERCEL.md)
+
+[![Deploy Eats with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fluisgrandegg%2Fpublic-internet&root-directory=apps%2Feats&project-name=eats-node&repository-name=eats-node&env=BETTER_AUTH_SECRET%2CNEXT_PUBLIC_APP_URL&envDescription=BETTER_AUTH_SECRET+signs+session+cookies+%2832%2B+random+chars%29.+NEXT_PUBLIC_APP_URL+is+this+node+public+URL+and+is+baked+in+at+build+time.&envLink=https%3A%2F%2Fgithub.com%2Fluisgrandegg%2Fpublic-internet%2Fblob%2Fmain%2Fapps%2Feats%2FVERCEL.md%232-fill-in-the-two-required-variables&products=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D) &nbsp; **Eats** — [full guide](./apps/eats/VERCEL.md)
+
+To run a node on infrastructure you own instead, see [Stay](./apps/stay/DEPLOYMENT.md) or
+[Eats](./apps/eats/DEPLOYMENT.md) — systemd, your own PostgreSQL, your own reverse proxy.
+
+---
 
 The short version:
 
