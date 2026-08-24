@@ -58,6 +58,40 @@ every node, which is exactly what [CONSTITUTION.md](../../CONSTITUTION.md) rules
 own copy is also where node-specific changes live: a custom payment provider, your
 branding, your configuration. You decide when to take an upgrade.
 
+### What lands in your repository
+
+The copy is the **whole monorepo** — both platforms, the shared packages, the backlog and
+the decision records — not just `apps/eats`. `root-directory` tells Vercel where to
+*build*, not what to clone; there is no way to clone a subdirectory on its own.
+
+That is not waste. `apps/eats` cannot build by itself: it depends on four workspace
+packages (`design-system`, `node-auth`, `payments`, `eats-sdk`) plus the root
+`pnpm-workspace.yaml`, `pnpm-lock.yaml`, `tsconfig.base.json` and `package.json`. Splitting
+one app into a standalone repository would mean publishing those packages to a registry
+first.
+
+| In your copy | Built | Deployed |
+|---|---|---|
+| `apps/eats` | ✅ | ✅ — this node |
+| `packages/design-system`, `node-auth`, `payments`, `eats-sdk` | ✅ | bundled into the app |
+| `apps/stay` (the accommodation platform), `packages/stay-sdk` | ❌ | ❌ |
+| `apps/voice-bridge` (a designer dev tool) | ❌ | ❌ |
+| `backlog/`, `decisions/`, `.claude/` | — | ❌ |
+
+The only real cost is install time: `pnpm install --frozen-lockfile` runs at the workspace
+root, so the other app's dependencies are fetched and both apps' `prisma generate`
+postinstall hooks run. Nothing outside `apps/eats` is built, served, or reachable at
+runtime — the build command filters to `design-system → eats`, and Vercel serves only
+`apps/eats/.next`.
+
+### Running both platforms from one copy
+
+Because the copy already contains everything, a city running both nodes does **not** need a
+second copy. Create a second Vercel project from the same repository with **Root Directory**
+`apps/stay`, give it its own database and its own `NEXT_PUBLIC_APP_URL`, and you get
+two independent deployments sharing one repo and one design system. See
+[the Stay guide](../stay/VERCEL.md) for that app's specifics.
+
 You need a GitHub account and a Vercel account. Neon's free tier is enough to try a node;
 nothing here requires a paid plan.
 
