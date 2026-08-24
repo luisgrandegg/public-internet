@@ -1,7 +1,8 @@
 # Quickstart — Stay (stay)
 
 From clone to a running commission-free accommodation platform in ~5 minutes.
-(For production, see [DEPLOYMENT.md](./DEPLOYMENT.md).)
+Going live instead? → **[VERCEL.md](./VERCEL.md)** (managed, ~10 min) or
+[DEPLOYMENT.md](./DEPLOYMENT.md) (self-hosted).
 
 ## Prerequisites
 
