@@ -30,6 +30,26 @@
       }
     },
     "schemas": {
+      "NodeVersion": {
+        "type": "object",
+        "description": "The release of the node software this deployment was built from (ADR-008).",
+        "properties": {
+          "app": {
+            "type": "string",
+            "example": "eats",
+            "description": "Which platform this node runs"
+          },
+          "version": {
+            "type": "string",
+            "example": "0.4.0",
+            "description": "The node's release. '0.0.0-dev' means the app was built outside a release build."
+          }
+        },
+        "required": [
+          "app",
+          "version"
+        ]
+      },
       "OrderStatus": {
         "type": "string",
         "enum": [
@@ -2203,6 +2223,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/version": {
+      "get": {
+        "operationId": "version_get",
+        "summary": "Report the release this node is running",
+        "description": "Returns the release of the node software this deployment was built from (ADR-008). Public and unauthenticated so an operator can confirm what a node is actually running without shell access. Reports only — the node never checks for, announces, or acts on the availability of a newer release.\n",
+        "tags": [
+          "meta"
+        ],
+        "responses": {
+          "200": {
+            "description": "The node's release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/NodeVersion"
+                    }
+                  }
                 }
               }
             }

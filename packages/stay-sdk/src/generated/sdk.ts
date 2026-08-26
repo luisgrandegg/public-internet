@@ -18,6 +18,7 @@ import { ListingsResource } from './listings.resource.js'
 import { UsersMeBecomeHostResource } from './users-me-become-host.resource.js'
 import { UsersMeExportResource } from './users-me-export.resource.js'
 import { UsersMeResource } from './users-me.resource.js'
+import { VersionResource } from './version.resource.js'
 import { WebhooksPaymentsResource } from './webhooks-payments.resource.js'
 
 export class StaySDK {
@@ -34,6 +35,7 @@ export class StaySDK {
   readonly usersMeBecomeHost: UsersMeBecomeHostResource
   readonly usersMeExport: UsersMeExportResource
   readonly usersMe: UsersMeResource
+  readonly version: VersionResource
   readonly webhooksPayments: WebhooksPaymentsResource
   readonly host: {
     bookings: HostBookingsResource
@@ -57,6 +59,7 @@ export class StaySDK {
     this.usersMeBecomeHost = new UsersMeBecomeHostResource(client)
     this.usersMeExport = new UsersMeExportResource(client)
     this.usersMe = new UsersMeResource(client)
+    this.version = new VersionResource(client)
     this.webhooksPayments = new WebhooksPaymentsResource(client)
     this.host = {
       bookings: new HostBookingsResource(client),

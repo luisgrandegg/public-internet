@@ -1,5 +1,13 @@
 // GENERATED — do not edit manually. Run: pnpm --filter @public-internet/stay-sdk generate
 
+/** The release of the node software this deployment was built from (ADR-008). */
+export interface NodeVersion {
+  /** Which platform this node runs */
+  app: string
+  /** The node's release. '0.0.0-dev' means the app was built outside a release build. */
+  version: string
+}
+
 /** Type of rental property */
 export type PropertyType = 'flat' | 'house' | 'room' | 'studio'
 
