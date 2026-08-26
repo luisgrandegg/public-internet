@@ -289,10 +289,16 @@ Add it once, then upgrading is a merge and a push:
 
 ```bash
 git remote add upstream https://github.com/luisgrandegg/public-internet.git
-git fetch upstream
-git merge upstream/main          # review what you are taking before you push
+git fetch upstream --tags
+git merge v0.4.0                 # a release tag — not upstream/main
 git push origin main             # Vercel rebuilds and redeploys
 ```
+
+**Upgrade to a tag, not to `main`.** `main` may carry unreleased work.
+[CHANGELOG.md](../../CHANGELOG.md) marks every release with whether it applies
+migrations, needs new configuration, breaks something, or fixes a security issue; read
+[UPGRADING.md](../../UPGRADING.md) before taking any release that carries a marker. Confirm
+what you ended up on with `GET /api/version` on your node.
 
 Vercel applies any new migrations automatically — the build command runs
 `prisma migrate deploy` on every deploy, so there is no manual migration step.

@@ -1,0 +1,78 @@
+name: Release
+
+# Cutting a release:
+#   1. bump "version" in the root package.json
+#   2. add the matching section to CHANGELOG.md (with its impact markers)
+#   3. git tag vX.Y.Z && git push origin vX.Y.Z
+#
+# This workflow refuses a tag that disagrees with either of those, so a release
+# can never reach operators without a changelog entry. See ADR-008.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Verify and publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag and root version
+        id: v
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
+          echo "Tag $TAG / root package.json $PKG"
+
+      - name: Tag must match the root package.json version
+        run: |
+          if [ "${{ steps.v.outputs.tag }}" != "${{ steps.v.outputs.pkg }}" ]; then
+            echo "::error::Tag v${{ steps.v.outputs.tag }} does not match root package.json version ${{ steps.v.outputs.pkg }}. Bump the version and re-tag."
+            exit 1
+          fi
+
+      - name: CHANGELOG.md must have a section for this release
+        run: |
+          if ! grep -qE "^## v${{ steps.v.outputs.tag }}( |$)" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## v${{ steps.v.outputs.tag }}' section. Operators rely on it for migration, config and breaking-change markers (ADR-008)."
+            exit 1
+          fi
+
+      - name: Extract release notes
+        id: notes
+        run: |
+          awk -v v="## v${{ steps.v.outputs.tag }}" '
+            $0 ~ "^" v { found=1; print; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          echo "--- release notes ---"
+          cat release-notes.md
+
+      - name: Warn when a migration ships unmarked
+        run: |
+          BASE="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+          if git diff --name-only "$BASE" "${GITHUB_REF_NAME}" | grep -q 'prisma/migrations/'; then
+            if ! grep -qE "^## v${{ steps.v.outputs.tag }}.*Migrations" CHANGELOG.md; then
+              echo "::error::This release adds Prisma migrations but its CHANGELOG heading is not marked 🗄️ Migrations. Operators would get no warning to back up first (ADR-008)."
+              exit 1
+            fi
+          fi
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file release-notes.md

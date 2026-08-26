@@ -38,6 +38,21 @@ const options = {
         },
       },
       schemas: {
+        NodeVersion: {
+          type: 'object',
+          description:
+            'The release of the node software this deployment was built from (ADR-008).',
+          properties: {
+            app: { type: 'string', example: 'eats', description: 'Which platform this node runs' },
+            version: {
+              type: 'string',
+              example: '0.4.0',
+              description:
+                "The node's release. '0.0.0-dev' means the app was built outside a release build.",
+            },
+          },
+          required: ['app', 'version'],
+        },
         OrderStatus: {
           type: 'string',
           enum: ['PENDING', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'IN_DELIVERY', 'DELIVERED', 'CANCELLED'],

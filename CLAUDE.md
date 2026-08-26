@@ -90,6 +90,7 @@ Before making a choice that touches styling strategy, experiment isolation, or c
 | [ADR-005](./decisions/ADR-005-voice-input-via-elevenlabs.md) | Voice input for the designer toolchain via ElevenLabs Conversational AI |
 | [ADR-006](./decisions/ADR-006-stripe-payments.md) | Online payments via Stripe Checkout, with an explicit offline mode |
 | [ADR-007](./decisions/ADR-007-shared-node-infrastructure-packages.md) | Shared node-auth and payments packages; pluggable per-node auth strategies |
+| [ADR-008](./decisions/ADR-008-node-release-versioning.md) | Node releases: the repository is the versioned artifact; operators upgrade to tags |
 
 If you are about to make a decision that contradicts an existing ADR, stop and flag it explicitly rather than silently overriding it. If the decision genuinely needs to change, write a new ADR that supersedes the old one.
 
@@ -127,13 +128,32 @@ If you are about to make a decision that contradicts an existing ADR, stop and f
 ### CI Gates (run on every PR)
 
 - `pnpm lint` — zero ESLint errors
-- `pnpm typecheck` — zero TypeScript errors (strict mode)
+- `pnpm type-check` — zero TypeScript errors (strict mode)
 - `pnpm build` — all packages build cleanly
 - `pnpm --filter <app> test:e2e` — e2e suite passes (app features only)
 
-### Package Tagging
+### Releases
 
-When a PR merges to `main`, a workflow automatically creates git tags for any packages whose `package.json` version changed (e.g. `@public-internet/design-system@0.1.1`).
+The versioned artifact is **this repository**, not the npm packages — both apps are
+`private: true` and what an operator deploys is a git ref. Releases are repo-level tags
+(`v0.4.0`). See [ADR-008](./decisions/ADR-008-node-release-versioning.md).
+
+Semver describes impact on a **node operator**: **major** = the operator must act (dropped
+column, new required env var, breaking interface) · **minor** = new capability, safe to take ·
+**patch** = fixes only.
+
+To cut a release:
+
+1. Bump `version` in the root `package.json`
+2. Add the matching `## vX.Y.Z` section to [`CHANGELOG.md`](./CHANGELOG.md), with its impact
+   markers (🗄️ Migrations · ⚙️ Config · 💥 Breaking · 🔐 Security)
+3. `git tag vX.Y.Z && git push origin vX.Y.Z`
+
+`.github/workflows/release.yml` refuses a tag whose version disagrees with the root
+`package.json`, a tag with no changelog section, and a release that adds Prisma migrations
+without the 🗄️ marker — operators rely on that marker to know to back up first.
+
+Never tell an operator to merge `main`; point them at a tag.
 
 ---
 
@@ -151,6 +171,10 @@ Slash commands for designers live in `.claude/commands/`. Use them to start guid
 | `/create-pr`              | Create a PR for the current branch and start CI watch                         |
 | `/watch-pr`               | Poll CI on the current PR; fix failures automatically                         |
 | `/rules-audit`            | Score the quality of AI rules (CLAUDE.md, CONSTITUTION.md) across 8 criteria |
+| `/ai-audit`               | Audit AI-facing rules and surface drift between docs and the codebase         |
+| `/complete-feature`       | Complete a backlog feature: completion block, file move, backlog row, commit  |
+| `/setup-environment`      | Set up a fresh clone — dependencies, database, env files                     |
+| `/commands-readme`        | Open the designer's guide to every slash command                             |
 | `/review-pr`              | Review a PR, post inline comments per finding, submit REQUEST_CHANGES         |
 | `/tackle-backlog`         | Spawn one agent per backlog feature (coordinator for dependent features)       |
 | `/discover`               | Explore a project's architecture, data model, API surface, and UI             |
@@ -274,7 +298,7 @@ Check it before starting work to understand what's done, in progress, and pendin
 
 Specifically, complete the backlog item when **all of the following are true**:
 - The feature's code is committed on the current branch
-- `pnpm typecheck` and `pnpm lint` report zero errors
+- `pnpm type-check` and `pnpm lint` report zero errors
 - `/audit-component` has passed (for DS components)
 - You are about to run `/create-pr`
 

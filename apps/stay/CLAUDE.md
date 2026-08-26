@@ -106,6 +106,7 @@ This app uses Next.js Route Handlers as its REST API. See `apps/CLAUDE.md § Ful
 
 | Method | Path | Auth required | Description |
 |---|---|---|---|
+| `GET` | `/api/version` | No | Report the release this node is running (ADR-008); no telemetry |
 | `POST` | `/api/auth/sign-up` | No | Create account; sets session cookie |
 | `POST` | `/api/auth/sign-in` | No | Authenticate; sets session cookie |
 | `POST` | `/api/auth/sign-out` | Yes | Destroy session |
